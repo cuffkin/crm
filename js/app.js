@@ -31,21 +31,79 @@ $(function() {
     syncFormsWithServer(true); // true = синхронный запрос
     return undefined; // Убираем стандартное диалоговое окно 
   });
+
+  // Функция для отладки элементов
+  function debugElements() {
+    console.log('DEBUG: Проверка кликабельных элементов');
+    console.log('- Favorite tabs container:', $('#favorite-tabs').length);
+    console.log('- Favorite buttons:', $('#favorite-tabs button').length);
+    console.log('- Nav items:', $('.navbar .nav-item .nav-link[data-module]').length);
+    
+    // Выводим данные о каждой кнопке
+    $('#favorite-tabs button').each(function(i) {
+      const $btn = $(this);
+      const module = $btn.data('module');
+      const visible = $btn.is(':visible');
+      const width = $btn.width();
+      const height = $btn.height();
+      console.log(`Кнопка #${i+1}: модуль=${module}, видима=${visible}, размер=${width}x${height}px`);
+    });
+  }
+
+  // Отладочный код - проверяем элементы
+  console.log('Favorite tabs:', $('#favorite-tabs').length, 'found');
+  console.log('Favorite buttons:', $('#favorite-tabs button').length, 'found');
+  console.log('Nav items:', $('.navbar .nav-item .nav-link[data-module]').length, 'found');
+
+  // Глобальный обработчик на документе для гарантированной работы
+  $(document).on('click', '#favorite-tabs button', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const module = $(this).data('module');
+    if (module) {
+      console.log('Global document click handler detected module:', module);
+      openModuleTab(module);
+    } else {
+      console.error('Module not found in clicked button');
+    }
+    return false;
+  });
+
+  // Запускаем отладку через секунду после загрузки
+  setTimeout(debugElements, 1000);
 });
 
 // Функция для открытия модуля в новой вкладке
 function openModuleTab(modulePath) {
+  // Отладочная информация
+  console.log('Opening module:', modulePath);
+  
   let safePath = modulePath.replace(/\//g, '-');
 
   let tabId = 'tab-' + safePath;
   let tabContentId = 'content-' + safePath;
 
   if ($('#' + tabId).length > 0) {
+    console.log('Tab already exists, showing it');
     $('#' + tabId).tab('show');
     return;
   }
 
   let title = getModuleTitle(modulePath);
+  console.log('Tab title:', title);
+
+  // Проверяем состояние контейнеров для вкладок
+  console.log('Tab containers:', {
+    'crm-tabs exists': $('#crm-tabs').length,
+    'crm-tab-content exists': $('#crm-tab-content').length,
+    'crm-tabs visible': $('#crm-tabs').is(':visible'),
+    'crm-tab-content visible': $('#crm-tab-content').is(':visible'),
+    'crm-tabs CSS display': $('#crm-tabs').css('display')
+  });
+  
+  // Принудительно показываем контейнер вкладок, если он скрыт
+  $('#crm-tabs').css('display', 'flex');
+  $('#crm-tab-content').show();
 
   let navItem = $(`
     <li class="nav-item">
@@ -75,9 +133,20 @@ function openModuleTab(modulePath) {
 
   $('#' + tabId).tab('show');
 
+  // Проверяем, добавляет ли modulePath суффикс _partial
+  let url = '/crm/modules/' + modulePath;
+  if (!modulePath.endsWith('_partial') && !modulePath.endsWith('_partial.php')) {
+    url += '_partial.php';
+  } else if (!modulePath.endsWith('.php')) {
+    url += '.php';
+  }
+  
+  console.log('AJAX URL:', url);
+
   $.ajax({
-    url: '/crm/modules/' + modulePath + '_partial.php',
+    url: url,
     success: function(html) {
+      console.log('Content loaded successfully');
       tabPane.html(html).addClass('fade-in');
       
       // После загрузки содержимого запускаем отслеживание изменений формы
@@ -87,12 +156,16 @@ function openModuleTab(modulePath) {
       saveTabsState();
     },
     error: function(xhr) {
+      console.error('Error loading content:', xhr.status, xhr.statusText);
       if (xhr.status === 404) {
         tabPane.html('<div class="text-danger">Файл не найден (404). Проверьте структуру папок.</div>');
+        console.error('URL not found:', url);
       } else if (xhr.status === 500) {
         tabPane.html('<div class="text-danger">Ошибка 500 на сервере. Проверьте PHP-код.</div>');
+        console.error('Server error 500');
       } else {
         tabPane.html('<div class="text-danger">Ошибка загрузки ('+xhr.status+')</div>');
+        console.error('Other error:', xhr);
       }
     }
   });
@@ -796,6 +869,16 @@ window.showNotification = showNotification;
 
 // Получение заголовка модуля
 function getModuleTitle(path) {
+  // Убираем _partial.php и _partial из путей для правильного сопоставления
+  let cleanPath = path;
+  if (cleanPath.endsWith('_partial.php')) {
+    cleanPath = cleanPath.substring(0, cleanPath.length - 12); // Длина "_partial.php"
+  } else if (cleanPath.endsWith('_partial')) {
+    cleanPath = cleanPath.substring(0, cleanPath.length - 8); // Длина "_partial"
+  }
+  
+  console.log('Getting title for path:', path, ', clean path:', cleanPath);
+  
   switch (path) {
     // Продажи
     case 'sales/orders/list':     return 'Заказы покупателей';
@@ -834,12 +917,53 @@ function getModuleTitle(path) {
     case 'production/recipes/list_partial':   return 'Рецепты производства';
     case 'production/operations/list_partial': return 'Операции производства';
     case 'production/orders/list_partial':     return 'Заказы на производство';
+    
+    // Чистые пути для производства без суффиксов
+    case 'production/recipes/list':   return 'Рецепты производства';
+    case 'production/operations/list': return 'Операции производства';
+    case 'production/orders/list':     return 'Заказы на производство';
 
     // Справочники
     case 'loaders/list':     return 'Грузчики';
     case 'drivers/list':     return 'Водители';
 
     default:
+      // Попробуем использовать очищенный путь если основной не подошел
+      switch (cleanPath) {
+        // Продажи
+        case 'sales/orders/list':     return 'Заказы покупателей';
+        case 'shipments/list':        return 'Отгрузки';
+        case 'sales/returns/list':    return 'Возврат покупателя';
+
+        // Закупки
+        case 'purchases/orders/list':   return 'Заказ поставщику';
+        case 'purchases/receipts/list': return 'Приёмки';
+        case 'purchases/returns/list':  return 'Возврат поставщику';
+
+        // Прочие
+        case 'users/list':       return 'Пользователи';
+        case 'access/list':      return 'Управление доступом';
+        case 'counterparty/list':return 'Контрагенты';
+        case 'finances/list':    return 'Финансовые операции';
+
+        // Товары
+        case 'products/list':    return 'Список товаров';
+        case 'categories/list':  return 'Категории';
+        case 'warehouse/list':   return 'Склады';
+        case 'stock/list':       return 'Остатки';
+
+        // Производство
+        case 'production/recipes/list':   return 'Рецепты производства';
+        case 'production/operations/list': return 'Операции производства';
+        case 'production/orders/list':     return 'Заказы на производство';
+
+        // Справочники
+        case 'loaders/list':     return 'Грузчики';
+        case 'drivers/list':     return 'Водители';
+        
+        default:
+          return path; // fallback to original path
+      }
       return path; // fallback
   }
 }
@@ -1222,7 +1346,15 @@ function hasUnsavedChanges(tabContentId) {
   const tabContent = document.getElementById(tabContentId);
   if (!tabContent) return false;
   
-  // Проверяем, есть ли в tabContent формы с измененными полями
+  // Проверяем, является ли вкладка редактированием/созданием документа
+  // Вкладки редактирования/создания документов имеют ID, содержащие edit, например content-order-edit, content-shipment-edit и т.д.
+  const isEditTab = tabContentId.includes('edit') || 
+                    (tabContent.getAttribute('data-document-type') !== null);
+  
+  // Если это не вкладка редактирования/создания документа, возвращаем false
+  if (!isEditTab) return false;
+  
+  // Проверяем, есть ли в tabContent формы с полями, измененными вручную
   const forms = tabContent.querySelectorAll('form');
   
   for (let i = 0; i < forms.length; i++) {
@@ -1232,15 +1364,26 @@ function hasUnsavedChanges(tabContentId) {
     for (let j = 0; j < formInputs.length; j++) {
       const input = formInputs[j];
       
-      // Проверяем, отличается ли текущее значение от исходного
-      if (input.value !== input.defaultValue) {
+      // Проверяем, был ли элемент изменен вручную (через флаг data-user-modified)
+      if (input.dataset.userModified === 'true') {
         return true;
+      }
+      
+      // Проверяем, отличается ли текущее значение от исходного
+      // и не имеет ли поле атрибут data-ignore-changes
+      if (input.value !== input.defaultValue && !input.hasAttribute('data-ignore-changes')) {
+        // Если поле было заполнено программно через JavaScript, 
+        // оно будет иметь атрибут data-auto-filled="true"
+        if (!input.dataset.autoFilled) {
+          return true;
+        }
       }
     }
   }
   
-  // Проверяем наличие сохраненного состояния формы
-  if (globalFormsData.forms[tabContentId]) {
+  // Если нет сохраненного состояния формы или это состояние было сохранено автоматически,
+  // а не в результате пользовательских действий, возвращаем false
+  if (globalFormsData.forms[tabContentId] && globalFormsData.forms[tabContentId].userModified) {
     return true;
   }
   
@@ -1647,8 +1790,13 @@ function initFormTracking(tabContentId) {
   
   // Добавляем обработчики событий для отслеживания изменений
   inputs.forEach(input => {
+    // Сбрасываем флаги ручных изменений при инициализации
+    input.removeAttribute('data-user-modified');
+    
     input.addEventListener('change', function() {
-      saveFormState(tabContentId);
+      // Устанавливаем атрибут, указывающий, что поле было изменено пользователем вручную
+      this.dataset.userModified = 'true';
+      saveFormState(tabContentId, true); // true = изменено пользователем
     });
     
     // Для текстовых полей еще отслеживаем ввод, но с задержкой
@@ -1658,9 +1806,12 @@ function initFormTracking(tabContentId) {
       // Используем debounce для оптимизации
       let debounceTimer;
       input.addEventListener('input', function() {
+        // Помечаем, что поле было изменено пользователем вручную
+        this.dataset.userModified = 'true';
+        
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(function() {
-          saveFormState(tabContentId);
+          saveFormState(tabContentId, true); // true = изменено пользователем
         }, 300); // Задержка 300 мс
       });
     }
@@ -1670,13 +1821,13 @@ function initFormTracking(tabContentId) {
   contentElement.addEventListener('click', function(e) {
     // Сохраняем состояние через небольшую задержку, чтобы оно успело измениться после клика
     setTimeout(function() {
-      saveFormState(tabContentId);
+      saveFormState(tabContentId, true); // true = изменено пользователем
     }, 100);
   });
 }
 
 // Сохранение состояния формы
-function saveFormState(tabContentId) {
+function saveFormState(tabContentId, userModified = false) {
   const userId = getUserId();
   if (!userId) return;
   
@@ -1693,6 +1844,7 @@ function saveFormState(tabContentId) {
     documentType: documentType,
     documentId: documentId,
     timestamp: new Date().toISOString(),
+    userModified: userModified, // Флаг, указывающий, что изменения внесены пользователем вручную
     values: {}
   };
   
@@ -1714,6 +1866,12 @@ function saveFormState(tabContentId) {
       formData.values[key] = input.checked;
     } else {
       formData.values[key] = input.value;
+    }
+    
+    // Сохраняем информацию о том, было ли поле изменено вручную
+    if (input.dataset.userModified === 'true') {
+      if (!formData.modifiedFields) formData.modifiedFields = {};
+      formData.modifiedFields[key] = true;
     }
   });
   
@@ -1797,10 +1955,20 @@ function restoreFormState(tabContentId) {
       const input = contentElement.querySelector(`#${key}`) || contentElement.querySelector(`[name="${key}"]`);
       if (!input) continue;
       
-      if (input.type === 'checkbox' || input.type === 'radio') {
-        input.checked = formData.values[key];
+      // Проверяем, было ли это поле изменено пользователем вручную
+      const isUserModified = formData.modifiedFields && formData.modifiedFields[key];
+      
+      if (isUserModified) {
+        // Если поле было изменено пользователем вручную, устанавливаем соответствующий флаг
+        if (input.type === 'checkbox' || input.type === 'radio') {
+          input.checked = formData.values[key];
+        } else {
+          input.value = formData.values[key];
+        }
+        input.dataset.userModified = 'true';
       } else {
-        input.value = formData.values[key];
+        // Если поле не было изменено вручную, используем функцию для программного заполнения
+        setAutoFilledValue(input, formData.values[key]);
       }
     }
     
@@ -1827,6 +1995,14 @@ function restoreFormState(tabContentId) {
           <td><input type="text" class="form-control pd-description" value="${detail.description || ''}"></td>
           <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();calcTotalHybrid();">×</button></td>
         `;
+        
+        // Устанавливаем атрибут data-auto-filled для всех элементов, если они не были изменены вручную
+        if (!(formData.modifiedFields && formData.modifiedFields['payment_details'])) {
+          row.querySelectorAll('input, select').forEach(el => {
+            el.dataset.autoFilled = 'true';
+          });
+        }
+        
         tbody.appendChild(row);
       });
       
@@ -2095,13 +2271,21 @@ function openProductionOperationTab(operationId, operationNumber = null) {
 $(function() {
   // Открытие/закрытие сайдбара
   $('#sidebar-toggle').on('click', function() {
-    $('.sidebar').toggleClass('open');
-  });
-
-  // Закрытие сайдбара
-  $('#sidebar-close').on('click', function(e) {
-    e.stopPropagation();
-    $('.sidebar').removeClass('open');
+    // Открываем сайдбар
+    $('.sidebar').css('transform', 'translateX(280px)');
+    
+    // Добавляем обработчик для закрытия по клику вне сайдбара
+    setTimeout(function() {
+      $(document).on('click.sidebar', function(e) {
+        // Если клик был не внутри сайдбара и не на кнопке сайдбара
+        if (!$(e.target).closest('.sidebar').length && !$(e.target).closest('#sidebar-toggle').length) {
+          // Закрываем сайдбар
+          $('.sidebar').css('transform', 'translateX(0)');
+          // Убираем обработчик события
+          $(document).off('click.sidebar');
+        }
+      });
+    }, 50); // Небольшая задержка, чтобы избежать срабатывания на текущем клике
   });
 
   // Обработка клика по элементам сайдбара
@@ -2123,14 +2307,36 @@ $(function() {
     $fav.empty();
     favorites.slice(0, 6).forEach(function(path) {
       const title = getModuleTitle(path) || path;
-      const btn = $(`<button class="btn btn-link text-light d-flex align-items-center" data-module="${path}" title="${title}">
+      const btn = $(`<button class="btn btn-link text-light d-flex align-items-center favorite-tab-btn" data-module="${path}" title="${title}">
                        <i class="fas fa-star me-1"></i><span>${title}</span>
                      </button>`);
-      btn.on('click', function() {
+      btn.on('click', function(e) {
+        e.preventDefault();
+        console.log('Clicked favorite tab:', path);
         openModuleTab(path);
       });
       $fav.append(btn);
     });
+    // Проверяем количество созданных кнопок
+    console.log('Rendered', $fav.find('button').length, 'favorite buttons');
+    
+    // Добавляем прямую обработку кликов после рендеринга
+    setTimeout(function() {
+      debugElements();
+      
+      // Повторно привязываем события на всякий случай
+      $('#favorite-tabs button').each(function() {
+        const $btn = $(this);
+        const path = $btn.data('module');
+        $btn.off('click').on('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Direct click handler:', path);
+          openModuleTab(path);
+          return false;
+        });
+      });
+    }, 100);
   }
 
   function toggleFavorite(path) {
@@ -2165,4 +2371,41 @@ $(function() {
     $(`.sidebar .nav-link[data-module="${path}"]`).addClass('favorite');
   });
   renderFavorites();
+  
+  // Добавляем обработчик для nav-item в навбаре (если они есть)
+  // Используем делегирование событий для большей надежности
+  $(document).on('click', '.navbar .nav-item .nav-link[data-module], .favorite-tab-btn', function(e) {
+    e.preventDefault();
+    const path = $(this).data('module');
+    console.log('Clicked nav-item or favorite:', path);
+    openModuleTab(path);
+  });
+  
+  // Отладочный код - проверяем элементы
+  console.log('Favorite tabs:', $('#favorite-tabs').length, 'found');
+  console.log('Favorite buttons:', $('#favorite-tabs button').length, 'found');
+  console.log('Nav items:', $('.navbar .nav-item .nav-link[data-module]').length, 'found');
 });
+
+// Вспомогательная функция для программного заполнения полей без установки флага ручного изменения
+function setAutoFilledValue(element, value) {
+  if (!element) return;
+  
+  // Устанавливаем атрибут, указывающий, что значение было заполнено программно
+  element.dataset.autoFilled = 'true';
+  
+  // Удаляем флаг ручного изменения, если он был установлен ранее
+  element.removeAttribute('data-user-modified');
+  
+  // Задаем значение в зависимости от типа поля
+  if (element.type === 'checkbox' || element.type === 'radio') {
+    element.checked = !!value;
+  } else {
+    element.value = value;
+  }
+  
+  // Если необходимо - вызываем событие change для обработки зависимых полей
+  // но делаем это в режиме программного изменения
+  const event = new Event('change', { bubbles: true });
+  element.dispatchEvent(event);
+}
