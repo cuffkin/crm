@@ -946,18 +946,20 @@ textarea.form-control {
 /* Sidebar and Favorites */
 .sidebar {
   position: fixed;
-  top: 0;
-  left: -250px;
-  width: 250px;
-  height: 100vh;
-  background-color: var(--bs-primary);
+  top: 56px; /* высота основного navbar */
+  left: 0;
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - 56px);
+  background-color: #002d5a;
   color: #fff;
   overflow-y: auto;
-  transition: left 0.3s ease;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
   z-index: 1040;
 }
 .sidebar.open {
-  left: 0;
+  transform: translateY(0);
 }
 .sidebar .nav-link {
   color: #fff;
@@ -974,20 +976,42 @@ textarea.form-control {
   color: gold;
 }
 #sidebar-toggle {
-  position: fixed;
-  top: 15px;
-  left: 15px;
-  z-index: 1050;
+  position: static !important;
+  margin-right: 1rem;
+  z-index: auto;
 }
 #crm-tabs {
   display: none !important;
 }
 #favorite-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
+  align-items: center;
 }
-#favorite-tabs .favorite-item i, #favorite-tabs i {
-  font-size: 1.25rem;
-  color: var(--bs-light);
+#favorite-tabs button {
+  background: transparent;
+  border: none;
+  padding: 0.2rem;
   cursor: pointer;
+  text-decoration: none !important;
+}
+#favorite-tabs button i {
+  font-size: 1rem;
+}
+#favorite-tabs button span {
+  line-height: 1rem;
+}
+#favorite-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+#favorite-tabs button:hover i {
+  color: gold;
+  text-decoration: none;
+}
+
+/* Скрывать кнопку сайдбара при открытом меню */
+.sidebar.open + #sidebar-toggle {
+  display: none;
 }

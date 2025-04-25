@@ -23,8 +23,32 @@
 </head>
 <body class="light-theme">
   <?php include __DIR__ . '/sidebar.php'; ?>
-  <!-- Кнопка открытия сайдбара -->
-  <button id="sidebar-toggle" class="btn btn-outline-light me-2" title="Меню">
-    <i class="fas fa-bars"></i>
-  </button>
-  <!-- Начало основного содержимого -->
+  <!-- Основной navbar -->
+  <nav class="navbar navbar-dark bg-primary">
+    <div class="container-fluid">
+      <!-- Кнопка открытия сайдбара -->
+      <button id="sidebar-toggle" class="btn btn-outline-light me-2" title="Меню">
+        <i class="fas fa-bars"></i>
+      </button>
+      <a class="navbar-brand text-light" href="#">PRORABCRM SPA</a>
+      <div id="favorite-tabs" class="d-flex"></div>
+      <div class="d-flex align-items-center text-light ms-auto">
+        <div id="session-status" class="d-flex align-items-center me-3">
+          <small id="session-info" class="text-light me-2"></small>
+          <span id="sync-status" class="badge bg-secondary rounded-pill" title="Статус синхронизации">
+            <i class="fas fa-sync-alt"></i>
+          </span>
+        </div>
+        <span class="me-3"><?= htmlspecialchars($username) ?> (<?= htmlspecialchars($user_role) ?>)</span>
+        <label class="theme-switcher me-3" title="Переключить тему">
+          <input type="checkbox" id="theme-switcher">
+          <span class="theme-slider">
+            <i class="fas fa-sun theme-icon theme-icon-light"></i>
+            <i class="fas fa-moon theme-icon theme-icon-dark"></i>
+          </span>
+        </label>
+        <a href="logout.php" class="btn btn-outline-light btn-sm">Выйти</a>
+      </div>
+    </div>
+  </nav>
+  <!-- Контент страницы -->
