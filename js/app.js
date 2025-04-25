@@ -2098,6 +2098,12 @@ $(function() {
     $('.sidebar').toggleClass('open');
   });
 
+  // Закрытие сайдбара
+  $('#sidebar-close').on('click', function(e) {
+    e.stopPropagation();
+    $('.sidebar').removeClass('open');
+  });
+
   // Обработка клика по элементам сайдбара
   $('.sidebar .nav-link').on('click', function(e) {
     e.preventDefault();
@@ -2116,7 +2122,10 @@ $(function() {
     const $fav = $('#favorite-tabs');
     $fav.empty();
     favorites.slice(0, 6).forEach(function(path) {
-      const btn = $(`<button class="btn btn-link text-light" data-module="${path}" title="${path}"><i class="fas fa-star"></i></button>`);
+      const title = getModuleTitle(path) || path;
+      const btn = $(`<button class="btn btn-link text-light d-flex align-items-center" data-module="${path}" title="${title}">
+                       <i class="fas fa-star me-1"></i><span>${title}</span>
+                     </button>`);
       btn.on('click', function() {
         openModuleTab(path);
       });
@@ -2141,8 +2150,8 @@ $(function() {
     renderFavorites();
   }
 
-  // Обработчик клика по звездочке в сайдбаре
-  $('.sidebar .star-icon').on('click', function(e) {
+  // Делегированный обработчик клика по звездочке в сайдбаре
+  $('.sidebar').on('click', '.star-icon', function(e) {
     e.stopPropagation();
     const path = $(this).closest('.nav-link').data('module');
     toggleFavorite(path);
