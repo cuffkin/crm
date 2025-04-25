@@ -206,6 +206,9 @@ include __DIR__ . '/includes/header.php';
 
       </ul>
 
+      <!-- Избранные вкладки -->
+      <div id="favorite-tabs" class="d-flex align-items-center text-light me-3"></div>
+
       <!-- Статус сессии и информация о пользователе -->
       <div class="d-flex align-items-center text-light">
         <!-- Индикатор статуса сессии -->

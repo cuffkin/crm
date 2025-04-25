@@ -22,4 +22,9 @@
   <script src="/crm/js/theme-switcher.js"></script>
 </head>
 <body class="light-theme">
+  <?php include __DIR__ . '/sidebar.php'; ?>
+  <!-- Кнопка открытия сайдбара -->
+  <button id="sidebar-toggle" class="btn btn-outline-light me-2" title="Меню">
+    <i class="fas fa-bars"></i>
+  </button>
   <!-- Начало основного содержимого -->

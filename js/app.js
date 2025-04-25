@@ -2090,3 +2090,70 @@ function openProductionOperationTab(operationId, operationNumber = null) {
   
   return { tabId, tabContentId };
 }
+
+// Инициализация сайдбара и избранного
+$(function() {
+  // Открытие/закрытие сайдбара
+  $('#sidebar-toggle').on('click', function() {
+    $('.sidebar').toggleClass('open');
+  });
+
+  // Обработка клика по элементам сайдбара
+  $('.sidebar .nav-link').on('click', function(e) {
+    e.preventDefault();
+    const path = $(this).data('module');
+    openModuleTab(path);
+  });
+
+  // Избранные вкладки в шапке
+  let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
+  function saveFavorites() {
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  }
+
+  function renderFavorites() {
+    const $fav = $('#favorite-tabs');
+    $fav.empty();
+    favorites.slice(0, 6).forEach(function(path) {
+      const btn = $(`<button class="btn btn-link text-light" data-module="${path}" title="${path}"><i class="fas fa-star"></i></button>`);
+      btn.on('click', function() {
+        openModuleTab(path);
+      });
+      $fav.append(btn);
+    });
+  }
+
+  function toggleFavorite(path) {
+    const idx = favorites.indexOf(path);
+    if (idx === -1) {
+      if (favorites.length >= 6) {
+        alert('Можно добавить не более 6 избранных');
+        return;
+      }
+      favorites.push(path);
+      $(`.sidebar .nav-link[data-module="${path}"]`).addClass('favorite');
+    } else {
+      favorites.splice(idx, 1);
+      $(`.sidebar .nav-link[data-module="${path}"]`).removeClass('favorite');
+    }
+    saveFavorites();
+    renderFavorites();
+  }
+
+  // Обработчик клика по звездочке в сайдбаре
+  $('.sidebar .star-icon').on('click', function(e) {
+    e.stopPropagation();
+    const path = $(this).closest('.nav-link').data('module');
+    toggleFavorite(path);
+  });
+
+  // Доступ из глобальной области
+  window.toggleFavorite = toggleFavorite;
+
+  // Инициализируем классы избранного и отрисовываем
+  favorites.forEach(function(path) {
+    $(`.sidebar .nav-link[data-module="${path}"]`).addClass('favorite');
+  });
+  renderFavorites();
+});

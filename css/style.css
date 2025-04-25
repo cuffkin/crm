@@ -942,3 +942,52 @@ textarea.form-control {
     justify-content: space-between;
   }
 }
+
+/* Sidebar and Favorites */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -250px;
+  width: 250px;
+  height: 100vh;
+  background-color: var(--bs-primary);
+  color: #fff;
+  overflow-y: auto;
+  transition: left 0.3s ease;
+  z-index: 1040;
+}
+.sidebar.open {
+  left: 0;
+}
+.sidebar .nav-link {
+  color: #fff;
+  padding: 0.75rem 1rem;
+}
+.sidebar .nav-link.favorite {
+  background-color: rgba(255,255,255,0.1);
+}
+.sidebar .star-icon {
+  color: #ccc;
+  cursor: pointer;
+}
+.sidebar .nav-link.favorite .star-icon {
+  color: gold;
+}
+#sidebar-toggle {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1050;
+}
+#crm-tabs {
+  display: none !important;
+}
+#favorite-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+#favorite-tabs .favorite-item i, #favorite-tabs i {
+  font-size: 1.25rem;
+  color: var(--bs-light);
+  cursor: pointer;
+}
