@@ -1,0 +1,11 @@
+# /crm/modules/sales/returns/.htaccess
+# Для перенаправления запросов на соответствующие обработчики
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Если запрашивается старый API-метод, перенаправляем на новый обработчик 
+    # с сохранением оригинального имени в URL
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(get_last_return_id\.php)$ get_last_return_id.php [L]
+</IfModule>

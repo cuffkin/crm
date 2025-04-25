@@ -1,0 +1,330 @@
+/* /crm/css/enhanced-style.css - Улучшения для внешнего вида без нарушения структуры */
+
+/* Определяем переменные */
+:root {
+  --primary-color: #ff5a14; /* Оранжевый */
+  --primary-light: #ff7a44;
+  --primary-dark: #e64a00;
+  --secondary-color: #003366; /* Темно-синий */
+  --secondary-light: #004e9e;
+  --secondary-dark: #00264d;
+  
+  /* Нейтральные цвета */
+  --bg-main: #f9fafc;
+  --bg-card: #ffffff;
+  --bg-header: #f8f9fa;
+  --bg-hover: #f3f6fa;
+  
+  /* Текст */
+  --text-primary: #303442;
+  --text-secondary: #555b6e;
+  --text-muted: #6c757d;
+  --text-light: #ffffff;
+  
+  /* Границы */
+  --border-color: #eaedf3;
+  --border-dark: #c9d0e0;
+  
+  /* Состояния */
+  --success-color: #28a745;
+  --success-light: rgba(40, 167, 69, 0.1);
+  --danger-color: #dc3545;
+  --danger-light: rgba(220, 53, 69, 0.1);
+  --warning-color: #ffc107;
+  --warning-light: rgba(255, 193, 7, 0.1);
+  --info-color: #17a2b8;
+  --info-light: rgba(23, 162, 184, 0.1);
+  
+  /* Тени */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
+  
+  /* Скругления */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  
+  /* Переходы */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
+}
+
+/* Общие улучшения внешнего вида */
+body {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+/* Улучшения для навигации */
+.navbar {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 1rem;
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+.navbar-dark {
+  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%);
+}
+
+.nav-link {
+  position: relative;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-link:hover {
+  transform: translateY(-2px);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--primary-color);
+  transition: width 0.3s ease, left 0.3s ease;
+  opacity: 0;
+}
+
+.nav-link:hover::after {
+  width: 70%;
+  left: 15%;
+  opacity: 1;
+}
+
+/* Улучшения для кнопок */
+.btn {
+  transition: all 0.2s ease;
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.7s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover::after {
+  left: 100%;
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, var(--primary-color), var(--primary-light));
+  border: none;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(45deg, var(--primary-dark), var(--primary-color));
+}
+
+/* Улучшения для карточек */
+.card {
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 0.8rem 1.25rem;
+}
+
+/* Улучшения для таблиц */
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.table td, .table th {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(var(--primary-color), 0.03);
+}
+
+/* Улучшения для форм */
+.form-control, .form-select {
+  border-radius: 5px;
+  transition: all 0.2s ease;
+  border: 1px solid #dee2e6;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(255, 90, 20, 0.15);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Заголовки и текст */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: var(--secondary-color);
+}
+
+/* Переключатель темы */
+.theme-switcher {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  margin-left: 10px;
+}
+
+.theme-switcher input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.theme-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  transition: .4s;
+  border-radius: 24px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.theme-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .theme-slider {
+  background-color: var(--primary-color);
+}
+
+input:checked + .theme-slider:before {
+  transform: translateX(26px);
+}
+
+/* Иконки тем */
+.theme-icon {
+  position: absolute;
+  top: 4px;
+  font-size: 16px;
+  transition: .4s;
+  color: #fff;
+}
+
+.theme-icon-light {
+  left: 6px;
+  opacity: 0;
+}
+
+.theme-icon-dark {
+  right: 6px;
+  opacity: 1;
+}
+
+input:checked + .theme-slider .theme-icon-light {
+  opacity: 1;
+}
+
+input:checked + .theme-slider .theme-icon-dark {
+  opacity: 0;
+}
+
+/* Добавляем более мягкие тени и переходы */
+.shadow-soft {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-hover {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.shadow-hover:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07);
+  transform: translateY(-3px);
+}
+
+/* Уведомления */
+.toast-container {
+  z-index: 9999;
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+}
+
+.toast {
+  border-radius: 6px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: none;
+  overflow: hidden;
+}
+
+/* Улучшенные модальные окна */
+.modal-content {
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, var(--secondary-light) 0%, var(--secondary-color) 100%);
+  color: white;
+  border-bottom: none;
+}
+
+.modal-footer {
+  border-top: 1px solid #eee;
+  background-color: #f8f9fa;
+}

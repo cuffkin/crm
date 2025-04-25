@@ -1,0 +1,11 @@
+# /crm/modules/shipments/.htaccess
+# Перенаправление запросов к API на обработчик
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Если запрашивается один из API-методов, перенаправляем на api_handler.php
+    # с сохранением оригинального имени в URL для корректной маршрутизации
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(get_last_shipment_id\.php|get_order_items\.php|get_shipment_info\.php)$ api_handler.php [L]
+</IfModule>
