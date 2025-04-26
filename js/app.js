@@ -1,6 +1,132 @@
 // /crm/js/app.js
 
 $(function() {
+  // НОВАЯ РЕАЛИЗАЦИЯ ВЫПАДАЮЩИХ МЕНЮ
+  // Создаем свой менеджер меню, полностью отключая Bootstrap dropdown
+  const menuManager = {
+    // Текущее активное меню
+    activeMenu: null,
+    
+    // Инициализация
+    init: function() {
+      // Отключаем стандартное поведение bootstrap dropdown
+      $(document).on('show.bs.dropdown shown.bs.dropdown hide.bs.dropdown hidden.bs.dropdown', 
+        function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      );
+      
+      // Обработчик для кнопок открытия меню
+      $(document).on('click', '[data-bs-toggle="dropdown"], .dropdown-toggle', 
+        this.handleDropdownToggle.bind(this)
+      );
+      
+      // Обработчик кликов по пунктам меню
+      $(document).on('click', '.dropdown-menu .dropdown-item', 
+        this.handleMenuItemClick.bind(this)
+      );
+      
+      // Закрытие меню при клике вне
+      $(document).on('mousedown', this.handleOutsideClick.bind(this));
+      
+      // Скрываем все меню при инициализации
+      $('.dropdown-menu').hide();
+      
+      console.log('MenuManager initialized');
+    },
+    
+    // Обработчик нажатия на кнопку открытия меню
+    handleDropdownToggle: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const $button = $(e.currentTarget);
+      const $menu = $button.closest('.dropdown, .btn-group').find('.dropdown-menu');
+      
+      // Если это то же меню, что уже открыто - закрываем его
+      if (this.activeMenu && this.activeMenu[0] === $menu[0]) {
+        this.closeMenu();
+        return;
+      }
+      
+      // Закрываем ранее открытое меню
+      this.closeMenu();
+      
+      // Открываем новое меню
+      if ($menu.length) {
+        const buttonPos = $button[0].getBoundingClientRect();
+        const isTable = $button.closest('.table').length > 0;
+        
+        // Фиксированное позиционирование относительно окна
+        $menu.css({
+          position: 'fixed',
+          display: 'block',
+          top: buttonPos.bottom + 'px',
+          left: buttonPos.left + 'px',
+          minWidth: Math.max(180, buttonPos.width) + 'px',
+          zIndex: 99999
+        });
+        
+        // Уникальное поведение для кнопок в таблице
+        if (isTable) {
+          $menu.css('minWidth', '180px');
+        }
+        
+        // Исправляем выход за пределы экрана
+        const menuPos = $menu[0].getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        
+        if (menuPos.right > windowWidth) {
+          $menu.css('left', Math.max(10, windowWidth - menuPos.width - 10) + 'px');
+        }
+        
+        // Запоминаем активное меню
+        this.activeMenu = $menu;
+        
+        // Отладочная информация
+        console.log('Opened menu:', $menu);
+        console.log('Button position:', buttonPos);
+        console.log('Menu position:', menuPos);
+      }
+    },
+    
+    // Обработчик нажатия на пункт меню
+    handleMenuItemClick: function(e) {
+      console.log('Menu item clicked:', e.currentTarget);
+      // Не закрываем меню сразу, чтобы успело сработать действие
+      setTimeout(() => this.closeMenu(), 50);
+    },
+    
+    // Обработчик клика вне меню
+    handleOutsideClick: function(e) {
+      if (!this.activeMenu) return;
+      
+      const $target = $(e.target);
+      
+      // Если клик не по меню и не по его кнопке
+      if (!$target.closest('.dropdown-menu').length && 
+          !$target.closest('[data-bs-toggle="dropdown"], .dropdown-toggle').length) {
+        console.log('Outside click detected, closing menu');
+        this.closeMenu();
+      }
+    },
+    
+    // Закрытие меню
+    closeMenu: function() {
+      if (this.activeMenu) {
+        console.log('Closing menu:', this.activeMenu);
+        this.activeMenu.hide();
+        this.activeMenu = null;
+      }
+    }
+  };
+  
+  // Инициализируем менеджер меню
+  menuManager.init();
+
+  // Остальные обработчики (не связанные с меню)
   $('[data-module]').on('click', function(e) {
     e.preventDefault();
     let modPath = $(this).data('module') || '';
@@ -8,7 +134,7 @@ $(function() {
     openModuleTab(modPath);
   });
 
-  // Запускаем автосохранение форм каждые 15 секунд (снизили интервал для надежности)
+  // Запускаем автосохранение форм каждые 15 секунд
   setInterval(function() {
     autoSaveAllForms();
   }, 15000);
@@ -20,16 +146,14 @@ $(function() {
   
   // Проверяем наличие сохраненной сессии после загрузки страницы
   $(document).ready(function() {
-    // Небольшая задержка для полной загрузки DOM
     setTimeout(restoreUserSession, 1000);
   });
   
   // Добавляем обработчик для события перед закрытием страницы
   $(window).on('beforeunload', function() {
-    // Принудительно сохраняем все формы и синхронизируем с сервером
     autoSaveAllForms();
-    syncFormsWithServer(true); // true = синхронный запрос
-    return undefined; // Убираем стандартное диалоговое окно 
+    syncFormsWithServer(true);
+    return undefined;
   });
 
   // Функция для отладки элементов
