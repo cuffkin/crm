@@ -309,12 +309,25 @@ function closeOrderTab(contentId) {
 // Функция для закрытия вкладки
 function closeModuleTab(tabId, tabContentId) {
   // Проверяем, есть ли несохраненные изменения
-  if (hasUnsavedChanges(tabContentId)) {
-    if (!confirm('Есть несохраненные изменения. Вы уверены, что хотите закрыть вкладку?')) {
-      return; // Отменяем закрытие, если пользователь нажал "Отмена"
-    }
+  if (checkUnsavedChanges(tabContentId)) {
+    // Показываем собственное модальное окно подтверждения вместо стандартного confirm
+    showConfirmModal(
+      'Несохраненные изменения',
+      'В этой вкладке есть несохраненные изменения. Вы действительно хотите закрыть её?',
+      function() {
+        // Пользователь подтвердил - закрываем вкладку
+        forceCloseModuleTab(tabId, tabContentId);
+      }
+    );
+    return; // Прерываем выполнение, ждем решения пользователя
   }
   
+  // Если изменений нет, закрываем вкладку без подтверждения
+  forceCloseModuleTab(tabId, tabContentId);
+}
+
+// Функция принудительного закрытия вкладки (без проверки изменений)
+function forceCloseModuleTab(tabId, tabContentId) {
   // Проверяем, существуют ли элементы
   if (!$('#' + tabId).length || !$('#' + tabContentId).length) {
     return;
@@ -341,6 +354,240 @@ function closeModuleTab(tabId, tabContentId) {
   
   // Сохраняем текущие открытые вкладки
   saveTabsState();
+  
+  console.log(`Вкладка ${tabId} закрыта`);
+}
+
+// Улучшенная система проверки наличия несохраненных изменений
+function checkUnsavedChanges(tabContentId) {
+  console.log(`Проверка несохраненных изменений в ${tabContentId}`);
+  
+  const tabContent = document.getElementById(tabContentId);
+  if (!tabContent) {
+    console.log('Вкладка не найдена');
+    return false;
+  }
+  
+  // Проверяем, является ли вкладка редактированием/созданием документа
+  const isEditTab = tabContentId.includes('edit') || 
+                    tabContent.getAttribute('data-document-type') !== null;
+  
+  // Если это не вкладка редактирования/создания, возвращаем false
+  if (!isEditTab) {
+    console.log('Это не вкладка редактирования - изменений нет');
+    return false;
+  }
+  
+  console.log('Проверка изменений в полях формы...');
+  
+  // Ищем все формы и поля ввода
+  const formInputs = tabContent.querySelectorAll('input, select, textarea');
+  
+  // Проверка изменений в полях
+  for (const input of formInputs) {
+    // Пропускаем служебные поля
+    if (input.type === 'button' || input.type === 'submit' || 
+        input.hasAttribute('data-ignore-changes')) {
+      continue;
+    }
+    
+    // Проверяем, был ли элемент изменен вручную
+    if (input.hasAttribute('data-user-modified')) {
+      console.log(`Обнаружено измененное поле: ${input.id || input.name}`);
+      return true;
+    }
+    
+    // Проверяем разницу между текущим и начальным значением
+    if (input.type === 'checkbox' || input.type === 'radio') {
+      // Для чекбоксов и радиокнопок проверяем свойство checked
+      const initialChecked = input.getAttribute('data-initial-checked');
+      if (initialChecked !== null && initialChecked !== String(input.checked)) {
+        console.log(`Обнаружено измененное поле (чекбокс): ${input.id || input.name}`);
+        return true;
+      }
+    } else {
+      // Для текстовых полей проверяем value
+      const initialValue = input.getAttribute('data-initial-value');
+      if (initialValue !== null && initialValue !== input.value) {
+        // Исключаем поля, заполненные автоматически
+        if (!input.hasAttribute('data-auto-filled')) {
+          console.log(`Обнаружено измененное поле (значение): ${input.id || input.name}`);
+          return true;
+        }
+      }
+    }
+  }
+  
+  // Проверяем данные о состоянии формы в глобальном объекте
+  if (globalFormsData.forms[tabContentId] && 
+      globalFormsData.forms[tabContentId].userModified === true) {
+    console.log('Обнаружены изменения в глобальном объекте состояния формы');
+    return true;
+  }
+  
+  console.log('Несохраненных изменений не обнаружено');
+  return false;
+}
+
+// Функция для инициализации отслеживания изменений в форме
+function initFormTracking(tabContentId) {
+  console.log(`Инициализация отслеживания формы для: ${tabContentId}`);
+  const contentElement = document.getElementById(tabContentId);
+  
+  if (!contentElement) {
+    console.error(`Элемент #${tabContentId} не найден`);
+    return;
+  }
+  
+  const inputs = contentElement.querySelectorAll('input, select, textarea');
+  
+  // Сохраняем начальные значения полей для последующего сравнения
+  inputs.forEach(input => {
+    // Сбрасываем все флаги изменений
+    input.removeAttribute('data-user-modified');
+    
+    // Сохраняем исходные значения как атрибуты
+    if (input.type === 'checkbox' || input.type === 'radio') {
+      input.setAttribute('data-initial-checked', input.checked);
+    } else {
+      input.setAttribute('data-initial-value', input.value);
+    }
+    
+    // Обработчик изменения для всех типов полей
+    input.addEventListener('change', function() {
+      this.setAttribute('data-user-modified', 'true');
+      saveFormState(tabContentId, true); // true = изменено пользователем
+    });
+    
+    // Дополнительный обработчик для текстовых полей
+    if (input.tagName === 'TEXTAREA' || 
+        (input.tagName === 'INPUT' && 
+         ['text', 'number', 'email', 'tel', 'password', 'date', 'datetime-local'].includes(input.type))) {
+      
+      let debounceTimer;
+      input.addEventListener('input', function() {
+        this.setAttribute('data-user-modified', 'true');
+        
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          saveFormState(tabContentId, true);
+        }, 300);
+      });
+    }
+  });
+  
+  // Сохраняем форму при любых кликах внутри контейнера
+  contentElement.addEventListener('click', function() {
+    setTimeout(() => saveFormState(tabContentId, true), 100);
+  });
+}
+
+// Удаление сохраненного состояния формы
+function removeTabFormState(tabContentId) {
+  const userId = getUserId();
+  if (!userId) return;
+  
+  console.log(`Удаление состояния формы для ${tabContentId}`);
+  
+  // Очищаем все флаги изменений
+  const tabContent = document.getElementById(tabContentId);
+  if (tabContent) {
+    const inputs = tabContent.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+      input.removeAttribute('data-user-modified');
+      input.removeAttribute('data-initial-value');
+      input.removeAttribute('data-initial-checked');
+    });
+  }
+  
+  // Удаляем из глобального объекта
+  if (globalFormsData.forms[tabContentId]) {
+    delete globalFormsData.forms[tabContentId];
+  }
+  
+  // Удаляем из localStorage
+  const formKey = `form_state_${userId}_${tabContentId}`;
+  localStorage.removeItem(formKey);
+  
+  // Удаляем из списка сохраненных форм
+  const formsListKey = `form_keys_${userId}`;
+  const formsList = JSON.parse(localStorage.getItem(formsListKey) || '[]');
+  const index = formsList.indexOf(formKey);
+  if (index > -1) {
+    formsList.splice(index, 1);
+    localStorage.setItem(formsListKey, JSON.stringify(formsList));
+  }
+  
+  console.log(`Состояние формы для вкладки ${tabContentId} удалено`);
+}
+
+// Функция для отображения собственного модального окна с подтверждением
+function showConfirmModal(title, message, confirmCallback, cancelCallback) {
+  // Сначала проверим, есть ли уже модальное окно на странице
+  let $modal = $('#customConfirmModal');
+  
+  // Если модального окна еще нет, создаем его
+  if ($modal.length === 0) {
+    const modalHTML = `
+      <div class="modal fade" id="customConfirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="confirmModalLabel"></h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p id="confirmModalMessage"></p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" id="confirmModalCancelBtn" data-bs-dismiss="modal">Отмена</button>
+              <button type="button" class="btn btn-primary" id="confirmModalConfirmBtn">Подтвердить</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Добавляем HTML в тело документа
+    $('body').append(modalHTML);
+    $modal = $('#customConfirmModal');
+    
+    // Создаем экземпляр модального окна с помощью Bootstrap
+    const bsModal = new bootstrap.Modal($modal[0]);
+    
+    // Обработчики кнопок
+    $('#confirmModalConfirmBtn').on('click', function() {
+      bsModal.hide();
+      if (typeof window._currentConfirmCallback === 'function') {
+        window._currentConfirmCallback();
+      }
+    });
+    
+    $('#confirmModalCancelBtn').on('click', function() {
+      if (typeof window._currentCancelCallback === 'function') {
+        window._currentCancelCallback();
+      }
+    });
+    
+    // Обработчики закрытия модального окна
+    $modal.on('hidden.bs.modal', function() {
+      if (typeof window._currentCancelCallback === 'function') {
+        window._currentCancelCallback();
+      }
+    });
+  }
+  
+  // Сохраняем функции обратного вызова
+  window._currentConfirmCallback = confirmCallback;
+  window._currentCancelCallback = cancelCallback || function() {};
+  
+  // Устанавливаем заголовок и текст сообщения
+  $('#confirmModalLabel').text(title);
+  $('#confirmModalMessage').text(message);
+  
+  // Показываем модальное окно
+  const bsModal = new bootstrap.Modal($modal[0]);
+  bsModal.show();
 }
 
 // Глобальная карта открытых вкладок для редактирования заказов и отгрузок
@@ -1465,55 +1712,6 @@ function printOrder(orderId) {
 
 // ======== ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ВКЛАДКАМИ И СЕССИЕЙ ========
 
-// Функция для проверки наличия несохраненных изменений
-function hasUnsavedChanges(tabContentId) {
-  const tabContent = document.getElementById(tabContentId);
-  if (!tabContent) return false;
-  
-  // Проверяем, является ли вкладка редактированием/созданием документа
-  // Вкладки редактирования/создания документов имеют ID, содержащие edit, например content-order-edit, content-shipment-edit и т.д.
-  const isEditTab = tabContentId.includes('edit') || 
-                    (tabContent.getAttribute('data-document-type') !== null);
-  
-  // Если это не вкладка редактирования/создания документа, возвращаем false
-  if (!isEditTab) return false;
-  
-  // Проверяем, есть ли в tabContent формы с полями, измененными вручную
-  const forms = tabContent.querySelectorAll('form');
-  
-  for (let i = 0; i < forms.length; i++) {
-    const form = forms[i];
-    const formInputs = form.querySelectorAll('input, select, textarea');
-    
-    for (let j = 0; j < formInputs.length; j++) {
-      const input = formInputs[j];
-      
-      // Проверяем, был ли элемент изменен вручную (через флаг data-user-modified)
-      if (input.dataset.userModified === 'true') {
-        return true;
-      }
-      
-      // Проверяем, отличается ли текущее значение от исходного
-      // и не имеет ли поле атрибут data-ignore-changes
-      if (input.value !== input.defaultValue && !input.hasAttribute('data-ignore-changes')) {
-        // Если поле было заполнено программно через JavaScript, 
-        // оно будет иметь атрибут data-auto-filled="true"
-        if (!input.dataset.autoFilled) {
-          return true;
-        }
-      }
-    }
-  }
-  
-  // Если нет сохраненного состояния формы или это состояние было сохранено автоматически,
-  // а не в результате пользовательских действий, возвращаем false
-  if (globalFormsData.forms[tabContentId] && globalFormsData.forms[tabContentId].userModified) {
-    return true;
-  }
-  
-  return false;
-}
-
 // Функция для сохранения состояния вкладок
 function saveTabsState() {
   const tabs = [];
@@ -1895,61 +2093,6 @@ function restoreSavedTabs(tabs) {
 
 // ======== НОВЫЕ ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ФОРМАМИ ========
 
-// Инициализация отслеживания изменений формы
-function initFormTracking(tabContentId) {
-  const contentElement = document.getElementById(tabContentId);
-  if (!contentElement) return;
-  
-  console.log(`Инициализация отслеживания формы для: ${tabContentId}`);
-  
-  // Находим все формы в контейнере вкладки
-  const forms = contentElement.querySelectorAll('form');
-  const inputs = contentElement.querySelectorAll('input, select, textarea');
-  
-  // Если нет форм и элементов ввода, просто выходим
-  if (forms.length === 0 && inputs.length === 0) return;
-  
-  // Восстанавливаем состояние формы, если оно было сохранено
-  restoreFormState(tabContentId);
-  
-  // Добавляем обработчики событий для отслеживания изменений
-  inputs.forEach(input => {
-    // Сбрасываем флаги ручных изменений при инициализации
-    input.removeAttribute('data-user-modified');
-    
-    input.addEventListener('change', function() {
-      // Устанавливаем атрибут, указывающий, что поле было изменено пользователем вручную
-      this.dataset.userModified = 'true';
-      saveFormState(tabContentId, true); // true = изменено пользователем
-    });
-    
-    // Для текстовых полей еще отслеживаем ввод, но с задержкой
-    if (input.tagName === 'TEXTAREA' || (input.tagName === 'INPUT' && 
-        ['text', 'number', 'email', 'tel', 'password', 'date', 'datetime-local'].includes(input.type))) {
-      
-      // Используем debounce для оптимизации
-      let debounceTimer;
-      input.addEventListener('input', function() {
-        // Помечаем, что поле было изменено пользователем вручную
-        this.dataset.userModified = 'true';
-        
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(function() {
-          saveFormState(tabContentId, true); // true = изменено пользователем
-        }, 300); // Задержка 300 мс
-      });
-    }
-  });
-  
-  // Добавляем обработчик для отслеживания click по кнопкам и другим элементам, которые могут менять состояние формы
-  contentElement.addEventListener('click', function(e) {
-    // Сохраняем состояние через небольшую задержку, чтобы оно успело измениться после клика
-    setTimeout(function() {
-      saveFormState(tabContentId, true); // true = изменено пользователем
-    }, 100);
-  });
-}
-
 // Сохранение состояния формы
 function saveFormState(tabContentId, userModified = false) {
   const userId = getUserId();
@@ -2216,30 +2359,6 @@ function restoreTabFormState(tabContentId, documentType, documentId, options = {
   }
   
   console.log(`Не найдено сохраненной формы для: ${documentType}/${documentId}`);
-}
-
-// Удаление сохраненного состояния формы
-function removeTabFormState(tabContentId) {
-  const userId = getUserId();
-  if (!userId) return;
-  
-  // Удаляем из глобального объекта
-  if (globalFormsData.forms[tabContentId]) {
-    delete globalFormsData.forms[tabContentId];
-  }
-  
-  // Удаляем из localStorage
-  const formKey = `form_state_${userId}_${tabContentId}`;
-  localStorage.removeItem(formKey);
-  
-  // Удаляем из списка сохраненных форм
-  const formsListKey = `form_keys_${userId}`;
-  const formsList = JSON.parse(localStorage.getItem(formsListKey) || '[]');
-  const index = formsList.indexOf(formKey);
-  if (index > -1) {
-    formsList.splice(index, 1);
-    localStorage.setItem(formsListKey, JSON.stringify(formsList));
-  }
 }
 
 // Автосохранение всех форм на открытых вкладках
@@ -2533,3 +2652,9 @@ function setAutoFilledValue(element, value) {
   const event = new Event('change', { bubbles: true });
   element.dispatchEvent(event);
 }
+
+// Кастомная модальная система
+$(document).on('click', '[data-bs-dismiss="modal"]', function() {
+  // Находим ближайшее модальное окно и скрываем его
+  $(this).closest('.modal').modal('hide');
+});

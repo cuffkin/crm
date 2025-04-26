@@ -46,11 +46,11 @@ if ($id > 0) {
 }
 
 // Список категорий (type='категория')
-$catRes = $conn->query("SELECT id,name FROM PCRM_Categories WHERE type='категория' AND status='active' ORDER BY name");
+$catRes = $conn->query("SELECT id,name FROM PCRM_Categories WHERE type='category' AND status='active' ORDER BY name");
 $allCats = $catRes->fetch_all(MYSQLI_ASSOC);
 
 // Список подкатегорий (type='подкатегория')
-$subCatRes = $conn->query("SELECT id,name FROM PCRM_Categories WHERE type='подкатегория' AND status='active' ORDER BY name");
+$subCatRes = $conn->query("SELECT id,name FROM PCRM_Categories WHERE type='subcategory' AND status='active' ORDER BY name");
 $allSubCats = $subCatRes->fetch_all(MYSQLI_ASSOC);
 ?>
 
