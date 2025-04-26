@@ -525,89 +525,104 @@ function removeTabFormState(tabContentId) {
 function showConfirmModal(title, message, confirmCallback, cancelCallback) {
   console.log('Вызов showConfirmModal:', title, message);
   
-  // Сначала проверим, есть ли уже модальное окно на странице
-  let $modal = $('#customConfirmModal');
+  // Проверка наличия jQuery и bootstrap
+  if (typeof $ === 'undefined' || typeof $.fn.modal === 'undefined') {
+    console.error('jQuery или Bootstrap не загружены');
+    // Если библиотеки не доступны, используем стандартный confirm
+    if (confirm(message)) {
+      if (typeof confirmCallback === 'function') confirmCallback();
+    } else {
+      if (typeof cancelCallback === 'function') cancelCallback();
+    }
+    return;
+  }
   
-  // Если модального окна еще нет, создаем его
-  if ($modal.length === 0) {
-    const modalHTML = `
-      <div class="modal fade" id="customConfirmModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="confirmModalLabel"></h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-              <p id="confirmModalMessage"></p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" id="confirmModalCancelBtn" data-dismiss="modal">Отмена</button>
-              <button type="button" class="btn btn-primary" id="confirmModalConfirmBtn">Подтвердить</button>
-            </div>
+  // Удаляем старое модальное окно, если оно существует
+  $('#customConfirmModal').remove();
+  
+  // Создаем новое модальное окно с уникальным ID
+  const modalId = 'customConfirmModal';
+  const modalHTML = `
+    <div class="modal" id="${modalId}" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">${title}</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>${message}</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary cancel-btn" data-dismiss="modal">Отмена</button>
+            <button type="button" class="btn btn-primary confirm-btn">Подтвердить</button>
           </div>
         </div>
       </div>
-    `;
-    
-    // Добавляем HTML в тело документа
-    $('body').append(modalHTML);
-    $modal = $('#customConfirmModal');
-  }
+    </div>
+  `;
   
-  // Сохраняем функции обратного вызова в глобальных переменных
-  window._currentConfirmCallback = confirmCallback;
-  window._currentCancelCallback = cancelCallback || function() {};
+  // Добавляем HTML в тело документа
+  $('body').append(modalHTML);
   
-  // Устанавливаем заголовок и текст сообщения
-  $('#confirmModalLabel').text(title);
-  $('#confirmModalMessage').text(message);
-  
-  // Обработчики кнопок
-  $('#confirmModalConfirmBtn').off('click').on('click', function() {
-    $('#customConfirmModal').modal('hide');
-    if (typeof window._currentConfirmCallback === 'function') {
-      setTimeout(function() {
-        window._currentConfirmCallback();
-      }, 300);
+  // Привязываем обработчики событий
+  $(`#${modalId} .confirm-btn`).on('click', function() {
+    $(`#${modalId}`).modal('hide');
+    if (typeof confirmCallback === 'function') {
+      setTimeout(confirmCallback, 300);
     }
   });
   
-  $('#confirmModalCancelBtn, .close, [data-dismiss="modal"]').off('click').on('click', function() {
-    if (typeof window._currentCancelCallback === 'function') {
-      setTimeout(function() {
-        window._currentCancelCallback();
-      }, 300);
-    }
-  });
-  
-  // Обработчик закрытия модального окна
-  $modal.off('hidden.bs.modal').on('hidden.bs.modal', function() {
-    if (typeof window._currentCancelCallback === 'function') {
-      window._currentCancelCallback();
+  $(`#${modalId} .cancel-btn, #${modalId} .close`).on('click', function() {
+    if (typeof cancelCallback === 'function') {
+      setTimeout(cancelCallback, 300);
     }
   });
   
   // Показываем модальное окно
   try {
-    console.log('Открытие модального окна...');
-    $('#customConfirmModal').modal('show');
+    $(`#${modalId}`).modal({
+      backdrop: 'static',
+      keyboard: false
+    });
+    $(`#${modalId}`).modal('show');
+    console.log('Модальное окно показано');
   } catch (e) {
     console.error('Ошибка при показе модального окна:', e);
-    // Если по какой-то причине не удалось показать модальное окно, используем стандартный confirm
+    // Запасной вариант
     if (confirm(message)) {
-      if (typeof confirmCallback === 'function') {
-        confirmCallback();
-      }
+      if (typeof confirmCallback === 'function') confirmCallback();
     } else {
-      if (typeof cancelCallback === 'function') {
-        cancelCallback();
-      }
+      if (typeof cancelCallback === 'function') cancelCallback();
     }
   }
 }
+
+// Тестирование модального окна при загрузке страницы
+$(document).ready(function() {
+  console.log('Проверка модальных окон при загрузке...');
+  
+  // Добавляем кнопку для тестирования модального окна
+  if (!$('#testModalBtn').length) {
+    $('body').append('<button id="testModalBtn" style="position: fixed; bottom: 10px; right: 10px; z-index: 9999;" class="btn btn-warning">Тест модального окна</button>');
+    
+    $('#testModalBtn').on('click', function() {
+      console.log('Тестирование модального окна...');
+      showConfirmModal(
+        'Тестовое модальное окно',
+        'Это тест модального окна для проверки работы диалогов. Работает ли оно?',
+        function() {
+          alert('Вы нажали "Подтвердить"');
+        },
+        function() {
+          alert('Вы нажали "Отмена"');
+        }
+      );
+    });
+  }
+});
 
 // Глобальная карта открытых вкладок для редактирования заказов и отгрузок
 const openOrderTabs = new Map();
