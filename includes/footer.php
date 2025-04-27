@@ -1,10 +1,10 @@
 <?php
 // /crm/includes/footer.php
 ?>
-</div> <!-- Закрываем .container -->
 
 <script src="/crm/assets/jquery-3.3.1/jquery.min.js"></script>
 <script src="/crm/assets/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+<script src="/crm/js/notification-handler.js"></script>
 <script src="/crm/js/app.js"></script>
 <script src="/crm/js/session-status.js"></script>
 
@@ -53,6 +53,27 @@
     }
   });
 </script>
+
+<!-- Модальное окно предупреждения о несохраненных изменениях -->
+<div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="unsavedChangesModalLabel">
+          <i class="fas fa-exclamation-triangle text-warning me-2"></i>Внимание!
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <p>В форме есть несохраненные изменения. Вы уверены, что хотите закрыть её без сохранения?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-danger" id="closeTabConfirm">Закрыть без сохранения</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
