@@ -11,6 +11,9 @@
   --danger-rgb: 220, 53, 69;
   --warning-rgb: 255, 193, 7;
   --info-rgb: 23, 162, 184;
+  
+  /* Добавляем переменную для z-index выпадающих меню */
+  --dropdown-z-index: 1050;
 }
 
 /* Основные контейнеры */
@@ -609,4 +612,82 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Правила для таблиц и выпадающих меню */
+.table-responsive {
+  position: relative !important;
+}
+
+/* Корректировка для выпадающих меню внутри таблиц */
+.dropdown-menu {
+  position: fixed !important;
+  z-index: 99999 !important;
+}
+
+/* Стили для выпадающих меню в кнопках действий */
+.btn-group .dropdown-menu {
+  min-width: 180px;
+  border-radius: 8px;
+  padding: 8px 0;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  margin-top: 5px;
+}
+
+/* Обеспечиваем видимость выпадающих меню */
+.dropdown-menu.show {
+  display: block !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Стили для элементов выпадающего меню */
+.dropdown-item {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+  background-color: rgba(var(--primary-rgb), 0.05);
+  color: var(--primary-color);
+}
+
+.dropdown-item:active {
+  background-color: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary-color);
+}
+
+/* Исправление для кнопок в таблицах */
+.table .btn-group {
+  position: static;
+}
+
+/* Правильное позиционирование для меню в таблицах */
+.table .dropdown-menu {
+  transform: none !important;
+}
+
+/* Обеспечиваем правильное отображение в строках таблицы */
+.table td {
+  position: relative !important;
+}
+
+/* Отключаем overflow:hidden для родительских контейнеров */
+.table-responsive,
+.card-body,
+.table-container,
+.tab-content,
+.tab-pane,
+.table-bordered,
+.table {
+  overflow: visible !important;
+}
+
+/* Особое правило для tab-content, чтобы выпадающие меню были видны */
+.tab-content {
+  position: static !important;
+  z-index: 1 !important;
 }

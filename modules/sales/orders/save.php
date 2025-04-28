@@ -75,7 +75,7 @@ if ($id > 0) {
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?, ?, 0)
     ";
     $st = $conn->prepare($sql);
-    $st->bind_param("issisiisssdiii",
+    $st->bind_param("issisiisssdii",
         $org, $num, $odate,
         $cust, $contacts, $wh, $driver,
         $deliv, $comment, $status,

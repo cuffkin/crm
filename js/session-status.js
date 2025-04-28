@@ -6,6 +6,11 @@ $(document).ready(function() {
     
     // Обновление каждые 5 секунд
     setInterval(updateSessionStatus, 5000);
+    
+    // Добавим тестовое уведомление для проверки работы системы
+    setTimeout(function() {
+        showNotification('Система уведомлений успешно инициализирована', 'success');
+    }, 1000);
 });
 
 // Переменные для хранения состояния

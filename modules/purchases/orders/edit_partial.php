@@ -49,7 +49,7 @@ if ($id > 0) {
 $orgRes = $conn->query("SELECT id,name FROM PCRM_Organization ORDER BY name");
 $allOrgs = $orgRes->fetch_all(MYSQLI_ASSOC);
 
-$supplierRes = $conn->query("SELECT id,name FROM PCRM_Counterparty WHERE type='supplier' ORDER BY name");
+$supplierRes = $conn->query("SELECT id,name,type FROM PCRM_Counterparty ORDER BY name");
 $allSuppliers = $supplierRes->fetch_all(MYSQLI_ASSOC);
 
 $whRes = $conn->query("SELECT id,name FROM PCRM_Warehouse WHERE status='active' ORDER BY name");
@@ -108,7 +108,7 @@ $uniquePrefix = 'po_' . uniqid();
         <option value="">(не выбран)</option>
         <?php foreach ($allSuppliers as $supplier): ?>
         <option value="<?= $supplier['id'] ?>" <?= ($supplier['id'] == $supplier_id ? 'selected' : '') ?>>
-          <?= htmlspecialchars($supplier['name']) ?>
+          <?= htmlspecialchars($supplier['name']) ?> (<?= htmlspecialchars($supplier['type']) ?>)
         </option>
         <?php endforeach; ?>
       </select>

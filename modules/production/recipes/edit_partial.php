@@ -456,9 +456,7 @@ $(document).ready(function() {
     
     // Обработчик кнопки отмены
     $('#cancelRecipeEdit').on('click', function() {
-        if (confirm('Вы уверены, что хотите отменить редактирование? Несохраненные изменения будут потеряны.')) {
-            returnToList();
-        }
+        returnToList();
     });
 });
 

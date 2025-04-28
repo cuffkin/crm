@@ -52,16 +52,9 @@ function getTabMetadata(tabElement) {
     };
 }
 
-// Обработчик для обнаружения изменений в формах
-document.addEventListener('input', function(e) {
-    const formInput = e.target.closest('input, select, textarea');
-    if (formInput) {
-        const tabPane = formInput.closest('.tab-pane');
-        if (tabPane) {
-            tabPane.dataset.hasChanges = 'true';
-        }
-    }
-});
+// Обработчик для обнаружения изменений в формах УДАЛЕН
+// Эта функциональность уже реализована в app.js с использованием атрибута data-has-unsaved-changes
+// и глобального делегированного обработчика $(document).on('input change', '.tab-pane input, .tab-pane select, .tab-pane textarea', ...)
 
 // Экспортируем функции
 window.tabManager = {

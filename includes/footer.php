@@ -5,6 +5,7 @@
 <script src="/crm/assets/jquery-3.3.1/jquery.min.js"></script>
 <script src="/crm/assets/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
 <script src="/crm/js/notification-handler.js"></script>
+<script src="/crm/js/modal.js"></script>
 <script src="/crm/js/app.js"></script>
 <script src="/crm/js/session-status.js"></script>
 
@@ -55,7 +56,7 @@
 </script>
 
 <!-- Модальное окно предупреждения о несохраненных изменениях -->
-<div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel" role="dialog" aria-modal="true">
+<div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel" role="dialog" aria-modal="true" data-persistent="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">

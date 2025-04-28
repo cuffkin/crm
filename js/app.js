@@ -1,51 +1,38 @@
 // /crm/js/app.js
 
-// Немедленный вызов патча Bootstrap при загрузке скрипта
+// Проверяем, загружен ли modal.js и его функции
 (function() {
-  // Функция для немедленного патчинга Bootstrap Modal
-  function patchBootstrapImmediately() {
-    // Попытка применить патч сразу
-    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
-      patchBootstrapModal();
-    } else {
-      // Если Bootstrap еще не загрузился, устанавливаем интервал для проверки
-      function tryPatch() {
-        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
-          patchBootstrapModal();
-          clearInterval(patchInterval);
-        }
-      }
-      
-      // Проверяем каждые 50мс, готов ли Bootstrap для патча
-      const patchInterval = setInterval(tryPatch, 50);
-      
-      // Устанавливаем таймаут для очистки интервала через 5 секунд, 
-      // если Bootstrap не загрузился
-      setTimeout(() => {
-        clearInterval(patchInterval);
-        console.warn('Не удалось применить патч Bootstrap Modal: таймаут');
-      }, 5000);
-    }
+  console.log('Инициализация app.js, проверка доступности функций из modal.js');
+  
+  // Проверяем, что мы находимся в браузерной среде
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    console.error('app.js загружен вне браузерной среды, это не поддерживается');
+    return;
   }
   
-  // Вызываем патч немедленно
-  if (typeof patchBootstrapModal === 'function') {
-    patchBootstrapImmediately();
+  // Проверяем, доступны ли функции из modal.js
+  const functionsFromModalJs = [
+    'patchBootstrapModal',
+    'patchBootstrapImmediately',
+    'cleanupModals',
+    'showConfirmationModal',
+    'showUnsavedChangesConfirm',
+    'hideUnsavedChangesModal'
+  ];
+  
+  // Проверяем наличие всех необходимых функций
+  const missingFunctions = functionsFromModalJs.filter(funcName => typeof window[funcName] !== 'function');
+  
+  if (missingFunctions.length > 0) {
+    console.error('Не найдены необходимые функции из modal.js:', missingFunctions.join(', '));
+    console.error('Убедитесь, что файл modal.js загружен перед app.js!');
   } else {
-    // Если функция patchBootstrapModal еще не определена, 
-    // устанавливаем интервал для проверки
-    const checkInterval = setInterval(() => {
-      if (typeof patchBootstrapModal === 'function') {
-        patchBootstrapImmediately();
-        clearInterval(checkInterval);
-      }
-    }, 50);
+    console.log('Все функции из modal.js доступны, продолжаем инициализацию');
     
-    // Устанавливаем таймаут для очистки интервала
-    setTimeout(() => {
-      clearInterval(checkInterval);
-      console.warn('Не удалось найти функцию patchBootstrapModal: таймаут');
-    }, 5000);
+    // Вызываем патч Bootstrap если он доступен
+    if (typeof window.patchBootstrapImmediately === 'function') {
+      window.patchBootstrapImmediately();
+    }
   }
 })();
 
@@ -53,7 +40,7 @@ $(function() {
   "use strict";
   
   // Патчим еще раз после полной загрузки страницы для уверенности
-  $(document).ready(patchBootstrapModal);
+  $(document).ready(window.patchBootstrapModal);
   
   // НОВАЯ РЕАЛИЗАЦИЯ ВЫПАДАЮЩИХ МЕНЮ
   // Создаем свой менеджер меню, полностью отключая Bootstrap dropdown
@@ -201,12 +188,24 @@ $(function() {
   // Проверяем наличие сохраненной сессии после загрузки страницы
   $(document).ready(function() {
     // Очищаем все модальные окна при загрузке страницы
-    cleanupModals();
+    window.cleanupModals();
     
     // Обработчик на все модальные окна при закрытии
-    $(document).on('hidden.bs.modal', '.modal', function() {
-      // Очищаем модальные окна при закрытии любого из них
-      setTimeout(cleanupModals, 100);
+    $(document).on('hidden.bs.modal', '.modal', function(e) {
+      // Предотвращаем повторные вызовы для одного и того же элемента
+      if (e.target !== this) return;
+      
+      const modalId = e.target.id;
+      console.log(`Модальное окно ${modalId} закрыто, выполняю отложенную очистку`);
+      
+      // Откладываем очистку, чтобы дать Bootstrap завершить свои процессы
+      setTimeout(function() {
+        try {
+          window.cleanupModals();
+        } catch (err) {
+          console.warn('Ошибка при очистке модальных окон после закрытия:', err);
+        }
+      }, 300);
     });
     
     setTimeout(function() {
@@ -429,12 +428,17 @@ function closeModuleTab(tabId, tabContentId) {
   // Если это форма с несохраненными изменениями, показываем предупреждение
   if (shouldShowWarning) {
     // Показываем уведомление перед модальным окном
-    window.showNotification('Обнаружены несохраненные изменения в форме', 'warning', 5000);
+    if (typeof window.showNotification === 'function') {
+      window.showNotification('Обнаружены несохраненные изменения в форме', 'warning', 5000);
+    }
     console.log('[Close Tab Warning] Обнаружены несохраненные изменения!');
     
-    showConfirmModal(
-      'Несохраненные изменения',
+    // Используем улучшенную функцию работы с модальным окном из modal.js
+    window.showUnsavedChangesConfirm(
+      '<i class="fas fa-exclamation-triangle text-warning me-2"></i>Несохраненные изменения',
       'В форме есть несохраненные изменения. Вы уверены, что хотите закрыть её без сохранения?',
+      'Закрыть без сохранения',
+      'Отмена',
       function() {
         // Колбэк подтверждения - закрываем вкладку
         forceCloseModuleTab(tabId, tabContentId);
@@ -667,165 +671,17 @@ function removeTabFormState(tabContentId) {
 function showConfirmModal(title, message, confirmCallback, cancelCallback) {
   console.log(`Показываю модальное окно: "${title}"`);
   
-  try {
-    // Перед открытием нового модального окна, очищаем все предыдущие
-    cleanupModals();
-    
-    // Показываем уведомление в дополнение к модальному окну
-    // Это обеспечит видимость уведомления, даже если модальное окно не отобразится
-    if (title.includes('Несохраненные изменения')) {
-      window.showNotification(message, 'warning', 7000);
-    }
-    
-    // Проверяем, существует ли модальное окно
-    let modalElement = document.getElementById('unsavedChangesModal');
-    
-    if (!modalElement) {
-      console.warn('Модальное окно #unsavedChangesModal не найдено, создаем динамически');
-      
-      // Создаем модальное окно динамически, если оно не существует
-      modalElement = document.createElement('div');
-      modalElement.id = 'unsavedChangesModal';
-      modalElement.className = 'modal fade';
-      modalElement.tabIndex = -1;
-      modalElement.setAttribute('role', 'dialog');
-      modalElement.setAttribute('aria-modal', 'true');
-      modalElement.setAttribute('aria-labelledby', 'unsavedChangesModalLabel');
-      
-      modalElement.innerHTML = `
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="unsavedChangesModalLabel">
-                <i class="fas fa-exclamation-triangle text-warning me-2"></i>${title}
-              </h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-              <p>${message}</p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-              <button type="button" class="btn btn-danger" id="closeTabConfirm">Закрыть без сохранения</button>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      // Добавляем модальное окно в body
-      document.body.appendChild(modalElement);
-    } else {
-      // Получаем ссылку на модальное окно
-      console.log('Модальное окно найдено, подготавливаем для использования');
-      
-      // Проверяем, есть ли уже активный экземпляр модального окна
-      let modal = bootstrap.Modal.getInstance(modalElement);
-      
-      // Если уже есть экземпляр, уничтожаем его
-      if (modal) {
-        modal.dispose();
-      }
-      
-      // Устанавливаем атрибуты для доступности
-      modalElement.setAttribute('aria-modal', 'true');
-      modalElement.setAttribute('role', 'dialog');
-      modalElement.removeAttribute('aria-hidden');
-      
-      // Устанавливаем заголовок и сообщение
-      const titleElement = modalElement.querySelector('.modal-title');
-      if (titleElement) {
-        titleElement.innerHTML = `<i class="fas fa-exclamation-triangle text-warning me-2"></i>${title}`;
-      }
-      
-      const bodyElement = modalElement.querySelector('.modal-body p');
-      if (bodyElement) {
-        bodyElement.textContent = message;
-      }
-    }
-    
-    // Очищаем предыдущие обработчики событий с кнопки подтверждения
-    let confirmButton = modalElement.querySelector('#closeTabConfirm');
-    
-    if (!confirmButton) {
-      console.error('Кнопка подтверждения не найдена после создания модального окна');
-      if (typeof confirmCallback === 'function') {
-        setTimeout(confirmCallback, 0);
-      }
-      return;
-    }
-    
-    // Заменяем кнопку новой, чтобы удалить старые обработчики
-    const newConfirmButton = confirmButton.cloneNode(true);
-    if (confirmButton.parentNode) {
-      confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
-    }
-    confirmButton = newConfirmButton;
-    
-    // Создаем новый экземпляр модального окна
-    const modal = new bootstrap.Modal(modalElement, {
-      backdrop: true,
-      keyboard: true,
-      focus: true
-    });
-    
-    // Переменная, чтобы отслеживать, какая кнопка была нажата
-    let confirmClicked = false;
-    
-    // Устанавливаем новый обработчик для кнопки подтверждения
-    confirmButton.addEventListener('click', function() {
-      console.log('Нажата кнопка подтверждения в модальном окне');
-      confirmClicked = true;
-      if (modal) modal.hide();
-    });
-    
-    // Удаляем все предыдущие обработчики события hidden.bs.modal
-    if (modalElement._closeCallbacks) {
-      modalElement._closeCallbacks = [];
-    }
-    
-    // Добавляем обработчик для отслеживания закрытия модального окна
-    const hiddenHandler = function() {
-      console.log('Модальное окно закрыто');
-      modalElement.removeEventListener('hidden.bs.modal', hiddenHandler);
-      
-      // Принудительно очищаем все модальные окна
-      cleanupModals();
-      
-      // Вызываем соответствующий колбэк
-      setTimeout(function() {
-        if (confirmClicked) {
-          if (typeof confirmCallback === 'function') {
-            confirmCallback();
-          }
-        } else {
-          if (typeof cancelCallback === 'function') {
-            cancelCallback();
-          }
-        }
-      }, 100);
-    };
-    
-    modalElement.addEventListener('hidden.bs.modal', hiddenHandler);
-    
-    // Добавляем обработчик на кнопки закрытия (для отмены)
-    const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
-    closeButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        console.log('Нажата кнопка закрытия/отмены');
-        confirmClicked = false;
-      });
-    });
-    
-    // Показываем модальное окно
-    modal.show();
-    
-    console.log('Модальное окно отображено');
-  } catch (error) {
-    console.error('Ошибка при отображении модального окна:', error);
-    // В случае ошибки, просто вызываем колбэк подтверждения
-    if (typeof confirmCallback === 'function') {
-      setTimeout(confirmCallback, 0);
-    }
+  // Используем функцию из modal.js
+  if (typeof window.showConfirmationModal === 'function') {
+    return window.showConfirmationModal(title, message, confirmCallback, cancelCallback);
+  }
+  
+  // Если функция из modal.js недоступна, выводим ошибку в консоль
+  console.error('Функция showConfirmationModal не найдена! Проверьте, загружен ли файл modal.js');
+  
+  // В крайнем случае, просто вызываем колбэк подтверждения
+  if (typeof confirmCallback === 'function') {
+    setTimeout(confirmCallback, 0);
   }
 }
 
@@ -2015,7 +1871,7 @@ function showSessionRestoreDialog(tabs) {
   console.log('Предлагаем диалог восстановления. Количество вкладок:', tabs.length);
   
   // Сначала очищаем все существующие модальные окна
-  cleanupModals();
+  window.cleanupModals();
   
   // Определяем функции-обработчики до их использования
   
@@ -2069,52 +1925,46 @@ function showSessionRestoreDialog(tabs) {
   
   // Функция для удаления диалога
   let removeCustomDialog = function() {
+    // Сначала создаем локальные ссылки на элементы, чтобы избежать многократного поиска в DOM
     const dialog = document.getElementById('customSessionRestoreDialog');
     const overlay = document.getElementById('customSessionRestoreOverlay');
     
-    try {
-      if (dialog && dialog.parentNode) {
-        // Сначала удаляем обработчики событий
-        const closeBtn = dialog.querySelector('#customCloseBtn');
-        const newBtn = dialog.querySelector('#customNewSessionBtn');
-        const restoreBtn = dialog.querySelector('#customRestoreSessionBtn');
-        
-        if (closeBtn) closeBtn.removeEventListener('click', startNewAction);
-        if (newBtn) newBtn.removeEventListener('click', startNewAction);
-        if (restoreBtn) restoreBtn.removeEventListener('click', restoreAction);
-        
-        // Теперь удаляем элемент
-        dialog.parentNode.removeChild(dialog);
-      }
+    // Удаляем обработчики событий перед удалением элементов
+    if (dialog) {
+      const closeBtn = dialog.querySelector('#customCloseBtn');
+      const newBtn = dialog.querySelector('#customNewSessionBtn');
+      const restoreBtn = dialog.querySelector('#customRestoreSessionBtn');
       
-      if (overlay && overlay.parentNode) {
-        overlay.parentNode.removeChild(overlay);
-      }
-    } catch (e) {
-      console.warn('Ошибка при удалении диалога:', e);
-      
-      // В случае ошибки пробуем более простой подход
-      if (dialog) {
-        try { dialog.remove(); } catch (e) { console.warn('Не удалось удалить диалог:', e); }
-      }
-      
-      if (overlay) {
-        try { overlay.remove(); } catch (e) { console.warn('Не удалось удалить оверлей:', e); }
-      }
+      // Отключаем обработчики только если они существуют
+      if (closeBtn) closeBtn.onclick = null;
+      if (newBtn) newBtn.onclick = null;
+      if (restoreBtn) restoreBtn.onclick = null;
     }
     
-    // Дополнительно очищаем возможные остатки оверлеев
-    try {
-      const possibleOverlays = document.querySelectorAll('[id^="customSessionRestore"]');
-      possibleOverlays.forEach(el => {
-        try { el.remove(); } catch (e) { /* Игнорируем ошибки */ }
-      });
-    } catch (e) {
-      console.warn('Ошибка при удалении остатков диалога:', e);
+    // Удаляем элементы из DOM в правильном порядке
+    if (dialog && dialog.parentNode) {
+      dialog.parentNode.removeChild(dialog);
     }
     
-    // Для надежности вызываем очистку всех модальных окон
-    setTimeout(cleanupModals, 100);
+    if (overlay && overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
+    }
+    
+    // Находим и удаляем все оставшиеся элементы с похожими идентификаторами
+    const possibleOverlays = document.querySelectorAll('[id^="customSessionRestore"]');
+    possibleOverlays.forEach(el => {
+      if (el && el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    });
+    
+    // Отложенный вызов очистки модальных окон
+    // Используем window.setTimeout для избежания ошибок с неопределенными функциями
+    window.setTimeout(function() {
+      if (typeof window.cleanupModals === 'function') {
+        window.cleanupModals();
+      }
+    }, 100);
   };
   
   try {
@@ -2180,10 +2030,14 @@ function showSessionRestoreDialog(tabs) {
     document.body.appendChild(overlay);
     document.body.appendChild(dialog);
     
-    // Назначаем обработчики событий
-    document.getElementById('customCloseBtn').addEventListener('click', startNewAction);
-    document.getElementById('customNewSessionBtn').addEventListener('click', startNewAction);
-    document.getElementById('customRestoreSessionBtn').addEventListener('click', restoreAction);
+    // Назначаем обработчики событий прямым назначением onclick
+    const closeBtn = document.getElementById('customCloseBtn');
+    const newBtn = document.getElementById('customNewSessionBtn');
+    const restoreBtn = document.getElementById('customRestoreSessionBtn');
+    
+    if (closeBtn) closeBtn.onclick = startNewAction;
+    if (newBtn) newBtn.onclick = startNewAction;
+    if (restoreBtn) restoreBtn.onclick = restoreAction;
     
   } catch (e) {
     console.error('Ошибка при создании диалога восстановления сессии:', e);
@@ -2315,7 +2169,7 @@ function restoreSavedTabs(tabs) {
     }
     
     // Добавляем возможность восстановления вкладок производственных операций
-    if (type === 'production-operation' && tab.data.operationId) {
+    if (tab.documentType === 'production-operation' && tab.data && tab.data.operationId) {
       openProductionOperationTab(tab.data.operationId);
       return;
     }
@@ -2958,7 +2812,7 @@ $(document).on('click', '[data-bs-dismiss="modal"]', function() {
   }
   
   // Очищаем остатки модальных окон
-  setTimeout(cleanupModals, 300);
+  setTimeout(window.cleanupModals, 300);
 });
 
 // Переопределение стандартной функции confirm
@@ -2976,10 +2830,6 @@ $(document).on('click', '[data-bs-dismiss="modal"]', function() {
 
 // Функция для обновления статуса вкладки (отображение индикатора несохраненных изменений)
 function updateTabModifiedStatus(tabContentId, hasModifiedData) {
-  const contentElement = document.getElementById(tabContentId);
-  if (!contentElement) return;
-  
-  // Находим соответствующую вкладку
   const tabLink = document.querySelector(`a[href="#${tabContentId}"]`);
   if (!tabLink) return;
   
@@ -3025,12 +2875,14 @@ function initTabIndicators() {
 function cleanupModals() {
   console.log('Очистка модальных окон...');
   
-  // Сначала проверяем и сбрасываем состояние body
-  document.body.classList.remove('modal-open');
-  document.body.style.overflow = '';
-  document.body.style.paddingRight = '';
+  // Очистка body от классов и стилей модальных окон
+  if (document.body) {
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  }
   
-  // Удаляем все backdrop элементы принудительно
+  // Удаляем backdrop элементы нативным способом
   const backdrops = document.querySelectorAll('.modal-backdrop');
   backdrops.forEach(backdrop => {
     if (backdrop && backdrop.parentNode) {
@@ -3038,66 +2890,41 @@ function cleanupModals() {
     }
   });
   
-  // Удаляем все оставшиеся backdrop элементы с помощью jQuery
-  try {
-    $('.modal-backdrop').remove();
-  } catch (e) {
-    console.warn('Ошибка при удалении модальных backdrops через jQuery:', e);
-  }
-  
-  // Принудительно удаляем все атрибуты inline-стилей, добавленные Bootstrap
-  // для модальных окон и backdrop элементов
-  const allElements = document.querySelectorAll('body, .modal, .modal-backdrop, .modal-open, [class*="modal"]');
-  allElements.forEach(el => {
-    if (el && el.style) {
-      el.style.overflow = '';
-      el.style.paddingRight = '';
-    }
-  });
-  
   // Сбрасываем все модальные окна
   const modals = document.querySelectorAll('.modal');
   modals.forEach(modal => {
-    // Удаляем любые экземпляры Bootstrap Modal
-    try {
-      if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+    // Пропускаем обработку несуществующих элементов
+    if (!modal) return;
+    
+    // Удаляем экземпляры Bootstrap Modal
+    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+      try {
         const modalInstance = bootstrap.Modal.getInstance(modal);
         if (modalInstance) {
           modalInstance.dispose();
         }
-      }
-    } catch (e) {
-      console.warn('Ошибка при сбросе модального окна:', e);
-    }
-    
-    // Если модальное окно видимо, скрываем его
-    if (modal.classList.contains('show')) {
-      modal.classList.remove('show');
-      if (modal.style) {
-        modal.style.display = 'none';
+      } catch (e) {
+        // Ничего не делаем при ошибке - просто продолжаем очистку
       }
     }
     
-    // Убеждаемся, что атрибуты модального окна установлены правильно
+    // Сбрасываем классы и стили модального окна
+    modal.classList.remove('show');
+    if (modal.style) {
+      modal.style.display = 'none';
+      modal.style.paddingRight = '';
+    }
+    
+    // Сбрасываем атрибуты
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('role', 'dialog');
     modal.removeAttribute('aria-hidden');
-    
-    // Сброс стилей дисплея
-    if (modal.style) {
-      modal.style.display = '';
-      modal.style.paddingRight = '';
-    }
   });
   
-  // Принудительно удаляем все оставшиеся обработчики событий модальных окон
-  try {
-    $(document).off('focusin.bs.modal');
-    $('body').off('mousedown.bs.modal');
-    $(window).off('resize.bs.modal');
-    $('.modal').off(); // Удаляем все обработчики с модальных окон
-  } catch (e) {
-    console.warn('Ошибка при удалении обработчиков событий модальных окон:', e);
+  // Чистим очередь анимации, устанавливая все на начальное состояние
+  // Это поможет избежать "зависших" анимаций, которые могут вызывать проблемы
+  if (document.body) {
+    document.body.offsetHeight; // Force reflow
   }
   
   console.log('Все модальные окна очищены');
@@ -3106,13 +2933,7 @@ function cleanupModals() {
 // Проверяем наличие сохраненной сессии после загрузки страницы
 $(document).ready(function() {
   // Очищаем все модальные окна при загрузке страницы
-  cleanupModals();
-  
-  // Обработчик на все модальные окна при закрытии
-  $(document).on('hidden.bs.modal', '.modal', function() {
-    // Очищаем модальные окна при закрытии любого из них
-    setTimeout(cleanupModals, 100);
-  });
+  window.cleanupModals();
   
   setTimeout(function() {
     restoreUserSession();
@@ -3179,7 +3000,7 @@ function patchBootstrapModal() {
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
-        setTimeout(cleanupModals, 0);
+        setTimeout(window.cleanupModals, 0);
       });
     };
     
@@ -3271,7 +3092,7 @@ function patchBootstrapModal() {
           });
           
           // Запускаем дополнительную очистку
-          setTimeout(cleanupModals, 0);
+          setTimeout(window.cleanupModals, 0);
         }
       });
     };
@@ -3529,7 +3350,7 @@ function patchBootstrapModal() {
         }
         
         // Для уверенности вызываем дополнительную очистку
-        setTimeout(cleanupModals, 0);
+        setTimeout(window.cleanupModals, 0);
       }, () => {
         // В случае ошибки принудительно очищаем состояние
         document.body.classList.remove('modal-open');
@@ -3545,7 +3366,7 @@ function patchBootstrapModal() {
         });
         
         // Также очищаем модальные окна для уверенности
-        setTimeout(cleanupModals, 0);
+        setTimeout(window.cleanupModals, 0);
       });
     };
     
@@ -3643,3 +3464,50 @@ $(document).on('input change', 'input, select, textarea', function(e) {
     console.log('[WARNING] Не удалось найти родительскую вкладку для измененного поля', $input.attr('name') || $input.attr('id') || 'unnamed');
   }
 });
+
+// Добавляем таймаут для автоматического закрытия, чтобы избежать зависания UI
+// Это запасной вариант, если модальное окно по какой-то причине не будет закрыто
+setTimeout(function() {
+  try {
+    // Проверяем, существует ли еще элемент модального окна
+    const modalId = 'confirmModal';
+    const modalElement = document.getElementById(modalId);
+    if (!modalElement) {
+      console.log('Модальное окно уже закрыто или удалено');
+      return;
+    }
+    
+    // Безопасно проверяем класс
+    let stillOpen = false;
+    try {
+      if (modalElement.classList) {
+        stillOpen = modalElement.classList.contains('show');
+      }
+    } catch (err) {
+      console.warn('Ошибка при проверке класса модального окна:', err);
+    }
+    
+    if (stillOpen) {
+      console.warn('Обнаружено зависшее модальное окно, закрываем принудительно');
+      window.cleanupModals();
+      
+      // Если не была нажата кнопка подтверждения, считаем это отменой
+      if (!confirmClicked) {
+        safeExecuteCancelCallback();
+      } else {
+        safeExecuteConfirmCallback();
+      }
+    }
+  } catch (e) {
+    console.warn('Ошибка при автоматическом закрытии модального окна:', e);
+  }
+}, 10000); // 10 секунд
+
+// Используем функции из modal.js для работы с модальными окнами:
+// - patchBootstrapModal: патч для Bootstrap Modal
+// - cleanupModals: очистка модальных окон
+// - showConfirmationModal: показ окна подтверждения
+// - showUnsavedChangesConfirm: показ предупреждения о несохраненных изменениях
+// - hideUnsavedChangesModal: скрытие модального окна с предупреждением
+
+ 

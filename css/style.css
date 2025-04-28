@@ -947,19 +947,19 @@ textarea.form-control {
 .sidebar {
   position: fixed;
   top: 56px; /* высота основного navbar */
-  left: 0;
-  width: 100%;
+  left: -280px; /* ширина sidebar задается отрицательной */
+  width: 280px;
   height: auto;
   max-height: calc(100vh - 56px);
   background-color: #002d5a;
   color: #fff;
   overflow-y: auto;
-  transform: translateY(-100%);
+  transform: translateX(0);
   transition: transform 0.3s ease;
-  z-index: 1040;
+  z-index: 1100;
 }
 .sidebar.open {
-  transform: translateY(0);
+  transform: translateX(280px);
 }
 .sidebar .nav-link {
   color: #fff;
@@ -979,9 +979,21 @@ textarea.form-control {
   position: static !important;
   margin-right: 1rem;
   z-index: auto;
+  border: none;
+  transition: background-color 0.2s ease;
+  height: 38px;
+  width: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 #crm-tabs {
-  display: none !important;
+  display: flex !important;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+  padding-left: 1rem;
 }
 #favorite-tabs {
   display: flex;
@@ -994,24 +1006,100 @@ textarea.form-control {
   padding: 0.2rem;
   cursor: pointer;
   text-decoration: none !important;
+  position: relative;
+  z-index: 100;
+  min-height: 30px;
+  pointer-events: auto !important;
 }
 #favorite-tabs button i {
   font-size: 1rem;
+  pointer-events: auto !important;
 }
 #favorite-tabs button span {
   line-height: 1rem;
+  pointer-events: auto !important;
 }
 #favorite-tabs button {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  color: #fff !important;
+  opacity: 0.9;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 #favorite-tabs button:hover i {
   color: gold;
   text-decoration: none;
 }
+#favorite-tabs button:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
 
 /* Скрывать кнопку сайдбара при открытом меню */
 .sidebar.open + #sidebar-toggle {
   display: none;
+}
+
+/* Отключаем стандартную анимацию поднятия для кнопки сайдбара */
+#sidebar-toggle:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Исправление отображения выпадающих меню */
+.dropdown-menu {
+  z-index: 99999 !important; /* Очень высокий z-index, чтобы меню всегда было поверх всего */
+  position: fixed !important; /* Используем fixed вместо absolute для преодоления проблем с родительскими контейнерами */
+}
+
+/* Стили для выпадающих меню в кнопках действий */
+.dropdown-menu.show {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Корректное позиционирование внутри контейнеров с overflow */
+.table-responsive,
+.tab-content,
+.tab-pane,
+.card-body,
+.table-container,
+.table,
+.table-bordered,
+.table-sm {
+  overflow: visible !important; /* Позволяет выпадающим меню выходить за границы */
+}
+
+/* Добавляем отступы для выпадающих меню, чтобы они были лучше видны */
+.dropdown-menu.show .dropdown-item {
+  padding: 8px 16px !important;
+}
+
+/* Стили для полей, измененных пользователем */
+input[data-user-modified="true"],
+select[data-user-modified="true"],
+textarea[data-user-modified="true"] {
+  border-color: #ffc107;
+  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+/* Стили для модального окна предупреждения */
+#unsavedChangesModal .modal-content {
+  border-left: 4px solid #dc3545;
+}
+
+#unsavedChangesModal .modal-header {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+#unsavedChangesModal .modal-body {
+  padding: 1.5rem;
+}
+
+#unsavedChangesModal .modal-footer {
+  border-top: none;
 }

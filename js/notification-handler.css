@@ -1,0 +1,144 @@
+/**
+ * Стили для системы уведомлений
+ */
+ 
+/* Контейнер для уведомлений */
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  width: 320px;
+  max-width: 90%;
+}
+
+/* Базовый стиль уведомления */
+.notification {
+  position: relative;
+  margin-bottom: 10px;
+  padding: 15px 20px;
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  transform: translateX(120%);
+  transition: transform 0.3s ease-out;
+  cursor: pointer;
+  color: #fff;
+  opacity: 0.95;
+}
+
+/* Состояние "показано" для уведомления */
+.notification.show {
+  transform: translateX(0);
+}
+
+/* Заголовок уведомления */
+.notification-title {
+  font-weight: bold;
+  margin: 0 0 5px 0;
+  padding-right: 20px;
+}
+
+/* Сообщение уведомления */
+.notification-message {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Кнопка закрытия */
+.notification-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  line-height: 1;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-close:hover {
+  opacity: 1;
+}
+
+/* Типы уведомлений */
+.notification.success {
+  background-color: #28a745;
+  border-left: 5px solid #1e7e34;
+}
+
+.notification.error {
+  background-color: #dc3545;
+  border-left: 5px solid #bd2130;
+}
+
+.notification.warning {
+  background-color: #ffc107;
+  border-left: 5px solid #d39e00;
+  color: #333;
+}
+
+.notification.info {
+  background-color: #17a2b8;
+  border-left: 5px solid #117a8b;
+}
+
+/* Прогресс-бар для автоматического закрытия */
+.notification-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.notification-progress-bar {
+  height: 100%;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  transform-origin: left;
+}
+
+/* Анимация для прогресс-бара */
+@keyframes progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Анимация для появления и исчезновения уведомлений */
+@keyframes fadeOut {
+  from {
+    opacity: 0.95;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Стили для мобильных устройств */
+@media (max-width: 576px) {
+  .notification-container {
+    width: 100%;
+    right: 0;
+    padding: 0 10px;
+  }
+  
+  .notification {
+    margin-bottom: 8px;
+    padding: 12px 15px;
+  }
+} 

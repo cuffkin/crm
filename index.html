@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система уведомлений CRM</title>
+    <link rel="stylesheet" href="css/notification.css">
+    <!-- Подключаем основные стили -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Демонстрация системы уведомлений</h1>
+    </header>
+    
+    <main>
+        <div class="demo-container">
+            <h2>Тестовые уведомления</h2>
+            <div class="demo-buttons">
+                <button id="success-btn" class="btn btn-success">Успех</button>
+                <button id="error-btn" class="btn btn-danger">Ошибка</button>
+                <button id="warning-btn" class="btn btn-warning">Предупреждение</button>
+                <button id="info-btn" class="btn btn-info">Информация</button>
+                <button id="custom-btn" class="btn btn-primary">Пользовательское</button>
+                <button id="close-all-btn" class="btn btn-secondary">Закрыть все</button>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>CRM Система уведомлений &copy; 2023</p>
+    </footer>
+
+    <!-- Подключаем скрипт уведомлений -->
+    <script src="js/notification-handler.js"></script>
+    <script>
+        // Настраиваем обработчики для кнопок
+        document.getElementById('success-btn').addEventListener('click', function() {
+            notificationHandler.success('Операция успешно выполнена!');
+        });
+        
+        document.getElementById('error-btn').addEventListener('click', function() {
+            notificationHandler.error('Произошла ошибка при выполнении операции.');
+        });
+        
+        document.getElementById('warning-btn').addEventListener('click', function() {
+            notificationHandler.warning('Внимание! Это предупреждение.');
+        });
+        
+        document.getElementById('info-btn').addEventListener('click', function() {
+            notificationHandler.info('Информационное сообщение для пользователя.');
+        });
+        
+        document.getElementById('custom-btn').addEventListener('click', function() {
+            notificationHandler.show(
+                'Это пользовательское уведомление с длительным временем отображения',
+                'info',
+                { duration: 10000 } // 10 секунд
+            );
+        });
+        
+        document.getElementById('close-all-btn').addEventListener('click', function() {
+            notificationHandler.closeAll();
+        });
+    </script>
+</body>
+</html> 

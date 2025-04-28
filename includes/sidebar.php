@@ -1,34 +1,26 @@
 <?php
 // /crm/includes/sidebar.php
 ?>
-<nav class="sidebar">
+<nav class="sidebar" style="left: -280px; width: 280px;">
   <ul class="nav flex-column">
     <li class="nav-item">
       <a class="nav-link d-flex align-items-center" href="#" data-module="users/list">
-        <i class="fas fa-users me-2"></i>
-        <span>Пользователи</span>
-        <i class="fas fa-star ms-auto star-icon" onclick="toggleFavorite('users/list'); event.stopPropagation();" title="В избранное"></i>
+        <i class="fas fa-users me-2"></i><span>Пользователи</span><i class="fas fa-star ms-auto star-icon" onclick="toggleFavorite('users/list');event.stopPropagation();" title="В избранное"></i>
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link d-flex align-items-center" href="#" data-module="access/list">
-        <i class="fas fa-lock me-2"></i>
-        <span>Управление доступом</span>
-        <i class="fas fa-star ms-auto star-icon" onclick="toggleFavorite('access/list'); event.stopPropagation();" title="В избранное"></i>
+        <i class="fas fa-lock me-2"></i><span>Управление доступом</span><i class="fas fa-star ms-auto star-icon" onclick="toggleFavorite('access/list');event.stopPropagation();" title="В избранное"></i>
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link d-flex align-items-center" href="#" data-module="counterparty/list">
-        <i class="fas fa-building me-2"></i>
-        <span>Контрагенты</span>
-        <i class="fas fa-star ms-auto star-icon" onclick="toggleFavorite('counterparty/list'); event.stopPropagation();" title="В избранное"></i>
+        <i class="fas fa-building me-2"></i><span>Контрагенты</span><i class="fas fa-star ms-auto star-icon" onclick="toggleFavorite('counterparty/list');event.stopPropagation();" title="В избранное"></i>
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link d-flex align-items-center" href="#" data-module="products/list">
-        <i class="fas fa-box-open me-2"></i>
-        <span>Товары</span>
-        <i class="fas fa-star ms-auto star-icon" onclick="toggleFavorite('products/list'); event.stopPropagation();" title="В избранное"></i>
+        <i class="fas fa-box-open me-2"></i><span>Товары</span><i class="fas fa-star ms-auto star-icon" onclick="toggleFavorite('products/list');event.stopPropagation();" title="В избранное"></i>
       </a>
     </li>
     <li class="nav-item">
