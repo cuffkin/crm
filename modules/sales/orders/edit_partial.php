@@ -115,17 +115,20 @@ $uniquePrefix = 'ord_' . uniqid();
     </div>
     <div class="mb-3">
       <label>Контрагент <span class="text-danger">*</span></label>
-      <select id="o-cust" class="form-select required" required>
-        <option value="">(не выбран)</option>
-        <?php foreach ($allCust as $c): ?>
-        <option value="<?= $c['id'] ?>" 
-                data-address="<?= htmlspecialchars($c['address'] ?? '') ?>"
-                data-contacts="<?= htmlspecialchars($c['phone'] ?? '') ?>"
-                <?= ($c['id'] == $customer ? 'selected' : '') ?>>
-          <?= htmlspecialchars($c['name']) ?>
-        </option>
-        <?php endforeach; ?>
-      </select>
+      <div class="input-group">
+        <select id="o-cust" class="form-select required" required>
+          <option value="">(не выбран)</option>
+          <?php foreach ($allCust as $c): ?>
+          <option value="<?= $c['id'] ?>" 
+                  data-address="<?= htmlspecialchars($c['address'] ?? '') ?>"
+                  data-contacts="<?= htmlspecialchars($c['phone'] ?? '') ?>"
+                  <?= ($c['id'] == $customer ? 'selected' : '') ?>>
+            <?= htmlspecialchars($c['name']) ?>
+          </option>
+          <?php endforeach; ?>
+        </select>
+        <button class="btn btn-outline-secondary" type="button" onclick="openNewTab('counterparty/edit_partial')">Создать нового</button>
+      </div>
       <div class="invalid-feedback">Выберите контрагента</div>
     </div>
     <div class="mb-3">
@@ -211,14 +214,17 @@ $uniquePrefix = 'ord_' . uniqid();
         <?php foreach ($items as $itm): ?>
         <tr>
           <td>
-            <select class="form-select oi-product">
-              <option value="">(не выбран)</option>
-              <?php foreach ($allProducts as $p): ?>
-              <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>" <?= ($p['id'] == $itm['product_id'] ? 'selected' : '') ?>>
-                <?= htmlspecialchars($p['name']) ?>
-              </option>
-              <?php endforeach; ?>
-            </select>
+            <div class="input-group">
+              <select class="form-select oi-product">
+                <option value="">(не выбран)</option>
+                <?php foreach ($allProducts as $p): ?>
+                <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>" <?= ($p['id'] == $itm['product_id'] ? 'selected' : '') ?>>
+                  <?= htmlspecialchars($p['name']) ?>
+                </option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
+            </div>
           </td>
           <td><input type="number" step="0.001" class="form-control oi-qty" value="<?= $itm['quantity'] ?>"></td>
           <td><input type="number" step="0.01" class="form-control oi-price" value="<?= $itm['price'] ?>"></td>
@@ -276,7 +282,33 @@ $uniquePrefix = 'ord_' . uniqid();
     let currentTabContentId = '';
 
     // Регистрируем функции в глобальной области видимости с уникальными именами
-    window['<?= $uniquePrefix ?>_addRow'] = addRow;
+    window['<?= $uniquePrefix ?>_addRow'] = function() {
+      const newRow = `
+        <tr>
+          <td>
+            <div class="input-group">
+              <select class="form-select oi-product">
+                <option value="">(не выбран)</option>
+                <?php foreach ($allProducts as $p): ?>
+                <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>">
+                  <?= htmlspecialchars($p['name']) ?>
+                </option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
+            </div>
+          </td>
+          <td><input type="number" step="0.001" class="form-control oi-qty" value="1"></td>
+          <td><input type="number" step="0.01" class="form-control oi-price" value="0"></td>
+          <td><input type="number" step="0.01" class="form-control oi-discount" value="0"></td>
+          <td class="oi-sum"></td>
+          <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();window['<?= $uniquePrefix ?>_calcTotal']();">×</button></td>
+        </tr>
+      `;
+      $('#oi-table tbody').append(newRow);
+      initializeRowHandlers();
+      window['<?= $uniquePrefix ?>_calcTotal']();
+    };
     window['<?= $uniquePrefix ?>_calcTotal'] = calcTotal;
     window['<?= $uniquePrefix ?>_saveOrderAndClose'] = saveOrderAndClose;
     window['<?= $uniquePrefix ?>_saveOrder'] = saveOrder;
@@ -314,7 +346,7 @@ $uniquePrefix = 'ord_' . uniqid();
       
       // Если это новый заказ, добавляем строку товара автоматически
       if (<?= $id ?> === 0 && $('#oi-table tbody tr').length === 0) {
-        addRow();
+        window['<?= $uniquePrefix ?>_addRow']();
       }
       
       // Если это новый заказ, генерируем номер автоматически
@@ -430,26 +462,6 @@ $uniquePrefix = 'ord_' . uniqid();
         calcTotal();
       });
     });
-
-    function addRow() {
-      let rowHtml = `
-        <tr>
-          <td>
-            <select class="form-select oi-product">
-              <option value="">(не выбран)</option>
-              ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name}</option>`).join('')}
-            </select>
-          </td>
-          <td><input type="number" step="0.001" class="form-control oi-qty" value="1"></td>
-          <td><input type="number" step="0.01" class="form-control oi-price" value="0"></td>
-          <td><input type="number" step="0.01" class="form-control oi-discount" value="0"></td>
-          <td class="oi-sum"></td>
-          <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();window['<?= $uniquePrefix ?>_calcTotal']();">×</button></td>
-        </tr>
-      `;
-      $('#oi-table tbody').append(rowHtml);
-      calcTotal();
-    }
 
     function calcTotal() {
       let grand = 0;
@@ -842,6 +854,11 @@ $uniquePrefix = 'ord_' . uniqid();
         e.stopPropagation();
         closeModuleTab(tabId, tabContentId);
       });
+    }
+
+    // Для обратной совместимости
+    function addRow() {
+      window['<?= $uniquePrefix ?>_addRow']();
     }
 })();
 </script>

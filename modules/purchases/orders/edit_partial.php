@@ -104,14 +104,17 @@ $uniquePrefix = 'po_' . uniqid();
     </div>
     <div class="mb-3">
       <label>Поставщик <span class="text-danger">*</span></label>
-      <select id="po-supplier" class="form-select required" required>
-        <option value="">(не выбран)</option>
-        <?php foreach ($allSuppliers as $supplier): ?>
-        <option value="<?= $supplier['id'] ?>" <?= ($supplier['id'] == $supplier_id ? 'selected' : '') ?>>
-          <?= htmlspecialchars($supplier['name']) ?> (<?= htmlspecialchars($supplier['type']) ?>)
-        </option>
-        <?php endforeach; ?>
-      </select>
+      <div class="input-group">
+        <select id="po-supplier" class="form-select required" required>
+          <option value="">(не выбран)</option>
+          <?php foreach ($allSuppliers as $supplier): ?>
+          <option value="<?= $supplier['id'] ?>" <?= ($supplier['id'] == $supplier_id ? 'selected' : '') ?>>
+            <?= htmlspecialchars($supplier['name']) ?> (<?= htmlspecialchars($supplier['type']) ?>)
+          </option>
+          <?php endforeach; ?>
+        </select>
+        <button class="btn btn-outline-secondary" type="button" onclick="openNewTab('counterparty/edit_partial')">Создать нового</button>
+      </div>
       <div class="invalid-feedback">Выберите поставщика</div>
     </div>
     <div class="mb-3">
@@ -165,14 +168,17 @@ $uniquePrefix = 'po_' . uniqid();
         <?php foreach ($items as $itm): ?>
         <tr>
           <td>
-            <select class="form-select poi-product">
-              <option value="">(не выбран)</option>
-              <?php foreach ($allProducts as $p): ?>
-              <option value="<?= $p['id'] ?>" data-price="<?= $p['cost_price'] ?>" <?= ($p['id'] == $itm['product_id'] ? 'selected' : '') ?>>
-                <?= htmlspecialchars($p['name']) ?>
-              </option>
-              <?php endforeach; ?>
-            </select>
+            <div class="input-group">
+              <select class="form-select poi-product">
+                <option value="">(не выбран)</option>
+                <?php foreach ($allProducts as $p): ?>
+                <option value="<?= $p['id'] ?>" data-price="<?= $p['cost_price'] ?>" <?= ($p['id'] == $itm['product_id'] ? 'selected' : '') ?>>
+                  <?= htmlspecialchars($p['name']) ?>
+                </option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
+            </div>
           </td>
           <td><input type="number" step="0.001" class="form-control poi-qty" value="<?= $itm['quantity'] ?>"></td>
           <td><input type="number" step="0.01" class="form-control poi-price" value="<?= $itm['price'] ?>"></td>
@@ -263,6 +269,11 @@ $uniquePrefix = 'po_' . uniqid();
         }
       }
       
+      // Если это новый заказ, добавляем строку товара автоматически
+      if (<?= $id ?> === 0 && $('#poi-table tbody tr').length === 0) {
+        window['<?= $uniquePrefix ?>_addRow']();
+      }
+      
       // Если это новый заказ, генерируем номер автоматически
       if (<?= $id ?> === 0 && $('#po-num').val() === '') {
         $.getJSON('/crm/modules/purchases/orders/order_api.php', { action: 'generate' }, function(response) {
@@ -342,10 +353,13 @@ $uniquePrefix = 'po_' . uniqid();
       let rowHtml = `
         <tr>
           <td>
-            <select class="form-select poi-product">
-              <option value="">(не выбран)</option>
-              ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.cost_price}">${p.name}</option>`).join('')}
-            </select>
+            <div class="input-group">
+              <select class="form-select poi-product">
+                <option value="">(не выбран)</option>
+                ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.cost_price}">${p.name}</option>`).join('')}
+              </select>
+              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
+            </div>
           </td>
           <td><input type="number" step="0.001" class="form-control poi-qty" value="1"></td>
           <td><input type="number" step="0.01" class="form-control poi-price" value="0"></td>
@@ -507,5 +521,7 @@ $uniquePrefix = 'po_' . uniqid();
         }
       }
     }
+
+    // Используем глобальную функцию openNewTab из common.js
 })();
 </script>

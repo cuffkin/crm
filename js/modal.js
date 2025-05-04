@@ -633,6 +633,12 @@ function cleanupModals() {
     // Перебираем все найденные модальные окна
     modals.forEach(modalElement => {
       try {
+        // Пропускаем постоянные модальные окна
+        if (modalElement.getAttribute('data-persistent') === 'true') {
+          console.log(`Модальное окно ${modalElement.id} отмечено как persistent, пропускаем очистку`);
+          return;
+        }
+        
         // Проверяем наличие Bootstrap
         if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
           // Пытаемся получить экземпляр Modal для элемента
@@ -686,10 +692,34 @@ $(document).ready(function() {
     const modalId = e.target.id;
     console.log(`Модальное окно ${modalId} закрыто, выполняю отложенную очистку`);
     
+    // Проверяем, не является ли модальное окно постоянным (не должно автоматически очищаться)
+    if (e.target.getAttribute('data-persistent') === 'true') {
+      console.log(`Модальное окно ${modalId} отмечено как persistent, пропускаем очистку`);
+      return;
+    }
+    
     // Откладываем очистку, чтобы дать Bootstrap завершить свои процессы
     setTimeout(function() {
       try {
-        cleanupModals();
+        // Вызываем cleanupModals только для модальных окон, которые не помечены как persistent
+        if (modalId !== 'unsavedChangesModal') {
+          cleanupModals();
+        } else {
+          // Для unsavedChangesModal очищаем только backdrops и стили body
+          const backdrops = document.querySelectorAll('.modal-backdrop');
+          backdrops.forEach(backdrop => {
+            if (backdrop && backdrop.parentNode) {
+              backdrop.parentNode.removeChild(backdrop);
+            }
+          });
+          
+          // Удаляем класс modal-open с body, если нет активных модальных окон
+          if (document.querySelectorAll('.modal.show').length === 0) {
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+          }
+        }
       } catch (err) {
         console.warn('Ошибка при очистке модальных окон после закрытия:', err);
       }
@@ -740,256 +770,169 @@ function patchBootstrapModal() {
     
     // Патчим метод _showElement для проверки существования элемента
     modalProto._showElement = function(relatedTarget) {
-      if (!this._element || !document.body.contains(this._element)) {
-        console.warn('Bootstrap Modal: элемент не найден или не добавлен в DOM');
+      // Сначала убедимся, что элемент существует
+      if (!this._element) {
+        console.warn('Bootstrap Modal: элемент не найден в _showElement');
         return;
       }
       
+      // Убедимся, что элемент находится в DOM
+      try {
+        if (!document.body.contains(this._element)) {
+          console.warn('Bootstrap Modal: элемент не добавлен в DOM');
+          return;
+        }
+      } catch (err) {
+        console.warn('Ошибка при проверке наличия элемента в DOM:', err);
+        return;
+      }
+      
+      // Безопасно вызываем оригинальный метод
       return safeElementAccess(() => {
         return originalShowElement.call(this, relatedTarget);
-      }, () => {
-        // В случае ошибки пытаемся привести DOM в нормальное состояние
-        if (this._element) {
-          this._element.style.display = 'none';
+      }, (e) => {
+        // В случае ошибки пытаемся скрыть модальное окно
+        try {
+          if (this._element) {
+            this._element.style.display = 'none';
+          }
+          // Очищаем стили body
+          document.body.classList.remove('modal-open');
+          document.body.style.removeProperty('overflow');
+          document.body.style.removeProperty('padding-right');
+        } catch (cleanupErr) {
+          console.warn('Ошибка при очистке после ошибки _showElement:', cleanupErr);
         }
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-        setTimeout(cleanupModals, 0);
       });
     };
     
     // Патчим метод hide для безопасного скрытия
     modalProto.hide = function() {
-      if (!this._element || !document.body.contains(this._element)) {
-        console.warn('Bootstrap Modal: элемент не найден при попытке скрытия');
-        // Принудительно очищаем, даже если элемент не найден
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach(backdrop => backdrop.remove());
+      // Сначала убедимся, что элемент существует
+      if (!this._element) {
+        console.warn('Bootstrap Modal: элемент не найден в hide');
         return;
       }
       
-      // Полностью заменяем функцию hide вместо вызова оригинальной
+      // Безопасно вызываем оригинальный метод
       return safeElementAccess(() => {
-        // Проверяем, не скрыто ли уже модальное окно
-        if (!this._isShown || this._isTransitioning) {
-          return;
-        }
-        
-        // Вызываем обработчики событий перед скрытием, если они есть
-        if (typeof this._triggerBackdropTransition === 'function') {
-          try {
-            // Если метод возвращает true, значит он сам обрабатывает анимацию закрытия
-            if (this._triggerBackdropTransition()) {
-              return;
-            }
-          } catch (e) {
-            console.warn('Ошибка при вызове _triggerBackdropTransition:', e);
-          }
-        }
-        
-        // Устанавливаем флаги
-        this._isShown = false;
-        
-        // Удаляем backdrop
+        return originalHide.call(this);
+      }, (e) => {
+        // В случае ошибки выполняем минимальную очистку
         try {
-          if (this._backdrop) {
-            // Безопасно вызываем hide у backdrop
-            if (typeof this._backdrop.hide === 'function') {
-              this._backdrop.hide(() => {
-                this._hideModal();
-              });
-            } else {
-              // Если метод hide у backdrop не доступен, сразу вызываем _hideModal
-              this._hideModal();
-            }
-          } else {
-            this._hideModal();
-          }
-        } catch (e) {
-          console.warn('Ошибка при удалении backdrop:', e);
-          // В случае ошибки просто вызываем _hideModal напрямую
-          this._hideModal();
-        }
-      }, () => {
-        // В случае ошибки выполняем минимально необходимые действия
-        try {
-          // Устанавливаем основные флаги
-          this._isShown = false;
-          
-          // Вызываем метод скрытия напрямую
-          this._hideModal();
-        } catch (e) {
-          console.error('Критическая ошибка при скрытии модального окна:', e);
-          // В случае ошибки принудительно очищаем DOM
-          document.body.classList.remove('modal-open');
-          document.body.style.overflow = '';
-          document.body.style.paddingRight = '';
-          
-          // Скрываем элемент модального окна, если он доступен
+          // Скрываем модальное окно вручную
           if (this._element) {
-            this._element.style.display = 'none';
             this._element.classList.remove('show');
+            this._element.style.display = 'none';
             this._element.setAttribute('aria-hidden', 'true');
-            this._element.removeAttribute('aria-modal');
-            this._element.removeAttribute('role');
           }
           
-          // Удаляем backdrop вручную
+          // Очищаем стили body
+          document.body.classList.remove('modal-open');
+          document.body.style.removeProperty('overflow');
+          document.body.style.removeProperty('padding-right');
+          
+          // Удаляем backdrop элементы
           const backdrops = document.querySelectorAll('.modal-backdrop');
           backdrops.forEach(backdrop => {
             if (backdrop && backdrop.parentNode) {
               backdrop.parentNode.removeChild(backdrop);
             }
           });
-          
-          // Запускаем дополнительную очистку
-          setTimeout(cleanupModals, 0);
+        } catch (cleanupErr) {
+          console.warn('Ошибка при очистке после ошибки hide:', cleanupErr);
         }
       });
     };
     
-    // Патчим метод _resetAdjustments для безопасной работы с элементами
+    // Патчим остальные методы аналогично
     modalProto._resetAdjustments = function() {
-      if (!this._element) {
-        console.warn('Bootstrap Modal: элемент не найден в _resetAdjustments');
-        return;
-      }
-      
-      if (!this._element.style) {
-        console.warn('Bootstrap Modal: элемент не имеет свойства style');
-        return;
-      }
+      if (!this._element || !this._element.style) return;
       
       return safeElementAccess(() => {
         return originalResetAdjustments.call(this);
       });
     };
     
-    // Патчим метод _adjustDialog
     modalProto._adjustDialog = function() {
-      if (!this._element) {
-        console.warn('Bootstrap Modal: элемент не найден в _adjustDialog');
-        return;
-      }
-      
-      if (!this._element.style) {
-        console.warn('Bootstrap Modal: элемент не имеет свойства style в _adjustDialog');
-        return;
-      }
+      if (!this._element || !this._element.style) return;
       
       return safeElementAccess(() => {
         return originalAdjustDialog.call(this);
       });
     };
     
-    // Патчим метод _enforceFocus
     modalProto._enforceFocus = function() {
-      if (!this._element) {
-        console.warn('Bootstrap Modal: элемент не найден в _enforceFocus');
-        return;
-      }
+      if (!this._element) return;
       
       return safeElementAccess(() => {
         return originalEnforceFocus.call(this);
       });
     };
     
-    // Патчим метод _setEscapeEvent
     modalProto._setEscapeEvent = function() {
-      if (!this._element) {
-        console.warn('Bootstrap Modal: элемент не найден в _setEscapeEvent');
-        return;
-      }
+      if (!this._element) return;
       
       return safeElementAccess(() => {
         return originalSetEscapeEvent.call(this);
       });
     };
     
-    // Патчим метод dispose для безопасного удаления
-    modalProto.dispose = function() {
-      return safeElementAccess(() => {
-        const result = originalDispose.call(this);
-        
-        // Принудительно удаляем все обработчики и ссылки
-        if (this._element) {
-          this._element.removeAttribute('aria-modal');
-          this._element.removeAttribute('role');
-          this._element.removeAttribute('aria-hidden');
-          
-          // Удаляем все обработчики событий, связанные с Bootstrap
-          ['show.bs.modal', 'shown.bs.modal', 'hide.bs.modal', 'hidden.bs.modal', 
-           'hidePrevented.bs.modal'].forEach(event => {
-            this._element.removeEventListener(event, () => {});
-          });
-        }
-        
-        return result;
-      }, () => {
-        // Принудительная очистка в случае ошибки
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach(backdrop => backdrop.remove());
-      });
-    };
-    
-    // Патчим метод _hideModal для предотвращения ошибок с null.style
     modalProto._hideModal = function() {
+      // Проверяем наличие элемента
       if (!this._element) {
         console.warn('Bootstrap Modal: элемент не найден в _hideModal');
         return;
       }
       
       return safeElementAccess(() => {
-        // Полностью заменяем реализацию _hideModal, а не вызываем оригинальный метод
-        
-        // Скрываем диалог
-        if (this._dialog && this._dialog.style) {
-          this._dialog.style.display = 'none';
-        }
-        
-        // Скрываем элемент модального окна
-        this._element.setAttribute('aria-hidden', 'true');
-        this._element.removeAttribute('aria-modal');
-        this._element.removeAttribute('role');
-        
-        if (this._element.style) {
-          this._element.style.display = 'none';
-        }
-        
-        // Удаляем класс show
-        if (this._element.classList) {
-          this._element.classList.remove('show');
-        }
-        
-        // Устанавливаем флаг транзиции
-        this._isTransitioning = false;
-        
-        // Очищаем состояние body
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-        
-        // Удаляем backdrop вручную вместо вызова this._backdrop.hide()
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach(backdrop => {
-          if (backdrop && backdrop.parentNode) {
-            backdrop.parentNode.removeChild(backdrop);
-          }
-        });
-        
-        // Вызываем событие hidden.bs.modal
+        return originalHideModal.call(this);
+      }, (e) => {
+        // Выполняем минимальную очистку в случае ошибки
         try {
-          const hiddenEvent = new Event('hidden.bs.modal');
-          this._element.dispatchEvent(hiddenEvent);
-        } catch (e) {
-          console.warn('Error triggering hidden.bs.modal:', e);
+          // Скрываем модальное окно
+          if (this._element) {
+            this._element.classList.remove('show');
+            this._element.style.display = 'none';
+            this._element.setAttribute('aria-hidden', 'true');
+          }
+          
+          // Очищаем стили body
+          document.body.classList.remove('modal-open');
+          document.body.style.removeProperty('overflow');
+          document.body.style.removeProperty('padding-right');
+          
+          // Удаляем backdrop элементы
+          const backdrops = document.querySelectorAll('.modal-backdrop');
+          backdrops.forEach(backdrop => {
+            if (backdrop && backdrop.parentNode) {
+              backdrop.parentNode.removeChild(backdrop);
+            }
+          });
+        } catch (cleanupErr) {
+          console.warn('Ошибка при очистке после ошибки _hideModal:', cleanupErr);
+        }
+      });
+    };
+    
+    modalProto.dispose = function() {
+      return safeElementAccess(() => {
+        return originalDispose.call(this);
+      }, (e) => {
+        // В случае ошибки удаляем атрибуты модального окна
+        try {
+          if (this._element) {
+            this._element.removeAttribute('aria-modal');
+            this._element.removeAttribute('role');
+            this._element.removeAttribute('aria-hidden');
+          }
+          
+          // Очищаем стили body
+          document.body.classList.remove('modal-open');
+          document.body.style.removeProperty('overflow');
+          document.body.style.removeProperty('padding-right');
+        } catch (cleanupErr) {
+          console.warn('Ошибка при очистке после ошибки dispose:', cleanupErr);
         }
       });
     };
@@ -1015,22 +958,64 @@ function patchBootstrapImmediately() {
     return;
   }
   
-  // Проверяем, что jQuery и Bootstrap доступны
-  if (typeof $ === 'undefined') {
-    console.warn('jQuery не обнаружен, отложенный запуск патча Bootstrap Modal');
-    // Ждем загрузку DOM и пробуем снова
-    document.addEventListener('DOMContentLoaded', function() {
-      if (typeof $ !== 'undefined') {
-        patchBootstrapImmediately();
-      } else {
-        console.error('jQuery не обнаружен даже после загрузки DOM, патч не применён');
-      }
-    });
+  console.log('Запускаю патч Bootstrap Modal...');
+  
+  // Проверяем, доступен ли Bootstrap
+  if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+    // Если Bootstrap уже доступен, патчим немедленно
+    console.log('Bootstrap обнаружен, применяю патч немедленно');
+    patchBootstrapModal();
     return;
   }
   
-  // Применяем патч с небольшой задержкой, чтобы Bootstrap успел загрузиться
-  setTimeout(patchBootstrapImmediately, 100);
+  console.log('Bootstrap еще не загружен, ожидаю загрузку...');
+  
+  // Ожидаем загрузку Bootstrap с небольшими интервалами
+  let attempts = 0;
+  const maxAttempts = 20; // Максимальное количество попыток
+  
+  const waitForBootstrap = function() {
+    attempts++;
+    
+    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+      console.log(`Bootstrap загружен (попытка ${attempts}), применяю патч`);
+      patchBootstrapModal();
+      return;
+    }
+    
+    if (attempts >= maxAttempts) {
+      console.warn(`Превышено максимальное количество попыток (${maxAttempts}) ожидания загрузки Bootstrap`);
+      return;
+    }
+    
+    // Увеличиваем интервал ожидания с каждой попыткой
+    const timeout = Math.min(50 * attempts, 500);
+    setTimeout(waitForBootstrap, timeout);
+  };
+  
+  // Запускаем ожидание загрузки Bootstrap
+  waitForBootstrap();
+  
+  // Дополнительно подписываемся на событие загрузки DOM
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM загружен, проверяю наличие Bootstrap');
+    
+    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+      console.log('Bootstrap обнаружен после загрузки DOM, применяю патч');
+      patchBootstrapModal();
+    } else {
+      console.warn('Bootstrap не обнаружен после загрузки DOM');
+      // Дополнительная попытка с задержкой после загрузки DOM
+      setTimeout(function() {
+        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+          console.log('Bootstrap обнаружен после задержки, применяю патч');
+          patchBootstrapModal();
+        } else {
+          console.error('Bootstrap так и не был обнаружен');
+        }
+      }, 1000);
+    }
+  });
 }
 
 // Экспортируем функцию в глобальную область видимости
@@ -1047,50 +1032,29 @@ window.patchBootstrapImmediately = patchBootstrapImmediately;
 // Функция для безопасной работы с модальным окном несохраненных изменений
 function showUnsavedChangesConfirm(title, message, confirmText, cancelText, confirmCallback, cancelCallback) {
   try {
-    // Сначала очищаем возможные существующие модальные окна для избежания конфликтов
-    cleanupModals();
+    console.log('Открываю модальное окно несохраненных изменений');
     
     // ID нашего модального окна
     const modalId = 'unsavedChangesModal';
     
     // Проверяем существование модального окна в DOM
-    let modalEl = document.getElementById(modalId);
+    const modalEl = document.getElementById(modalId);
     
-    // Если модальное окно не найдено, создаем его
+    // Если модальное окно не найдено, используем нативный confirm
     if (!modalEl) {
-      console.log('Создаём новое модальное окно для несохраненных изменений');
+      console.error(`Модальное окно с ID ${modalId} не найдено в DOM. Используется стандартный confirm.`);
       
-      // Создаем новый элемент модального окна
-      modalEl = document.createElement('div');
-      modalEl.id = modalId;
-      modalEl.className = 'modal fade';
-      modalEl.setAttribute('tabindex', '-1');
-      modalEl.setAttribute('aria-labelledby', `${modalId}Label`);
-      modalEl.setAttribute('aria-hidden', 'true');
+      if (confirm(message || 'В форме есть несохраненные изменения. Вы уверены, что хотите закрыть её без сохранения?')) {
+        if (typeof confirmCallback === 'function') {
+          confirmCallback();
+        }
+      } else {
+        if (typeof cancelCallback === 'function') {
+          cancelCallback();
+        }
+      }
       
-      // Создаем структуру модального окна
-      modalEl.innerHTML = `
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="${modalId}Label">
-                <i class="fas fa-exclamation-triangle text-warning me-2"></i>Внимание!
-              </h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-            </div>
-            <div class="modal-body">
-              <p>В форме есть несохраненные изменения. Вы уверены, что хотите закрыть её без сохранения?</p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-              <button type="button" class="btn btn-danger" id="closeTabConfirm">Закрыть без сохранения</button>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      // Добавляем модальное окно в body
-      document.body.appendChild(modalEl);
+      return false;
     }
     
     // Обновляем содержимое модального окна
@@ -1104,83 +1068,104 @@ function showUnsavedChangesConfirm(title, message, confirmText, cancelText, conf
     if (confirmBtn) confirmBtn.textContent = confirmText || 'Закрыть без сохранения';
     if (cancelBtn) cancelBtn.textContent = cancelText || 'Отмена';
     
-    // Удаляем все существующие обработчики событий кнопки подтверждения
+    // Удаляем существующие обработчики с кнопки подтверждения
     if (confirmBtn) {
-      const newConfirmBtn = confirmBtn.cloneNode(true);
-      if (confirmBtn.parentNode) {
-        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-      }
+      // Очищаем все существующие обработчики
+      const confirmBtnNew = confirmBtn.cloneNode(true);
+      confirmBtn.parentNode.replaceChild(confirmBtnNew, confirmBtn);
       
-      // Добавляем обработчик для новой кнопки через прямое назначение свойства onclick
-      newConfirmBtn.onclick = function() {
-        // Закрываем модальное окно
-        hideUnsavedChangesModal();
+      // Добавляем новый обработчик
+      confirmBtnNew.addEventListener('click', function() {
+        // Скрываем модальное окно через Bootstrap API
+        let bootstrapModal = null;
         
-        // Вызываем функцию подтверждения
-        if (typeof confirmCallback === 'function') {
-          setTimeout(confirmCallback, 100);
+        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+          try {
+            bootstrapModal = bootstrap.Modal.getInstance(modalEl);
+            
+            if (bootstrapModal) {
+              bootstrapModal.hide();
+            }
+          } catch (err) {
+            console.warn('Ошибка при закрытии модального окна через Bootstrap API', err);
+          }
         }
-      };
+        
+        // Вызываем колбэк подтверждения с небольшой задержкой
+        setTimeout(function() {
+          if (typeof confirmCallback === 'function') {
+            confirmCallback();
+          }
+        }, 300);
+      });
     }
     
-    // Переменная для отслеживания, был ли вызван колбэк отмены
-    let cancelHandled = false;
+    // Создаем переменную для отслеживания вызова колбэка отмены
+    let cancelCallbackExecuted = false;
     
-    // Функция для безопасного вызова колбэка отмены
-    const handleCancel = function() {
-      if (cancelHandled) return;
-      cancelHandled = true;
-      
-      // Вызываем функцию отмены
-      if (typeof cancelCallback === 'function') {
-        setTimeout(cancelCallback, 100);
+    // Функция для безопасного выполнения колбэка отмены
+    const executeCancelCallback = function() {
+      if (!cancelCallbackExecuted) {
+        cancelCallbackExecuted = true;
+        
+        setTimeout(function() {
+          if (typeof cancelCallback === 'function') {
+            cancelCallback();
+          }
+        }, 300);
       }
     };
     
-    // Устанавливаем обработчик на событие скрытия модального окна через прямое назначение свойства
-    modalEl.addEventListener('hidden.bs.modal', function modalHiddenHandler() {
-      modalEl.removeEventListener('hidden.bs.modal', modalHiddenHandler);
-      handleCancel();
-    });
-    
-    // Инициализируем и показываем модальное окно
-    try {
-      let modal = null;
+    // Добавляем обработчик события hidden.bs.modal напрямую к модальному окну
+    const handleHidden = function() {
+      modalEl.removeEventListener('hidden.bs.modal', handleHidden);
       
-      // Проверяем доступность Bootstrap
+      // Вызываем колбэк отмены, если колбэк подтверждения еще не был вызван
+      executeCancelCallback();
+    };
+    
+    // Удаляем существующие обработчики события hidden.bs.modal
+    modalEl.removeEventListener('hidden.bs.modal', handleHidden);
+    
+    // Добавляем новый обработчик
+    modalEl.addEventListener('hidden.bs.modal', handleHidden);
+    
+    // Показываем модальное окно, используя Bootstrap API
+    try {
+      // Пытаемся получить существующий экземпляр модального окна
+      let bootstrapModal = null;
+      
       if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
-        // Пытаемся получить существующий экземпляр
+        // Проверяем, существует ли уже экземпляр для этого элемента
         try {
-          modal = bootstrap.Modal.getInstance(modalEl);
+          bootstrapModal = bootstrap.Modal.getInstance(modalEl);
+          
+          // Если существует, используем его
+          if (bootstrapModal) {
+            console.log('Используем существующий экземпляр модального окна');
+          } else {
+            // Иначе создаем новый
+            console.log('Создаем новый экземпляр модального окна');
+            bootstrapModal = new bootstrap.Modal(modalEl, {
+              backdrop: true,
+              keyboard: true,
+              focus: true
+            });
+          }
+          
+          // Показываем модальное окно
+          bootstrapModal.show();
         } catch (err) {
-          console.log('Экземпляр модального окна не найден, создаём новый');
+          console.error('Ошибка при показе модального окна через Bootstrap API', err);
+          executeCancelCallback();
         }
-        
-        // Если экземпляр не найден, создаем новый
-        if (!modal) {
-          modal = new bootstrap.Modal(modalEl);
-        }
-        
-        // Показываем модальное окно через Bootstrap API
-        modal.show();
       } else {
-        // Ручное отображение модального окна, если Bootstrap недоступен
-        modalEl.classList.add('show');
-        modalEl.style.display = 'block';
-        document.body.classList.add('modal-open');
+        console.error('Bootstrap Modal не найден, невозможно показать модальное окно');
+        executeCancelCallback();
       }
     } catch (e) {
-      console.error('Ошибка при инициализации модального окна:', e);
-      // В случае ошибки используем нативный confirm
-      if (confirm(message || 'В форме есть несохраненные изменения. Вы уверены, что хотите закрыть её без сохранения?')) {
-        if (typeof confirmCallback === 'function') {
-          confirmCallback();
-        }
-      } else {
-        if (typeof cancelCallback === 'function') {
-          cancelCallback();
-        }
-      }
+      console.error('Критическая ошибка при работе с модальным окном:', e);
+      executeCancelCallback();
     }
     
     return true;
@@ -1209,66 +1194,52 @@ function hideUnsavedChangesModal() {
     const modalEl = document.getElementById(modalId);
     
     if (!modalEl) {
-      console.log('Модальное окно несохраненных изменений не найдено для закрытия');
+      console.warn(`Модальное окно с ID ${modalId} не найдено для закрытия`);
       return;
     }
     
-    // Проверяем, отображается ли модальное окно
-    const isVisible = modalEl.classList.contains('show') || modalEl.style.display === 'block';
-    if (!isVisible) {
-      console.log('Модальное окно уже закрыто или удалено');
-      return;
-    }
-    
-    // Пытаемся закрыть через Bootstrap API если доступно
+    // Пытаемся закрыть через Bootstrap API
     if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
       try {
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) {
-          modal.hide();
+        const bootstrapModal = bootstrap.Modal.getInstance(modalEl);
+        
+        if (bootstrapModal) {
+          bootstrapModal.hide();
           return;
         }
       } catch (err) {
-        console.log('Не удалось получить экземпляр модального окна, используем ручное закрытие');
+        console.warn('Ошибка при получении экземпляра модального окна:', err);
       }
     }
     
-    // Ручное закрытие модального окна, если Bootstrap API недоступно или не сработало
-    modalEl.classList.remove('show');
-    modalEl.style.display = 'none';
-    modalEl.setAttribute('aria-hidden', 'true');
-    
-    // Очищаем стили body
-    document.body.classList.remove('modal-open');
-    document.body.style.paddingRight = '';
-    document.body.style.overflow = '';
-    
-    // Удаляем backdrop элементы
-    const backdrops = document.querySelectorAll('.modal-backdrop');
-    backdrops.forEach(backdrop => {
-      if (backdrop && backdrop.parentNode) {
-        backdrop.parentNode.removeChild(backdrop);
-      }
-    });
-    
-    // Генерируем событие hidden.bs.modal для запуска обработчиков
+    // Запасной вариант: вручную скрываем модальное окно
     try {
-      const event = new Event('hidden.bs.modal');
-      modalEl.dispatchEvent(event);
+      modalEl.classList.remove('show');
+      modalEl.style.display = 'none';
+      modalEl.setAttribute('aria-hidden', 'true');
     } catch (err) {
-      console.log('Не удалось сгенерировать событие hidden.bs.modal');
+      console.warn('Ошибка при ручном скрытии модального окна:', err);
     }
     
-    console.log('Модальное окно несохраненных изменений закрыто');
+    // Удаляем .modal-backdrop и очищаем стили body
+    try {
+      // Очищаем стили body
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('padding-right');
+      
+      // Удаляем backdrop
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => {
+        if (backdrop && backdrop.parentNode) {
+          backdrop.parentNode.removeChild(backdrop);
+        }
+      });
+    } catch (err) {
+      console.warn('Ошибка при очистке DOM после закрытия модального окна:', err);
+    }
   } catch (e) {
-    console.error('Ошибка при закрытии модального окна несохраненных изменений:', e);
-    
-    // В случае ошибки используем общую очистку модальных окон
-    try {
-      cleanupModals();
-    } catch (err) {
-      console.error('Не удалось выполнить cleanupModals:', err);
-    }
+    console.error('Критическая ошибка при закрытии модального окна:', e);
   }
 }
 
