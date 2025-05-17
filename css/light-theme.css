@@ -241,6 +241,58 @@ body {
   color: var(--primary-color);
 }
 
+/* Сайдбар */
+.sidebar {
+  background-color: var(--secondary-color);
+  box-shadow: inset -5px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar .nav-link {
+  color: rgba(255, 255, 255, 0.8);
+  transition: all var(--transition-fast);
+}
+
+.sidebar .nav-link:hover {
+  color: var(--text-light);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+  color: var(--text-light);
+  background-color: rgba(255, 255, 255, 0.15);
+  border-left: 3px solid var(--primary-color);
+}
+
+.sidebar .star-icon {
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+.sidebar-category > .nav-link {
+  color: var(--text-light);
+  background-color: rgba(0, 0, 0, 0.2);
+  border-left: 3px solid transparent;
+}
+
+.sidebar-category > .nav-link:hover,
+.sidebar-category > .nav-link[aria-expanded="true"] {
+  border-left: 3px solid var(--primary-color);
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-category > .collapse {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .collapse .nav-link {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sidebar .collapse .nav-link:hover {
+  color: var(--text-light);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Вкладки */
 .nav-tabs {
   border-bottom: none;

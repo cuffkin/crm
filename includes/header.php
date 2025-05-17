@@ -6,6 +6,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ProrabCRM - система управления строительной компанией">
   <?php if (isset($_SESSION['user_id'])): ?>
   <meta name="user-id" content="<?= $_SESSION['user_id'] ?>">
   <?php endif; ?>
@@ -18,8 +19,14 @@
   <link rel="stylesheet" href="/crm/css/style.css">
   <!-- Улучшенный визуальный стиль -->
   <link rel="stylesheet" href="/crm/css/enhanced-style.css">
+  <!-- jQuery - перемещено из footer для правильной инициализации -->
+  <script src="/crm/assets/jquery-3.3.1/jquery.min.js"></script>
   <!-- Скрипт переключения тем -->
   <script src="/crm/js/theme-switcher.js"></script>
+  <!-- Добавляем файл sidebar.css -->
+  <link rel="stylesheet" href="/crm/css/sidebar.css">
+  <!-- JavaScript для сайдбара -->
+  <script src="/crm/js/sidebar.js"></script>
 </head>
 <body class="light-theme">
   <!-- Основной navbar -->

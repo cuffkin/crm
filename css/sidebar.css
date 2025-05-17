@@ -1,0 +1,184 @@
+/* Стили для сайдбара CRM системы */
+
+/* Оверлей для закрытия сайдбара при клике вне */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 998;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Активный оверлей виден */
+.sidebar-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+/* Основные стили сайдбара */
+.sidebar {
+  position: fixed;
+  left: -300px; /* Начальное положение - за пределами экрана */
+  top: 0;
+  height: 100%;
+  width: 280px;
+  background-color: #1e2f45;
+  z-index: 999;
+  transition: left 0.3s ease;
+  overflow-y: auto;
+  box-shadow: 3px 0 10px rgba(0,0,0,0.2);
+  padding: 20px 0;
+}
+
+/* Открытый сайдбар */
+.sidebar.open {
+  left: 0;
+}
+
+/* Состояние тела документа при открытом сайдбаре */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+/* Категории в сайдбаре */
+.sidebar-category > a {
+  font-weight: bold !important;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Стили для ссылок в сайдбаре */
+.sidebar .nav-link {
+  color: rgba(255,255,255,0.8);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.sidebar .nav-link:hover {
+  color: #fff;
+  background-color: rgba(255,255,255,0.1);
+}
+
+/* Иконки в сайдбаре */
+.sidebar .nav-link i:first-child {
+  width: 24px;
+  margin-right: 12px;
+}
+
+/* Звездочки для избранного */
+.sidebar .star-icon {
+  margin-left: auto;
+  opacity: 0.3;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.sidebar .nav-link.favorite .star-icon,
+.sidebar .star-icon.active {
+  opacity: 1;
+  color: #ffc107 !important; /* Золотой цвет для активных звездочек */
+}
+
+.sidebar .nav-link:hover .star-icon {
+  opacity: 0.8;
+}
+
+/* Стили для подменю */
+.sidebar .submenu {
+  display: none;
+  background-color: rgba(0,0,0,0.15);
+  padding-left: 15px;
+  margin-top: 5px;
+}
+
+.sidebar .submenu.open {
+  display: block;
+}
+
+/* Индикатор сворачивания/разворачивания */
+.sidebar .fa-chevron-down {
+  transition: transform 0.3s;
+  margin-left: auto;
+}
+
+.sidebar .nav-link[aria-expanded="true"] .fa-chevron-down {
+  transform: rotate(180deg);
+}
+
+/* Медиа-запрос для адаптивности */
+@media (max-width: 992px) {
+  .sidebar {
+    width: 260px;
+    left: -260px;
+  }
+}
+
+/* Дополнительные стили для отладки */
+#sidebar-toggle {
+  position: relative;
+  z-index: 1000;
+}
+
+/* Явное указание преимущества для различных состояний */
+.sidebar.open {
+  left: 0 !important;
+}
+
+/* Стилизация скроллбара */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(108, 117, 125, 0.3);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(108, 117, 125, 0.5);
+}
+
+/* Кнопка Настройки в сайдбаре */
+/* УДАЛЕНО */
+
+/* Стилизация модального окна настроек */
+/* УДАЛЕНО */
+
+/* Кнопка Настройки в сайдбаре */
+.sidebar .nav-item.mt-4 .nav-link {
+  border-top: 1px solid rgba(255,255,255,0.15);
+  margin-top: 18px;
+  padding-top: 16px;
+  font-weight: 500;
+  color: #fff;
+  background: rgba(0,0,0,0.08);
+  transition: background 0.2s;
+}
+.sidebar .nav-item.mt-4 .nav-link:hover {
+  background: rgba(255,255,255,0.08);
+  color: #ffc107;
+}
+
+/* Стилизация модального окна настроек */
+#settingsModal .modal-content {
+  border-radius: 12px;
+  box-shadow: 0 6px 32px rgba(30,47,69,0.18);
+}
+#settingsModal .modal-header {
+  border-bottom: 1px solid #e9ecef;
+}
+#settingsModal .modal-footer {
+  border-top: 1px solid #e9ecef;
+}
+#settingsModal .btn-outline-danger {
+  font-weight: 600;
+} 

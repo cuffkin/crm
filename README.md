@@ -1,6 +1,6 @@
-# ⚠️ **ВАЖНО**: ПЕРЕД ЛЮБЫМИ ДЕЙСТВИЯМИ С КОДОМ ОБЯЗАТЕЛЬНО ПРОЧИТАТЬ И ПОЛНОСТЬЮ ПОЙМЭТЬ ЭТОТ README.MD. ВСЕ ИЗМЕНЕНИЯ ДОПУСКАЮТСЯ ТОЛЬКО ПОСЛЕ ПОЛНОГО АНАЛИЗА.
+# ⚠️ **ВАЖНО**: ПЕРЕД ЛЮБЫМИ ДЕЙСТВИЯМИ С КОДОМ ОБЯЗАТЕЛЬНО ПРОЧИТАТЬ И ПОЛНОСТЬЮ ПОНЯТЬ ЭТОТ README.MD. ВСЕ ИЗМЕНЕНИЯ ДОПУСКАЮТСЯ ТОЛЬКО ПОСЛЕ ПОЛНОГО АНАЛИЗА.
 
-# **ДИСКЛЕЙМЕР:** Этот файл необходимо прочесть полностью для корректной работы ИИ с проектом.
+# **ДИСКЛЕЙМЕР:** Этот файл необходимо прочесть полностью для корректной работы с проектом.
 
 **Ключевые файлы для анализа:**
 - `index.php`
@@ -11,6 +11,8 @@
 - `includes/session-manager.php`
 - `includes/related_documents.php`
 - `js/app.js`
+- `js/common.js`
+- `js/modal.js`
 - `prorabCRM_DB.sql`
 - `modules/` (все подпапки)
 
@@ -21,11 +23,11 @@
 ## Структура директорий
 
 - **modules/** — серверные модули (production, finances, purchases, sales и т. д.), реализующие бизнес-логику
-- **includes/** — вспомогательные PHP-скрипты: шаблоны `header.php`, `footer.php`, управление сессиями, общие функции
+- **includes/** — вспомогательные PHP-скрипты: шаблоны `header.php`, `footer.php`, `sidebar.php`, управление сессиями, общие функции
 - **config/** — файлы конфигурации: подключение к базе данных (`db.php`), настройки сессии (`session.php`)
-- **js/** — клиентская логика SPA: `app.js`, `session-status.js` и `theme-switcher.js`
-- **css/** — стили проекта: `style.css`, `enhanced-style.css`
-- **assets/** — сторонние библиотеки: Bootstrap, jQuery, Font Awesome и прочие ресурсы
+- **js/** — клиентская логика SPA: `app.js`, `common.js`, `modal.js`, `session-status.js`, `theme-switcher.js`, `tab-manager.js`, `notification-handler.js` и `animations.js`
+- **css/** — стили проекта: `style.css`, `enhanced-style.css`, `notification-handler.css`
+- **assets/** — сторонние библиотеки: Bootstrap 5.3.3, jQuery, Font Awesome и прочие ресурсы
 - **vendor/** — зависимости (Composer), автозагрузчик (если используется)
 - **public/** — публичная папка для статики (при наличии)
 - **index.php**, **login.php**, **logout.php**, **ping.php**, **save_form_state.php** — основные точки входа сервера
@@ -42,7 +44,7 @@
 
 - **index.php**
   - Проверяет наличие `$_SESSION['user_id']` и перенаправляет на страницу входа
-  - Подключает шаблоны `header.php` и `footer.php`
+  - Подключает шаблоны `header.php`, `sidebar.php` и `footer.php`
   - Формирует навигацию через атрибут `data-module` для динамической загрузки SPA-модулей
 - **login.php** и **logout.php**
   - Обрабатывают аутентификацию пользователя и выход из системы
@@ -60,16 +62,29 @@
   - Автосохранение форм каждые 15 секунд и синхронизация с сервером каждые 45 секунд
   - Восстановление состояния вкладок и форм из `localStorage`
   - Управление уведомлениями при закрытии вкладок и контроль пользовательского опыта
+- **js/common.js**
+  - Определяет глобальные функции и переменные, используемые в других скриптах
+  - Содержит функцию `openNewTab` для альтернативного способа открытия вкладок
+- **js/modal.js**
+  - Реализует функциональность модальных окон и диалогов
+  - Содержит функции для патчинга Bootstrap модалей и подтверждений
 - **js/session-status.js**
   - Отображение статуса текущей сессии и времени последнего синхрона
 - **js/theme-switcher.js**
   - Переключатель темы (светлая/тёмная) с сохранением в `localStorage`
+- **js/tab-manager.js**
+  - Дополнительное управление вкладками в SPA интерфейсе
+- **js/notification-handler.js**
+  - Система уведомлений и оповещений для пользователя
+- **js/animations.js**
+  - Анимации и визуальные эффекты для улучшения пользовательского опыта
 
 ## Стили
 
 - **css/style.css** — базовые стили интерфейса
 - **css/enhanced-style.css** — дополнительные стили для улучшенного визуала
-- **Bootstrap 5** — сетка, компоненты и утилиты; файлы в `assets/bootstrap-5.3.3-dist`
+- **css/notification-handler.css** — стили для системы уведомлений
+- **Bootstrap 5.3.3** — сетка, компоненты и утилиты; файлы в `assets/bootstrap-5.3.3-dist`
 - **Font Awesome** — иконки (CDN)
 
 ## Управление сессиями
@@ -125,22 +140,26 @@
 - **production/operations/** — операции производства.
 - **finances/** — финансовые операции и кассы.
 - **drivers/** — водители.
-- **loaders/** — грузчики
+- **loaders/** — грузчики.
+- **corrections/inventory/** — инвентаризация и корректировки.
 
 ## Структура базы данных
 
 В проекте используется набор таблиц для хранения данных по модулям:
 
-- **Пользователи и сессии**: `PCRM_User`, `PCRM_UserSession`
+- **Пользователи и сессии**: `PCRM_User`, `PCRM_UserSession`, `PCRM_FormState`
 - **Заказы**: `PCRM_Order`, `PCRM_OrderItem`, `PCRM_OrderHistory`
 - **Отгрузки**: `PCRM_ShipmentHeader`, `PCRM_Shipments`
-- **Возвраты**: `PCRM_ReturnHeader`, `PCRM_ReturnItem`, `PCRM_InboundReturns`, `PCRM_SupplierReturnHeader`, `PCRM_SupplierReturnItem`
-- **Приёмки и закупки**: `PCRM_ReceiptHeader`, `PCRM_ReceiptItem`, `PCRM_PurchaseOrder`, `PCRM_PurchaseOrderItem`, `PCRM_InboundOperations`
+- **Возвраты**: `PCRM_ReturnHeader`, `PCRM_ReturnItem`, `PCRM_InboundReturns`, `PCRM_SupplierReturnHeader`, `PCRM_SupplierReturnItem`, `PCRM_OutboundReturns`
+- **Приёмки и закупки**: `PCRM_ReceiptHeader`, `PCRM_ReceiptItem`, `PCRM_PurchaseOrder`, `PCRM_PurchaseOrderItem`, `PCRM_InboundOperations`, `PCRM_OutboundOperations`
 - **Корректировки и инвентаризация**: `PCRM_Adjustments`
 - **Финансы**: `PCRM_FinancialTransaction`, `PCRM_CashRegister`, `PCRM_PaymentMethodDetails`
 - **Товары и склады**: `PCRM_Product`, `PCRM_ProductImages`, `PCRM_Categories`, `PCRM_Warehouse`, `PCRM_Stock`, `PCRM_Transfers`
 - **Производство**: `PCRM_ProductionRecipe`, `PCRM_ProductionRecipeItem`, `PCRM_ProductionOrder`, `PCRM_ProductionOperation`, `PCRM_ProductionOperationItem`
 - **Связанные документы**: `PCRM_RelatedDocuments`, `PCRM_DocumentRelation`
+- **Аналитика**: `PCRM_AnalyticsDashboard`
+- **Организация**: `PCRM_Organization`
+- **Обучение**: `PCRM_TrainingMaterial`
 
 ## Вспомогательные скрипты и API
 

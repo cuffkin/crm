@@ -6,6 +6,9 @@
 /* Подключаем текущую тему - динамически изменяется JS-скриптом */
 @import url('light-theme.css');
 
+/* Подключаем стили сайдбара */
+@import url('sidebar.css');
+
 /* Базовые стили */
 * {
   box-sizing: border-box;
@@ -410,7 +413,8 @@ input:checked + .theme-slider .theme-icon-dark {
   padding: 0.6rem 1rem;
   box-shadow: var(--shadow-md);
   transition: background-color 0.3s ease;
-  z-index: 1030;
+  z-index: 1050;
+  position: relative;
 }
 
 .navbar-brand {
@@ -420,6 +424,8 @@ input:checked + .theme-slider .theme-icon-dark {
   padding: 0.4rem 0;
   display: flex;
   align-items: center;
+  position: relative;
+  z-index: 1060;
 }
 
 .navbar-brand i {
@@ -943,114 +949,10 @@ textarea.form-control {
   }
 }
 
-/* Sidebar and Favorites */
-.sidebar {
-  position: fixed;
-  top: 56px; /* высота основного navbar */
-  left: -280px; /* ширина sidebar задается отрицательной */
-  width: 280px;
-  height: auto;
-  max-height: calc(100vh - 56px);
-  background-color: #002d5a;
-  color: #fff;
-  overflow-y: auto;
-  transform: translateX(0);
-  transition: transform 0.3s ease;
-  z-index: 1100;
-}
-.sidebar.open {
-  transform: translateX(280px);
-}
-.sidebar .nav-link {
-  color: #fff;
-  padding: 0.75rem 1rem;
-}
-.sidebar .nav-link.favorite {
-  background-color: rgba(255,255,255,0.1);
-}
-.sidebar .star-icon {
-  color: #ccc;
-  cursor: pointer;
-}
-.sidebar .nav-link.favorite .star-icon {
-  color: gold;
-}
-#sidebar-toggle {
-  position: static !important;
-  margin-right: 1rem;
-  z-index: auto;
-  border: none;
-  transition: background-color 0.2s ease;
-  height: 38px;
-  width: 38px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#crm-tabs {
-  display: flex !important;
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 1rem;
-  padding-left: 1rem;
-}
-#favorite-tabs {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-#favorite-tabs button {
-  background: transparent;
-  border: none;
-  padding: 0.2rem;
-  cursor: pointer;
-  text-decoration: none !important;
-  position: relative;
-  z-index: 100;
-  min-height: 30px;
-  pointer-events: auto !important;
-}
-#favorite-tabs button i {
-  font-size: 1rem;
-  pointer-events: auto !important;
-}
-#favorite-tabs button span {
-  line-height: 1rem;
-  pointer-events: auto !important;
-}
-#favorite-tabs button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: #fff !important;
-  opacity: 0.9;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-#favorite-tabs button:hover i {
-  color: gold;
-  text-decoration: none;
-}
-#favorite-tabs button:hover {
-  opacity: 1;
-  transform: translateY(-1px);
-}
-
-/* Скрывать кнопку сайдбара при открытом меню */
-.sidebar.open + #sidebar-toggle {
-  display: none;
-}
-
-/* Отключаем стандартную анимацию поднятия для кнопки сайдбара */
-#sidebar-toggle:hover {
-  transform: none;
-  box-shadow: none;
-}
-
 /* Исправление отображения выпадающих меню */
 .dropdown-menu {
-  z-index: 99999 !important; /* Очень высокий z-index, чтобы меню всегда было поверх всего */
-  position: fixed !important; /* Используем fixed вместо absolute для преодоления проблем с родительскими контейнерами */
+  z-index: 99999 !important;
+  position: fixed !important;
 }
 
 /* Стили для выпадающих меню в кнопках действий */
@@ -1071,7 +973,7 @@ textarea.form-control {
 .table,
 .table-bordered,
 .table-sm {
-  overflow: visible !important; /* Позволяет выпадающим меню выходить за границы */
+  overflow: visible !important;
 }
 
 /* Добавляем отступы для выпадающих меню, чтобы они были лучше видны */
@@ -1102,4 +1004,33 @@ textarea[data-user-modified="true"] {
 
 #unsavedChangesModal .modal-footer {
   border-top: none;
+}
+
+/* Стили для избранных вкладок в верхней панели */
+#favorite-tabs button.btn-link {
+  text-decoration: none; /* Убираем подчеркивание */
+  margin-right: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+#favorite-tabs button.btn-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+#favorite-tabs .fa-star {
+  color: #ffc107; /* Золотой цвет для звездочки */
+  font-size: 12px;
+  margin-right: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px; /* Небольшая корректировка по вертикали */
+}
+
+/* Стили для звездочек в сайдбаре */
+.sidebar .nav-link.favorite .star-icon {
+  opacity: 1;
+  color: #ffc107; /* Золотой цвет для активных звездочек */
 }

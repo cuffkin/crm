@@ -1,5 +1,14 @@
 // /crm/js/app.js
 
+// Инициализация глобального объекта для хранения данных форм
+window.globalFormsData = {
+  forms: {},
+  lastSaveTime: null
+};
+
+// Инициализация коллекции для хранения информации об открытых вкладках
+window.openOrderTabs = new Map();
+
 // Проверяем, загружен ли modal.js и его функции
 (function() {
   console.log('Инициализация app.js, проверка доступности функций из modal.js');
@@ -212,31 +221,21 @@ $(function() {
   // Проверяем наличие сохраненной сессии после загрузки страницы
   $(document).ready(function() {
     // Очищаем все модальные окна при загрузке страницы
-    window.cleanupModals();
+    if (typeof window.cleanupModals === 'function') {
+      window.cleanupModals();
+    }
     
-    // Обработчик на все модальные окна при закрытии
-    $(document).on('hidden.bs.modal', '.modal', function(e) {
-      // Предотвращаем повторные вызовы для одного и того же элемента
-      if (e.target !== this) return;
-      
-      const modalId = e.target.id;
-      console.log(`Модальное окно ${modalId} закрыто, выполняю отложенную очистку`);
-      
-      // Откладываем очистку, чтобы дать Bootstrap завершить свои процессы
-      setTimeout(function() {
-        try {
-          window.cleanupModals();
-        } catch (err) {
-          console.warn('Ошибка при очистке модальных окон после закрытия:', err);
-        }
-      }, 300);
-    });
+    console.log('Документ загружен, ожидаем инициализацию Bootstrap...');
     
+    // Проверка доступности Bootstrap выполняется в footer.php
+    // Там же будет вызвана функция restoreUserSession после загрузки Bootstrap
+    
+    // Инициализируем индикаторы вкладок с небольшой задержкой
     setTimeout(function() {
-      restoreUserSession();
-      // Инициализируем индикаторы вкладок
-      initTabIndicators();
-    }, 1000);
+      if (typeof initTabIndicators === 'function') {
+        initTabIndicators();
+      }
+    }, 1500);
   });
   
   // Добавляем обработчик для события перед закрытием страницы
@@ -285,12 +284,38 @@ $(function() {
 
   // Запускаем отладку через секунду после загрузки
   setTimeout(debugElements, 1000);
+
+  // === НАСТРОЙКИ: обработчики ===
+  // Открытие модального окна по клику на кнопку
+  // УДАЛЕНО
+
+  // Смена размера шрифта
+  // УДАЛЕНО
+  // Восстановление размера шрифта при загрузке
+  // УДАЛЕНО
+
+  // Смена темы
+  // УДАЛЕНО
+  // Восстановление темы при загрузке
+  // УДАЛЕНО
+
+  // Выйти из аккаунта
+  // УДАЛЕНО
+
+  // Удалить весь контент (кроме аккаунтов)
+  // УДАЛЕНО
 });
 
 // Функция для открытия модуля в новой вкладке
 function openModuleTab(modulePath) {
   // Отладочная информация
   console.log('Opening module:', modulePath);
+  
+  // Проверка на undefined или null
+  if (!modulePath) {
+    console.error('Ошибка: modulePath не определен');
+    return;
+  }
   
   let safePath = modulePath.replace(/\//g, '-');
 
@@ -1273,103 +1298,86 @@ function printReturn(returnId) {
 
 // Получение заголовка модуля
 function getModuleTitle(path) {
-  // Убираем _partial.php и _partial из путей для правильного сопоставления
-  let cleanPath = path;
-  if (cleanPath.endsWith('_partial.php')) {
-    cleanPath = cleanPath.substring(0, cleanPath.length - 12); // Длина "_partial.php"
-  } else if (cleanPath.endsWith('_partial')) {
-    cleanPath = cleanPath.substring(0, cleanPath.length - 8); // Длина "_partial"
-  }
+  // Если путь не определен, возвращаем безопасное значение
+  if (!path) return 'Неизвестный модуль';
   
-  console.log('Getting title for path:', path, ', clean path:', cleanPath);
+  console.log('Getting title for module path:', path);
   
-  switch (path) {
+  // Карта соответствия путей и заголовков
+  const moduleTitles = {
+    // Основные модули
+    'users/list': 'Пользователи',
+    'access/list': 'Управление доступом',
+    'finances/list': 'Финансы',
+    
     // Продажи
-    case 'sales/orders/list':     return 'Заказы покупателей';
-    case 'shipments/list':        return 'Отгрузки';
-    case 'sales/returns/list':    return 'Возврат покупателя';
-
+    'sales/orders/list': 'Заказы клиентов',
+    'shipments/list': 'Отгрузки',
+    'sales/returns/list': 'Возвраты покупателей',
+    
     // Закупки
-    case 'purchases/orders/list':   return 'Заказ поставщику';
-    case 'purchases/receipts/list': return 'Приёмки';
-    case 'purchases/returns/list':  return 'Возврат поставщику';
-
-    // Корректировки
-    case 'corrections/inventory/list':       return 'Инвентаризация';
-    case 'corrections/appropriations/list':  return 'Оприходование';
-    case 'corrections/writeoff/list':        return 'Списание';
-
-    // Прочие
-    case 'users/list':       return 'Пользователи';
-    case 'access/list':      return 'Управление доступом';
-    case 'counterparty/list':return 'Контрагенты';
-    case 'finances/list':    return 'Финансовые операции';
-    case 'automations/list': return 'Автоматизации';
-
+    'purchases/orders/list': 'Заказы поставщикам',
+    'purchases/receipts/list': 'Приёмки',
+    'purchases/returns/list': 'Возвраты поставщикам',
+    
     // Товары
-    case 'products/list':    return 'Список товаров';
-    case 'categories/list':  return 'Категории';
-    case 'warehouse/list':   return 'Склады';
-    case 'stock/list':       return 'Остатки';
-
+    'products/list': 'Товары',
+    'categories/list': 'Категории',
+    'measurements/list': 'Единицы измерения',
+    'warehouse/list': 'Склады',
+    'stock/list': 'Остатки',
+    
     // Производство
-    case 'production/recipes/list_partial.php':   return 'Рецепты производства';
-    case 'production/operations/list_partial.php': return 'Операции производства';
-    case 'production/orders/list_partial.php':     return 'Заказы на производство';
+    'production/recipes/list': 'Рецепты производства',
+    'production/orders/list': 'Заказы на производство',
+    'production/operations/list': 'Операции производства',
     
-    // Аналогичные пути без .php
-    case 'production/recipes/list_partial':   return 'Рецепты производства';
-    case 'production/operations/list_partial': return 'Операции производства';
-    case 'production/orders/list_partial':     return 'Заказы на производство';
-    
-    // Чистые пути для производства без суффиксов
-    case 'production/recipes/list':   return 'Рецепты производства';
-    case 'production/operations/list': return 'Операции производства';
-    case 'production/orders/list':     return 'Заказы на производство';
-
     // Справочники
-    case 'loaders/list':     return 'Грузчики';
-    case 'drivers/list':     return 'Водители';
-
-    default:
-      // Попробуем использовать очищенный путь если основной не подошел
-      switch (cleanPath) {
-        // Продажи
-        case 'sales/orders/list':     return 'Заказы покупателей';
-        case 'shipments/list':        return 'Отгрузки';
-        case 'sales/returns/list':    return 'Возврат покупателя';
-
-        // Закупки
-        case 'purchases/orders/list':   return 'Заказ поставщику';
-        case 'purchases/receipts/list': return 'Приёмки';
-        case 'purchases/returns/list':  return 'Возврат поставщику';
-
-        // Прочие
-        case 'users/list':       return 'Пользователи';
-        case 'access/list':      return 'Управление доступом';
-        case 'counterparty/list':return 'Контрагенты';
-        case 'finances/list':    return 'Финансовые операции';
-
-        // Товары
-        case 'products/list':    return 'Список товаров';
-        case 'categories/list':  return 'Категории';
-        case 'warehouse/list':   return 'Склады';
-        case 'stock/list':       return 'Остатки';
-
-        // Производство
-        case 'production/recipes/list':   return 'Рецепты производства';
-        case 'production/operations/list': return 'Операции производства';
-        case 'production/orders/list':     return 'Заказы на производство';
-
-        // Справочники
-        case 'loaders/list':     return 'Грузчики';
-        case 'drivers/list':     return 'Водители';
-        
-        default:
-          return path; // fallback to original path
-      }
-      return path; // fallback
+    'counterparty/list': 'Контрагенты',
+    'drivers/list': 'Водители',
+    'loaders/list': 'Грузчики',
+    
+    // Специальные страницы
+    'products/edit': 'Редактирование товара',
+    'measurements/edit': 'Редактирование единицы измерения'
+  };
+  
+  // Проверяем, есть ли путь в списке известных
+  if (moduleTitles[path]) {
+    return moduleTitles[path];
   }
+  
+  // Если путь не найден напрямую, пробуем разобрать его
+  const pathParts = path.split('/');
+  const lastPart = pathParts[pathParts.length - 1];
+  const secondLastPart = pathParts.length > 1 ? pathParts[pathParts.length - 2] : '';
+  
+  // Формируем заголовок на основе пути
+  if (path.includes('edit')) {
+    // Для страниц редактирования
+    if (secondLastPart === 'measurements') {
+      return lastPart === 'edit_partial' ? 'Редактирование ЕИ' : 'Единица измерения';
+    } else if (secondLastPart === 'products') {
+      return lastPart === 'edit_partial' ? 'Редактирование товара' : 'Товар';
+    } else {
+      return 'Редактирование';
+    }
+  } else if (lastPart === 'list') {
+    // Для списков модулей
+    if (secondLastPart === 'measurements') {
+      return 'Единицы измерения';
+    } else if (secondLastPart === 'products') {
+      return 'Товары';
+    } else {
+      // Формируем название из последней значимой части пути
+      const baseModuleName = secondLastPart || pathParts[0] || 'Модуль';
+      return baseModuleName.charAt(0).toUpperCase() + baseModuleName.slice(1);
+    }
+  }
+  
+  // Для неизвестных путей возвращаем путь как заголовок
+  console.log('Unknown module path:', path);
+  return path.split('/').pop() || 'Модуль';
 }
 
 // ======== ФУНКЦИИ ДЛЯ РАБОТЫ СО СВЯЗАННЫМИ ДОКУМЕНТАМИ ========
@@ -1828,17 +1836,342 @@ function getUserId() {
   return null;
 }
 
+// Глобальная переменная для отслеживания попыток восстановления сессии
+window.sessionRestoreAttempts = 0;
+window.maxSessionRestoreAttempts = 5;
+
+// Функция для отображения диалога восстановления сессии
+function showSessionRestoreDialog(tabs) {
+  console.log('%c[SESSION_RESTORE] Попытка показать диалог восстановления', 'background: #ffa500; color: white; padding: 2px 5px;');
+  console.log('[SESSION_RESTORE] Количество вкладок:', tabs.length);
+  console.log('[SESSION_RESTORE] Bootstrap доступен:', typeof bootstrap !== 'undefined');
+  console.log('[SESSION_RESTORE] Bootstrap.Modal доступен:', typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined');
+  
+  // Сначала очищаем все модальные окна
+  if (typeof window.cleanupModals === 'function') {
+    window.cleanupModals();
+  }
+  
+  // Удаляем существующий диалог восстановления сессии, если он есть
+  let oldDialog = document.getElementById('sessionRestoreModal');
+  if (oldDialog && oldDialog.parentNode) {
+    oldDialog.parentNode.removeChild(oldDialog);
+  }
+  
+  try {
+    // Создаем список вкладок для отображения
+    let tabsList = '';
+    tabs.forEach(function(tab) {
+      tabsList += `<li>${tab.title || 'Неизвестная вкладка'}</li>`;
+    });
+    
+    // Создаем модальное окно средствами Bootstrap
+    const modalHTML = `
+      <div class="modal fade" id="sessionRestoreModal" tabindex="-1" aria-labelledby="sessionRestoreModalLabel" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="sessionRestoreModalLabel">
+                <i class="fas fa-sync-alt text-primary me-2"></i>Восстановление сессии
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Обнаружена предыдущая сессия с открытыми вкладками (${tabs.length}).
+              </div>
+              <p>Открытые вкладки:</p>
+              <ul>${tabsList}</ul>
+              <p>Хотите продолжить предыдущую сессию или начать новую?</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" id="newSessionBtn">Начать новую</button>
+              <button type="button" class="btn btn-primary" id="restoreSessionBtn">
+                <i class="fas fa-sync me-2"></i>Продолжить предыдущую
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    console.log('[SESSION_RESTORE] HTML модального окна подготовлен, добавляем в DOM');
+    
+    // Добавляем модальное окно в DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Получаем ссылки на элементы
+    const modalEl = document.getElementById('sessionRestoreModal');
+    if (!modalEl) {
+      console.error('[SESSION_RESTORE] Не удалось найти созданное модальное окно в DOM!');
+      throw new Error('Модальное окно не найдено после добавления в DOM');
+    }
+    
+    console.log('[SESSION_RESTORE] Модальное окно успешно добавлено в DOM');
+    
+    const newSessionBtn = document.getElementById('newSessionBtn');
+    const restoreSessionBtn = document.getElementById('restoreSessionBtn');
+    const closeBtn = modalEl.querySelector('.btn-close');
+    
+    // Определение функций-обработчиков
+    // Функция для начала новой сессии
+    const startNewAction = function() {
+      console.log('[SESSION_RESTORE] Пользователь выбрал начать новую сессию');
+      
+      // Скрываем модальное окно
+      hideSessionRestoreModal();
+      
+      // Очищаем сохраненные вкладки для текущего пользователя
+      const userId = getUserId();
+      if (userId) {
+        // Очистка данных вкладок
+        localStorage.removeItem('user_tabs_' + userId);
+        
+        // Очистка данных форм - ищем все ключи localStorage и удаляем их
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(`form_state_${userId}_`)) {
+            localStorage.removeItem(key);
+          }
+        }
+        
+        // Очищаем глобальные данные форм
+        globalFormsData.forms = {};
+        
+        // Также отправляем запрос на сервер для очистки данных
+        $.ajax({
+          url: '/crm/save_form_state.php',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            action: 'clear',
+            user_id: userId
+          })
+        });
+      }
+    };
+    
+    // Функция для восстановления сессии
+    const restoreAction = function() {
+      console.log('[SESSION_RESTORE] Пользователь выбрал восстановить предыдущую сессию');
+      
+      // Скрываем модальное окно
+      hideSessionRestoreModal();
+      
+      // Восстанавливаем сохраненные вкладки
+      restoreSavedTabs(tabs);
+    };
+    
+    // Функция для скрытия модального окна
+    const hideSessionRestoreModal = function() {
+      try {
+        console.log('[SESSION_RESTORE] Попытка скрыть модальное окно');
+        
+        // Попытка скрыть модальное окно через Bootstrap API
+        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined' && modalEl) {
+          const bsModal = bootstrap.Modal.getInstance(modalEl);
+          if (bsModal) {
+            console.log('[SESSION_RESTORE] Найден экземпляр модального окна, закрываем');
+            bsModal.hide();
+          } else {
+            console.log('[SESSION_RESTORE] Экземпляр не найден, создаем новый и закрываем');
+            const newModal = new bootstrap.Modal(modalEl);
+            newModal.hide();
+          }
+        } else {
+          console.log('[SESSION_RESTORE] Bootstrap недоступен, закрываем модальное окно вручную');
+          // Резервный вариант: вручную скрываем и удаляем модальное окно
+          if (modalEl) {
+            modalEl.classList.remove('show');
+            modalEl.style.display = 'none';
+            
+            // Удаляем модальное окно из DOM после закрытия
+            setTimeout(function() {
+              if (modalEl && modalEl.parentNode) {
+                modalEl.parentNode.removeChild(modalEl);
+              }
+              
+              // Удаляем backdrop
+              const backdrops = document.querySelectorAll('.modal-backdrop');
+              backdrops.forEach(backdrop => {
+                if (backdrop && backdrop.parentNode) {
+                  backdrop.parentNode.removeChild(backdrop);
+                }
+              });
+              
+              // Очищаем стили body
+              document.body.classList.remove('modal-open');
+              document.body.style.removeProperty('overflow');
+              document.body.style.removeProperty('padding-right');
+            }, 300);
+          }
+        }
+      } catch (e) {
+        console.error('[SESSION_RESTORE] Ошибка при закрытии модального окна:', e);
+        
+        // В случае ошибки просто удаляем элемент
+        if (modalEl && modalEl.parentNode) {
+          modalEl.parentNode.removeChild(modalEl);
+        }
+        
+        // Вызываем очистку модальных окон
+        if (typeof window.cleanupModals === 'function') {
+          window.cleanupModals();
+        }
+      }
+    };
+    
+    // Назначаем обработчики событий
+    if (newSessionBtn) {
+      console.log('[SESSION_RESTORE] Назначаем обработчик для кнопки новой сессии');
+      newSessionBtn.addEventListener('click', startNewAction);
+    } else {
+      console.warn('[SESSION_RESTORE] Кнопка новой сессии не найдена!');
+    }
+    
+    if (restoreSessionBtn) {
+      console.log('[SESSION_RESTORE] Назначаем обработчик для кнопки восстановления сессии');
+      restoreSessionBtn.addEventListener('click', restoreAction);
+    } else {
+      console.warn('[SESSION_RESTORE] Кнопка восстановления сессии не найдена!');
+    }
+    
+    if (closeBtn) {
+      console.log('[SESSION_RESTORE] Назначаем обработчик для кнопки закрытия');
+      closeBtn.addEventListener('click', startNewAction); // По умолчанию закрытие = новая сессия
+    } else {
+      console.warn('[SESSION_RESTORE] Кнопка закрытия не найдена!');
+    }
+    
+    // Обработчик для клика по backdrop (за пределами модального окна)
+    modalEl.addEventListener('click', function(e) {
+      if (e.target === modalEl) {
+        startNewAction();
+      }
+    });
+    
+    // Показываем модальное окно
+    console.log('[SESSION_RESTORE] Попытка показать модальное окно через Bootstrap');
+    try {
+      if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+        // Явно проверяем наличие метода show в Modal
+        if (typeof bootstrap.Modal.prototype.show !== 'function') {
+          console.error('[SESSION_RESTORE] Bootstrap.Modal.prototype.show не является функцией!');
+          throw new Error('Метод show недоступен в bootstrap.Modal');
+        }
+        
+        // Создаем новый экземпляр модального окна с параметрами
+        const bsModal = new bootstrap.Modal(modalEl, {
+          backdrop: 'static',  // Статический backdrop (не закрывается по клику)
+          keyboard: false      // Отключаем закрытие по Esc
+        });
+        
+        // Сохраняем экземпляр в DOM для дальнейшего доступа
+        modalEl._bootstrapModal = bsModal;
+        
+        console.log('[SESSION_RESTORE] Вызываем метод show() для модального окна');
+        bsModal.show();
+        console.log('[SESSION_RESTORE] Метод show() успешно вызван');
+      } else {
+        console.warn('[SESSION_RESTORE] Bootstrap недоступен, показываем модальное окно вручную');
+        // Резервный вариант: вручную показываем модальное окно
+        modalEl.classList.add('fade');
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        document.body.classList.add('modal-open');
+        
+        // Создаем backdrop вручную
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        document.body.appendChild(backdrop);
+      }
+      console.log('[SESSION_RESTORE] Модальное окно должно быть показано');
+    } catch (e) {
+      console.error('[SESSION_RESTORE] Критическая ошибка при показе модального окна:', e);
+      // В случае ошибки, по умолчанию начинаем новую сессию
+      startNewAction();
+      
+      // Попробуем запустить показ тестового модального окна
+      setTimeout(function() {
+        console.log('[SESSION_RESTORE] Попытка показать тестовое модальное окно...');
+        if (typeof window.testModal === 'function') {
+          window.testModal();
+        }
+      }, 1000);
+    }
+  } catch (globalError) {
+    console.error('[SESSION_RESTORE] Глобальная ошибка в showSessionRestoreDialog:', globalError);
+    
+    // Прямой вызов тестовой функции для проверки работы Bootstrap Modal
+    setTimeout(function() {
+      if (typeof window.testModal === 'function') {
+        console.log('[SESSION_RESTORE] Пытаемся показать тестовое окно после ошибки');
+        window.testModal();
+      }
+    }, 1000);
+  }
+}
+
 // Функция для восстановления сессии пользователя
 function restoreUserSession() {
+  // Увеличиваем счетчик попыток
+  window.sessionRestoreAttempts++;
+  
+  console.log(`%c[SESSION_RESTORE] Попытка #${window.sessionRestoreAttempts} восстановления сессии`, 'background: #4CAF50; color: white; padding: 2px 5px;');
+  
   const userId = getUserId();
   if (!userId) {
-    console.error('Не удалось получить ID пользователя. Восстановление сессии невозможно.');
+    console.error('[SESSION_RESTORE] Не удалось получить ID пользователя. Восстановление сессии невозможно.');
     return;
   }
   
-  console.log('Восстановление сессии для пользователя:', userId);
+  console.log('[SESSION_RESTORE] Восстановление сессии для пользователя:', userId);
+  
+  // Проверяем, загружен ли Bootstrap полностью
+  if (typeof bootstrap === 'undefined' || typeof bootstrap.Modal === 'undefined') {
+    console.log('[SESSION_RESTORE] Bootstrap еще не загружен, откладываем восстановление сессии...');
+    
+    // Проверяем, не превышено ли максимальное количество попыток
+    if (window.sessionRestoreAttempts >= window.maxSessionRestoreAttempts) {
+      console.error('[SESSION_RESTORE] Превышено максимальное количество попыток восстановления сессии');
+      
+      // Принудительно создаем глобальный объект Bootstrap, если его нет
+      if (typeof bootstrap === 'undefined') {
+        console.log('[SESSION_RESTORE] Принудительно создаем глобальный объект Bootstrap');
+        window.bootstrap = {
+          Modal: function(element, options) {
+            this.element = element;
+            this.options = options;
+            this.show = function() {
+              console.log('[MOCK_BOOTSTRAP] Вызов show() для Modal');
+              element.style.display = 'block';
+              element.classList.add('show');
+              document.body.classList.add('modal-open');
+            };
+            this.hide = function() {
+              console.log('[MOCK_BOOTSTRAP] Вызов hide() для Modal');
+              element.style.display = 'none';
+              element.classList.remove('show');
+              document.body.classList.remove('modal-open');
+            };
+          }
+        };
+        
+        // Пробуем найти вкладки напрямую
+        tryRestoreFromLocalStorage(userId);
+      }
+      return;
+    }
+    
+    // Увеличиваем задержку до 2 секунд для гарантированной загрузки всех скриптов
+    setTimeout(restoreUserSession, 2000);
+    return;
+  }
   
   // Пытаемся загрузить состояние сессии с сервера
+  console.log('[SESSION_RESTORE] Отправляем AJAX запрос для восстановления сессии');
+  
   $.ajax({
     url: '/crm/save_form_state.php',
     type: 'GET',
@@ -1847,27 +2180,44 @@ function restoreUserSession() {
       user_id: userId
     },
     success: function(response) {
-      const serverData = typeof response === 'string' ? JSON.parse(response) : response;
+      console.log('[SESSION_RESTORE] Получен ответ от сервера:', response);
       
-      if (serverData.status === 'ok' && serverData.data) {
-        // Восстанавливаем состояние форм
-        if (serverData.data.forms) {
-          globalFormsData.forms = serverData.data.forms;
-        }
+      try {
+        const serverData = typeof response === 'string' ? JSON.parse(response) : response;
         
-        // Восстанавливаем вкладки
-        if (serverData.data.tabs && serverData.data.tabs.length > 0) {
-          // Показываем диалог подтверждения
-          showSessionRestoreDialog(serverData.data.tabs);
-          return;
+        if (serverData.status === 'ok' && serverData.data) {
+          console.log('[SESSION_RESTORE] Данные успешно получены с сервера');
+          
+          // Восстанавливаем состояние форм
+          if (serverData.data.forms) {
+            globalFormsData.forms = serverData.data.forms;
+          }
+          
+          // Восстанавливаем вкладки
+          if (serverData.data.tabs && serverData.data.tabs.length > 0) {
+            console.log('[SESSION_RESTORE] Найдены вкладки для восстановления:', serverData.data.tabs.length);
+            
+            // Показываем диалог подтверждения с небольшой задержкой
+            // для гарантированной инициализации Bootstrap
+            setTimeout(function() {
+              showSessionRestoreDialog(serverData.data.tabs);
+            }, 500);
+            return;
+          } else {
+            console.log('[SESSION_RESTORE] Вкладки не найдены в ответе сервера');
+          }
+        } else {
+          console.log('[SESSION_RESTORE] Получен некорректный ответ от сервера:', serverData);
         }
+      } catch (e) {
+        console.error('[SESSION_RESTORE] Ошибка при обработке ответа сервера:', e);
       }
       
       // Если с сервера не получили ничего, пробуем из localStorage
       tryRestoreFromLocalStorage(userId);
     },
     error: function(xhr, status, error) {
-      console.error('Ошибка при загрузке состояния с сервера:', error);
+      console.error('[SESSION_RESTORE] Ошибка при загрузке состояния с сервера:', error);
       
       // В случае ошибки пробуем восстановить из localStorage
       tryRestoreFromLocalStorage(userId);
@@ -1877,205 +2227,58 @@ function restoreUserSession() {
 
 // Функция для восстановления из localStorage
 function tryRestoreFromLocalStorage(userId) {
+  console.log('[SESSION_RESTORE] Попытка восстановления из localStorage для пользователя:', userId);
+  
   const savedTabs = localStorage.getItem('user_tabs_' + userId);
   if (!savedTabs) {
-    console.log('В localStorage нет сохраненных вкладок');
+    console.log('[SESSION_RESTORE] В localStorage нет сохраненных вкладок');
     return;
   }
   
   try {
     const tabs = JSON.parse(savedTabs);
-    if (tabs.length === 0) {
-      console.log('Найдено пустое состояние вкладок');
+    console.log('[SESSION_RESTORE] Данные из localStorage получены:', tabs);
+    
+    if (!tabs || !Array.isArray(tabs) || tabs.length === 0) {
+      console.log('[SESSION_RESTORE] Найдено пустое состояние вкладок');
       return;
     }
     
-    // Показываем диалог подтверждения
-    showSessionRestoreDialog(tabs);
+    console.log('[SESSION_RESTORE] Найдено', tabs.length, 'вкладок для восстановления');
+    
+    // Показываем диалог подтверждения с небольшой задержкой
+    // для гарантированной инициализации Bootstrap
+    setTimeout(function() {
+      showSessionRestoreDialog(tabs);
+    }, 500);
   } catch (e) {
-    console.error('Ошибка при разборе сохраненных вкладок:', e);
+    console.error('[SESSION_RESTORE] Ошибка при разборе сохраненных вкладок:', e);
   }
 }
 
-// Функция для отображения диалога восстановления сессии
-function showSessionRestoreDialog(tabs) {
-  console.log('Предлагаем диалог восстановления. Количество вкладок:', tabs.length);
+// Добавляем глобальный обработчик ошибок для перехвата проблем с модальными окнами
+window.addEventListener('error', function(e) {
+  console.error('[GLOBAL_ERROR] Перехвачена ошибка:', e.message);
+  console.error('[GLOBAL_ERROR] Стек вызовов:', e.error ? e.error.stack : 'Стек недоступен');
   
-  // Сначала очищаем все существующие модальные окна
-  window.cleanupModals();
-  
-  // Определяем функции-обработчики до их использования
-  
-  // Функция для начала новой сессии
-  let startNewAction = function() {
-    console.log('Пользователь выбрал начать новую сессию');
+  // Если ошибка связана с модальными окнами, пытаемся восстановить состояние
+  if (e.message.includes('modal') || e.message.includes('Modal') || e.message.includes('bootstrap')) {
+    console.log('[GLOBAL_ERROR] Обнаружена ошибка, связанная с модальными окнами, пытаемся восстановить...');
     
-    // Очищаем сохраненные вкладки для текущего пользователя
-    const userId = getUserId();
-    if (userId) {
-      // Очистка данных вкладок
-      localStorage.removeItem('user_tabs_' + userId);
-      
-      // Очистка данных форм - ищем все ключи localStorage и удаляем их
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(`form_state_${userId}_`)) {
-          localStorage.removeItem(key);
-        }
+    // Очищаем все модальные окна
+    if (typeof window.cleanupModals === 'function') {
+      window.cleanupModals();
+    }
+    
+    // Пытаемся показать тестовое модальное окно
+    setTimeout(function() {
+      if (typeof window.testModal === 'function') {
+        console.log('[GLOBAL_ERROR] Попытка показать тестовое модальное окно после ошибки');
+        window.testModal();
       }
-      
-      // Очищаем глобальные данные форм
-      globalFormsData.forms = {};
-      
-      // Также отправляем запрос на сервер для очистки данных
-      $.ajax({
-        url: '/crm/save_form_state.php',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-          action: 'clear',
-          user_id: userId
-        })
-      });
-    }
-    
-    // Удаляем наш ручной диалог
-    removeCustomDialog();
-  };
-  
-  // Функция для восстановления сессии
-  let restoreAction = function() {
-    console.log('Пользователь выбрал восстановить предыдущую сессию');
-    
-    // Восстанавливаем сохраненные вкладки
-    restoreSavedTabs(tabs);
-    
-    // Удаляем наш ручной диалог
-    removeCustomDialog();
-  };
-  
-  // Функция для удаления диалога
-  let removeCustomDialog = function() {
-    // Сначала создаем локальные ссылки на элементы, чтобы избежать многократного поиска в DOM
-    const dialog = document.getElementById('customSessionRestoreDialog');
-    const overlay = document.getElementById('customSessionRestoreOverlay');
-    
-    // Удаляем обработчики событий перед удалением элементов
-    if (dialog) {
-      const closeBtn = dialog.querySelector('#customCloseBtn');
-      const newBtn = dialog.querySelector('#customNewSessionBtn');
-      const restoreBtn = dialog.querySelector('#customRestoreSessionBtn');
-      
-      // Отключаем обработчики только если они существуют
-      if (closeBtn) closeBtn.onclick = null;
-      if (newBtn) newBtn.onclick = null;
-      if (restoreBtn) restoreBtn.onclick = null;
-    }
-    
-    // Удаляем элементы из DOM в правильном порядке
-    if (dialog && dialog.parentNode) {
-      dialog.parentNode.removeChild(dialog);
-    }
-    
-    if (overlay && overlay.parentNode) {
-      overlay.parentNode.removeChild(overlay);
-    }
-    
-    // Находим и удаляем все оставшиеся элементы с похожими идентификаторами
-    const possibleOverlays = document.querySelectorAll('[id^="customSessionRestore"]');
-    possibleOverlays.forEach(el => {
-      if (el && el.parentNode) {
-        el.parentNode.removeChild(el);
-      }
-    });
-    
-    // Отложенный вызов очистки модальных окон
-    // Используем window.setTimeout для избежания ошибок с неопределенными функциями
-    window.setTimeout(function() {
-      if (typeof window.cleanupModals === 'function') {
-        window.cleanupModals();
-      }
-    }, 100);
-  };
-  
-  try {
-    // Удаляем существующий диалог, если он есть
-    removeCustomDialog();
-    
-    // Создаем затемняющий фон
-    const overlay = document.createElement('div');
-    overlay.id = 'customSessionRestoreOverlay';
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    overlay.style.zIndex = '1050';
-    
-    // Создаем диалог
-    const dialog = document.createElement('div');
-    dialog.id = 'customSessionRestoreDialog';
-    dialog.style.position = 'fixed';
-    dialog.style.top = '50%';
-    dialog.style.left = '50%';
-    dialog.style.transform = 'translate(-50%, -50%)';
-    dialog.style.width = '90%';
-    dialog.style.maxWidth = '500px';
-    dialog.style.backgroundColor = 'white';
-    dialog.style.borderRadius = '5px';
-    dialog.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
-    dialog.style.zIndex = '1051';
-    dialog.style.padding = '20px';
-    
-    // Создаем список вкладок для показа в диалоге
-    let tabsList = '';
-    tabs.forEach(function(tab) {
-      tabsList += `<li>${tab.title || 'Неизвестная вкладка'}</li>`;
-    });
-    
-    // Заполняем диалог
-    dialog.innerHTML = `
-      <div style="margin-bottom: 15px; border-bottom: 1px solid #dee2e6; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-        <h5 style="margin: 0; font-size: 1.25rem;">Восстановление сессии</h5>
-        <button type="button" id="customCloseBtn" style="background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer;">×</button>
-      </div>
-      <div style="margin-bottom: 15px;">
-        <div style="padding: 10px; background-color: #cff4fc; color: #055160; border-radius: 4px; margin-bottom: 15px;">
-          <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
-          Обнаружена предыдущая сессия с открытыми вкладками (${tabs.length}).
-        </div>
-        <p>Открытые вкладки:</p>
-        <ul>${tabsList}</ul>
-        <p>Хотите продолжить предыдущую сессию или начать новую?</p>
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" id="customNewSessionBtn" style="padding: 6px 12px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Начать новую</button>
-        <button type="button" id="customRestoreSessionBtn" style="padding: 6px 12px; background-color: #0d6efd; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          <i class="fas fa-sync" style="margin-right: 8px;"></i>Продолжить предыдущую
-        </button>
-      </div>
-    `;
-    
-    // Добавляем элементы в DOM
-    document.body.appendChild(overlay);
-    document.body.appendChild(dialog);
-    
-    // Назначаем обработчики событий прямым назначением onclick
-    const closeBtn = document.getElementById('customCloseBtn');
-    const newBtn = document.getElementById('customNewSessionBtn');
-    const restoreBtn = document.getElementById('customRestoreSessionBtn');
-    
-    if (closeBtn) closeBtn.onclick = startNewAction;
-    if (newBtn) newBtn.onclick = startNewAction;
-    if (restoreBtn) restoreBtn.onclick = restoreAction;
-    
-  } catch (e) {
-    console.error('Ошибка при создании диалога восстановления сессии:', e);
-    // В случае ошибки начинаем новую сессию
-    startNewAction();
+    }, 1000);
   }
-}
+});
 
 // Функция для восстановления сохраненных вкладок
 function restoreSavedTabs(tabs) {
@@ -2683,30 +2886,19 @@ function openProductionOperationTab(operationId, operationNumber = null) {
 
 // Инициализация сайдбара и избранного
 $(function() {
-  // Открытие/закрытие сайдбара
-  $('#sidebar-toggle').on('click', function() {
-    // Открываем сайдбар
-    $('.sidebar').css('transform', 'translateX(280px)');
-    
-    // Добавляем обработчик для закрытия по клику вне сайдбара
-    setTimeout(function() {
-      $(document).on('click.sidebar', function(e) {
-        // Если клик был не внутри сайдбара и не на кнопке сайдбара
-        if (!$(e.target).closest('.sidebar').length && !$(e.target).closest('#sidebar-toggle').length) {
-          // Закрываем сайдбар
-          $('.sidebar').css('transform', 'translateX(0)');
-          // Убираем обработчик события
-          $(document).off('click.sidebar');
-        }
-      });
-    }, 50); // Небольшая задержка, чтобы избежать срабатывания на текущем клике
-  });
+  // УДАЛЯЮ ВТОРОЙ БЛОК КОДА ИНИЦИАЛИЗАЦИИ САЙДБАРА
+  // Эта часть полностью заменена новой реализацией в sidebar.php
 
   // Обработка клика по элементам сайдбара
-  $('.sidebar .nav-link').on('click', function(e) {
+  $('.sidebar .nav-link:not(.sidebar-toggle)').on('click', function(e) {
     e.preventDefault();
     const path = $(this).data('module');
-    openModuleTab(path);
+    if (path) {
+      console.log('Клик по элементу сайдбара, открываю модуль:', path);
+      openModuleTab(path);
+    } else {
+      console.error('Ошибка: data-module не определен для элемента', this);
+    }
   });
 
   // Избранные вкладки в шапке
@@ -2720,6 +2912,12 @@ $(function() {
     const $fav = $('#favorite-tabs');
     $fav.empty();
     favorites.slice(0, 6).forEach(function(path) {
+      // Проверяем, что путь определен
+      if (!path) {
+        console.error('Ошибка: неопределенный путь в избранном');
+        return;
+      }
+      
       const title = getModuleTitle(path) || path;
       const btn = $(`<button class="btn btn-link text-light d-flex align-items-center favorite-tab-btn" data-module="${path}" title="${title}">
                        <i class="fas fa-star me-1"></i><span>${title}</span>
@@ -2740,6 +2938,11 @@ $(function() {
       $('#favorite-tabs button').each(function() {
         const $btn = $(this);
         const path = $btn.data('module');
+        if (!path) {
+          console.error('Ошибка: data-module не определен для кнопки избранного', $btn);
+          return;
+        }
+        
         $btn.off('click').on('click', function(e) {
           e.preventDefault();
           e.stopPropagation();
@@ -2759,10 +2962,15 @@ $(function() {
         return;
       }
       favorites.push(path);
+      // Добавляем класс favorite к ссылке для стилизации
       $(`.sidebar .nav-link[data-module="${path}"]`).addClass('favorite');
+      // Также добавляем класс active к звездочке для визуального выделения
+      $(`.sidebar .nav-link[data-module="${path}"] .star-icon`).addClass('active');
     } else {
       favorites.splice(idx, 1);
+      // Удаляем классы для деактивации
       $(`.sidebar .nav-link[data-module="${path}"]`).removeClass('favorite');
+      $(`.sidebar .nav-link[data-module="${path}"] .star-icon`).removeClass('active');
     }
     saveFavorites();
     renderFavorites();
@@ -2780,7 +2988,9 @@ $(function() {
 
   // Инициализируем классы избранного и отрисовываем
   favorites.forEach(function(path) {
+    // Добавляем классы к ссылке и звездочке для правильного отображения
     $(`.sidebar .nav-link[data-module="${path}"]`).addClass('favorite');
+    $(`.sidebar .nav-link[data-module="${path}"] .star-icon`).addClass('active');
   });
   renderFavorites();
   
@@ -2789,8 +2999,12 @@ $(function() {
   $(document).on('click', '.navbar .nav-item .nav-link[data-module], .favorite-tab-btn', function(e) {
     e.preventDefault();
     const path = $(this).data('module');
-    console.log('Clicked nav-item or favorite:', path);
-    openModuleTab(path);
+    if (path) {
+      console.log('Clicked nav-item or favorite:', path);
+      openModuleTab(path);
+    } else {
+      console.error('Ошибка: data-module не определен для элемента навигации', this);
+    }
   });
   
   // Отладочный код - проверяем элементы
@@ -2964,13 +3178,21 @@ function cleanupModals() {
 // Проверяем наличие сохраненной сессии после загрузки страницы
 $(document).ready(function() {
   // Очищаем все модальные окна при загрузке страницы
-  window.cleanupModals();
+  if (typeof window.cleanupModals === 'function') {
+    window.cleanupModals();
+  }
   
+  console.log('Документ загружен, ожидаем инициализацию Bootstrap...');
+  
+  // Проверка доступности Bootstrap выполняется в footer.php
+  // Там же будет вызвана функция restoreUserSession после загрузки Bootstrap
+  
+  // Инициализируем индикаторы вкладок с небольшой задержкой
   setTimeout(function() {
-    restoreUserSession();
-    // Инициализируем индикаторы вкладок
-    initTabIndicators();
-  }, 1000);
+    if (typeof initTabIndicators === 'function') {
+      initTabIndicators();
+    }
+  }, 1500);
 });
 
 // Функция для патчинга Bootstrap Modal, чтобы он не вызывал ошибки при работе с null-элементами
@@ -3540,5 +3762,48 @@ setTimeout(function() {
 // - showConfirmationModal: показ окна подтверждения
 // - showUnsavedChangesConfirm: показ предупреждения о несохраненных изменениях
 // - hideUnsavedChangesModal: скрытие модального окна с предупреждением
+
+// Тестовая функция для проверки работы модальных окон
+window.testModal = function() {
+  console.log('Тестирование модального окна');
+  
+  // Проверка доступности Bootstrap
+  if (typeof bootstrap === 'undefined' || typeof bootstrap.Modal === 'undefined') {
+    console.error('Bootstrap Modal недоступен!');
+    return false;
+  }
+  
+  // Проверяем доступность unsavedChangesModal
+  const modalEl = document.getElementById('unsavedChangesModal');
+  if (!modalEl) {
+    console.error('Модальное окно unsavedChangesModal не найдено в DOM!');
+    return false;
+  }
+  
+  console.log('Модальное окно найдено, попытка показать');
+  
+  // Пробуем получить существующий экземпляр
+  let modalInstance = bootstrap.Modal.getInstance(modalEl);
+  
+  // Если экземпляр не найден, создаем новый
+  if (!modalInstance) {
+    console.log('Создание нового экземпляра модального окна');
+    modalInstance = new bootstrap.Modal(modalEl, {
+      backdrop: true,
+      keyboard: true,
+      focus: true
+    });
+  }
+  
+  // Показываем модальное окно
+  try {
+    modalInstance.show();
+    console.log('Модальное окно должно быть показано');
+    return true;
+  } catch (e) {
+    console.error('Ошибка при показе модального окна:', e);
+    return false;
+  }
+};
 
  

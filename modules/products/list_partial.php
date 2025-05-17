@@ -9,16 +9,20 @@ if (!check_access($conn, $_SESSION['user_id'], 'products')) {
     die("<div class='text-danger'>Доступ запрещён</div>");
 }
 
-/*
-  Достаём:
-    p.*,
-    названия категорий c.name, sc.name,
-    и сумму остатков (SELECT SUM(st.quantity) ...)
-*/
+// Проверяем существование таблицы единиц измерения
+$checkMeasurementTable = "SHOW TABLES LIKE 'PCRM_Measurement'";
+$measurementTableExists = $conn->query($checkMeasurementTable)->num_rows > 0;
+
+// Проверяем, есть ли поле default_measurement_id в продуктах
+$checkColumnSQL = "SHOW COLUMNS FROM PCRM_Product LIKE 'default_measurement_id'";
+$defaultMeasurementColumnExists = $conn->query($checkColumnSQL)->num_rows > 0;
+
+// Запрос в зависимости от наличия поля default_measurement_id
 $sql = "
 SELECT p.*,
        c.name AS cat_name,
        sc.name AS subcat_name,
+       " . ($defaultMeasurementColumnExists && $measurementTableExists ? "m.short_name as measurement_short_name," : "") . "
        (
          SELECT SUM(st.quantity)
          FROM PCRM_Stock st
@@ -29,8 +33,13 @@ LEFT JOIN PCRM_Categories c
        ON p.category = c.id
 LEFT JOIN PCRM_Categories sc
        ON p.subcategory = sc.id
+" . ($defaultMeasurementColumnExists && $measurementTableExists ? "
+LEFT JOIN PCRM_Measurement m
+       ON p.default_measurement_id = m.id
+" : "") . "       
 ORDER BY p.id DESC
 ";
+
 $res = $conn->query($sql);
 if (!$res) {
     die("<div class='text-danger'>Ошибка запроса: " . $conn->error . "</div>");
@@ -38,7 +47,15 @@ if (!$res) {
 $products = $res->fetch_all(MYSQLI_ASSOC);
 ?>
 <h4>Справочник товаров</h4>
-<button class="btn btn-primary btn-sm mb-2" onclick="editProduct(0)">Добавить товар</button>
+<div class="d-flex justify-content-between mb-3">
+  <button class="btn btn-primary btn-sm" onclick="editProduct(0)">Добавить товар</button>
+  
+  <?php if ($measurementTableExists): ?>
+  <button class="btn btn-secondary btn-sm" onclick="openNewTab('measurements/list')">
+    <i class="fas fa-ruler"></i> Единицы измерения
+  </button>
+  <?php endif; ?>
+</div>
 
 <table class="table table-bordered">
   <thead>
@@ -50,6 +67,7 @@ $products = $res->fetch_all(MYSQLI_ASSOC);
       <th>Подкатегория</th>
       <th>Цена</th>
       <th>Себестоимость</th>
+      <th>Ед. изм.</th>
       <th>Остаток (общий)</th>
       <th>Статус</th>
       <th>Действия</th>
@@ -61,6 +79,11 @@ $products = $res->fetch_all(MYSQLI_ASSOC);
     $stockVal = ($p['total_stock'] !== null)
                   ? $p['total_stock']
                   : 0;
+                  
+    // Определяем единицу измерения для отображения
+    $measurementDisplay = $defaultMeasurementColumnExists && $measurementTableExists 
+        ? ($p['measurement_short_name'] ?? $p['unit_of_measure'] ?? 'шт')
+        : ($p['unit_of_measure'] ?? 'шт');
   ?>
     <tr>
       <td><?= $p['id'] ?></td>
@@ -70,7 +93,8 @@ $products = $res->fetch_all(MYSQLI_ASSOC);
       <td><?= htmlspecialchars($p['subcat_name'] ?? '') ?></td>
       <td><?= $p['price'] ?></td>
       <td><?= $p['cost_price'] ?></td>
-      <td><?= $stockVal ?></td>
+      <td><?= htmlspecialchars($measurementDisplay) ?></td>
+      <td><?= $stockVal ?> <?= htmlspecialchars($measurementDisplay) ?></td>
       <td><?= $p['status'] ?></td>
       <td>
         <button class="btn btn-warning btn-sm" onclick="editProduct(<?= $p['id'] ?>)">Редакт.</button>

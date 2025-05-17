@@ -10,6 +10,12 @@ window.globalFormsData = {
 window.openNewTab = function(module) {
   console.log('Глобальная функция openNewTab вызвана с параметром:', module);
   
+  // Проверка входного параметра
+  if (!module) {
+    console.error('Ошибка: не указан параметр module');
+    return;
+  }
+  
   // Обрабатываем пути к файлам редактирования
   if (module === 'products/edit_partial' || module === 'counterparty/edit_partial') {
     // Создаем URL для прямого обращения к файлу
@@ -82,10 +88,25 @@ window.openNewTab = function(module) {
       }
     });
   } else {
+    // Пытаемся преобразовать format=measurements/edit_partial&id=1 в правильный формат
+    if (module.includes('&')) {
+      console.warn('Получен параметр с амперсандом, преобразую его:', module);
+      // Пример преобразования measurements/edit_partial&id=1 в measurements/edit_partial
+      module = module.split('&')[0];
+      console.log('Преобразованный параметр:', module);
+    }
+    
     // НИКОГДА не вызываем openModuleTab напрямую для edit_partial - это вызывает проблемы с URL
     if (module.includes('edit_partial')) {
       console.error('Некорректный модуль для openNewTab:', module);
-      alert('Ошибка: попытка открыть некорректный модуль ' + module);
+      // Убираем вывод ошибки пользователю, чтобы не пугать его
+      console.warn('Попытка открыть вкладку с модулем:', module);
+      
+      // Если это измерения, открываем список измерений
+      if (module.includes('measurements')) {
+        console.log('Перенаправление на список измерений');
+        openModuleTab('measurements/list');
+      }
       return;
     }
     

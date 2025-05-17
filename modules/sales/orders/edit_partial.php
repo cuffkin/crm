@@ -241,24 +241,41 @@ $uniquePrefix = 'ord_' . uniqid();
       <input type="text" id="o-total" class="form-control" readonly value="<?= $total_amount ?>">
     </div>
     <div class="mt-3">
-      <button class="btn btn-success" onclick="window['<?= $uniquePrefix ?>_saveOrderAndClose'](<?= $id ?>)">Сохранить и закрыть</button>
-      <button class="btn btn-success" onclick="window['<?= $uniquePrefix ?>_saveOrder'](<?= $id ?>)">Сохранить</button>
-      
-      <?php if ($id > 0): ?>
-      <!-- Кнопка "Создать на основании" с выпадающим меню -->
-      <div class="btn-group">
-        <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-          Создать на основании
-        </button>
-        <ul class="dropdown-menu">
-          <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createShipmentFromOrder'](<?= $id ?>)">Отгрузка</a></li>
-          <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createFinanceFromOrder'](<?= $id ?>)">Входящая кассовая операция</a></li>
-          <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createReturnFromOrder'](<?= $id ?>)">Возврат покупателя</a></li>
-        </ul>
+      <div class="d-flex justify-content-between">
+        <div>
+          <button class="btn btn-success" onclick="window['<?= $uniquePrefix ?>_saveOrderAndClose'](<?= $id ?>)">Сохранить и закрыть</button>
+          <button class="btn btn-success" onclick="window['<?= $uniquePrefix ?>_saveOrder'](<?= $id ?>)">Сохранить</button>
+          
+          <?php if ($id > 0): ?>
+          <!-- Кнопка "Создать на основании" с выпадающим меню -->
+          <div class="btn-group dropend">
+            <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+              Создать на основании
+            </button>
+            <ul class="dropdown-menu position-static">
+              <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createShipmentFromOrder'](<?= $id ?>)">Создать отгрузку</a></li>
+              <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createFinanceFromOrder'](<?= $id ?>)">Создать ПКО</a></li>
+              <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createReturnFromOrder'](<?= $id ?>)">Создать возврат</a></li>
+            </ul>
+          </div>
+          <?php endif; ?>
+        </div>
+        
+        <!-- Кнопка-бургер с дополнительными действиями для заказа -->
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+            <i class="fas fa-bars"></i> Действия
+          </button>
+          <ul class="dropdown-menu position-static">
+            <li><a class="dropdown-item" href="#" onclick="saveCreateShipmentAndPrint(<?= $id ?>)">
+              <i class="fas fa-print"></i> Сохранить, создать отгрузку на печать
+            </a></li>
+            <li><a class="dropdown-item" href="#" onclick="saveCreateShipmentAndPKO(<?= $id ?>)">
+              <i class="fas fa-money-bill"></i> Сохранить, создать отгрузку и ПКО на печать
+            </a></li>
+          </ul>
+        </div>
       </div>
-      <?php endif; ?>
-      
-      <button class="btn btn-secondary" onclick="window['<?= $uniquePrefix ?>_cancelChanges']()">Отмена</button>
     </div>
     
     <?php
@@ -270,6 +287,27 @@ $uniquePrefix = 'ord_' . uniqid();
     ?>
   </div>
 </div>
+
+<style>
+/* Стили для правильного отображения выпадающих меню */
+.dropdown-menu.position-static {
+  position: absolute !important;
+  transform: translate(0, 40px) !important;
+  top: 0 !important;
+  left: 0 !important;
+  margin: 0 !important;
+  display: none;
+}
+
+.dropdown.show .dropdown-menu.position-static {
+  display: block;
+}
+
+.btn-group.dropend .dropdown-menu.position-static {
+  left: 0 !important;
+  right: auto !important;
+}
+</style>
 
 <script>
 // Используем анонимную функцию для создания локальной области видимости
@@ -461,6 +499,15 @@ $uniquePrefix = 'ord_' . uniqid();
         }
         calcTotal();
       });
+      
+      // Инициализируем выпадающие меню
+      initializeDropdownMenus();
+      
+      // Обработчик для переключения статуса проведения
+      $('#o-conducted').on('change', function() {
+        let isChecked = $(this).is(':checked');
+        $('#conduct-status-text').text(isChecked ? 'Проведён' : 'Не проведён');
+      });
     });
 
     function calcTotal() {
@@ -481,7 +528,7 @@ $uniquePrefix = 'ord_' . uniqid();
       saveOrder(oid, true);
     }
 
-    function saveOrder(oid, closeAfterSave = false) {
+    function saveOrder(oid, closeAfterSave = false, successCallback = null, errorCallback = null) {
       // Проверка обязательных полей
       let valid = true;
       
@@ -529,6 +576,9 @@ $uniquePrefix = 'ord_' . uniqid();
       }
       
       if (!valid) {
+        if (typeof errorCallback === 'function') {
+          errorCallback();
+        }
         return;
       }
       
@@ -539,6 +589,9 @@ $uniquePrefix = 'ord_' . uniqid();
       if (isDelivery && deliveryAddress === '') {
         $('#o-delivery').addClass('is-invalid');
         alert('При выборе типа "Доставка" необходимо указать адрес доставки');
+        if (typeof errorCallback === 'function') {
+          errorCallback();
+        }
         return;
       } else {
         $('#o-delivery').removeClass('is-invalid');
@@ -599,14 +652,24 @@ $uniquePrefix = 'ord_' . uniqid();
             // Получаем ID созданного заказа
             $.get('/crm/modules/sales/orders/order_api.php', { action: 'get_last_id' }, function(newId) {
               if (newId > 0) {
+                // Вызываем колбэк успеха, если он есть
+                if (typeof successCallback === 'function') {
+                  successCallback(newId);
+                }
+                
                 // Получаем номер заказа
                 const orderNumber = $('#o-num').val();
                 
-                // Закрываем текущую вкладку
-                cancelChanges();
-                
-                // Открываем новую вкладку с созданным заказом и номером
-                openOrderEditTab(newId, orderNumber);
+                // Обновляем заголовок вкладки
+                if (currentTabId) {
+                  $(`#${currentTabId}`).html(`Заказ ${orderNumber} <button type="button" class="btn-close btn-close-white ms-2" aria-label="Close"></button>`);
+                  
+                  // Восстанавливаем обработчик закрытия
+                  $(`#${currentTabId} .btn-close`).on('click', function(e) {
+                    e.stopPropagation();
+                    closeModuleTab(currentTabId, currentTabContentId);
+                  });
+                }
               }
             });
           } else {
@@ -621,12 +684,23 @@ $uniquePrefix = 'ord_' . uniqid();
                 closeModuleTab(currentTabId, currentTabContentId);
               });
             }
+            
+            // Вызываем колбэк успеха, если он есть
+            if (typeof successCallback === 'function') {
+              successCallback(oid);
+            }
           }
         } else {
           alert(resp);
+          if (typeof errorCallback === 'function') {
+            errorCallback();
+          }
         }
       }).fail(function(xhr, status, error) {
         alert("Ошибка при сохранении заказа: " + error);
+        if (typeof errorCallback === 'function') {
+          errorCallback();
+        }
       });
     }
 
@@ -648,8 +722,39 @@ $uniquePrefix = 'ord_' . uniqid();
       }
     }
 
-    // Функция для создания отгрузки на основании заказа
-    function createShipmentFromOrder(orderId) {
+    // Модифицируем функцию createShipmentFromOrder для поддержки колбэков
+    window['<?= $uniquePrefix ?>_createShipmentFromOrder'] = function(orderId, callback) {
+      // Если это вызов для просто печати, создаем отгрузку через API
+      if (typeof callback === 'function') {
+        $.ajax({
+          url: '/crm/modules/shipments/api_handler.php',
+          type: 'POST',
+          data: {
+            action: 'create_from_order',
+            order_id: orderId
+          },
+          success: function(response) {
+            try {
+              const result = typeof response === 'string' ? JSON.parse(response) : response;
+              if (result.status === 'ok') {
+                callback(result.shipment_id);
+              } else {
+                alert(result.message || 'Ошибка при создании отгрузки');
+                callback(null);
+              }
+            } catch (e) {
+              alert('Неверный формат ответа');
+              callback(null);
+            }
+          },
+          error: function(xhr) {
+            alert('Ошибка сервера: ' + xhr.statusText);
+            callback(null);
+          }
+        });
+        return;
+      }
+
       // Создаем новую вкладку для отгрузки
       const tabId = 'shipment-tab-' + Math.floor(Math.random() * 1000000);
       const tabContentId = 'shipment-content-' + Math.floor(Math.random() * 1000000);
@@ -683,7 +788,7 @@ $uniquePrefix = 'ord_' . uniqid();
       $(`#${tabId}`).addClass('active');
       $(`#${tabContentId}`).addClass('show active');
       
-      // Загружаем содержимое редактирования отгрузки с предварительно выбранным заказом
+      // Загружаем содержимое редактирования отгрузки
       $.ajax({
         url: '/crm/modules/shipments/edit_partial.php',
         data: { 
@@ -712,83 +817,138 @@ $uniquePrefix = 'ord_' . uniqid();
         e.stopPropagation();
         closeModuleTab(tabId, tabContentId);
       });
-    }
+    };
 
-    // Функция для создания финансовой операции на основании заказа
-    function createFinanceFromOrder(orderId) {
+    // Модифицируем функцию createFinanceFromOrder для поддержки колбэков
+    window['<?= $uniquePrefix ?>_createFinanceFromOrder'] = function(orderId, callback) {
       // Получаем информацию о заказе
       $.getJSON('/crm/modules/sales/orders/order_api.php', { action: 'get_order_info', id: orderId }, function(orderData) {
-        if (orderData.status === 'ok') {
-          // Создаем новую вкладку для финансовой операции
-          const tabId = 'finance-tab-' + Math.floor(Math.random() * 1000000);
-          const tabContentId = 'finance-content-' + Math.floor(Math.random() * 1000000);
-          
-          // Заголовок вкладки
-          let tabTitle = 'Новый приход';
-          
-          // Добавляем новую вкладку
-          $('#crm-tabs').append(`
-            <li class="nav-item">
-              <a class="nav-link active" id="${tabId}" data-bs-toggle="tab" href="#${tabContentId}" role="tab">
-                ${tabTitle} <button type="button" class="btn-close btn-close-white ms-2" aria-label="Close"></button>
-              </a>
-            </li>
-          `);
-          
-          // Добавляем содержимое вкладки
-          $('#crm-tab-content').append(`
-            <div class="tab-pane fade show active" id="${tabContentId}" role="tabpanel">
-              <div class="text-center p-5">
-                <div class="spinner-border" role="status">
-                  <span class="visually-hidden">Загрузка...</span>
-                </div>
-              </div>
-            </div>
-          `);
-          
-          // Делаем новую вкладку активной
-          $('.nav-link').removeClass('active');
-          $('.tab-pane').removeClass('show active');
-          $(`#${tabId}`).addClass('active');
-          $(`#${tabContentId}`).addClass('show active');
-          
-          // Загружаем содержимое редактирования финансовой операции
+        // Если это вызов для просто печати, создаем ПКО через API
+        if (typeof callback === 'function') {
           $.ajax({
-            url: '/crm/modules/finances/edit_partial.php',
-            data: { 
-              id: 0,
-              type: 'income',
-              order_id: orderId,
-              amount: orderData.data.total_amount,
-              counterparty_id: orderData.data.customer,
-              tab: 1,
-              tab_id: tabId,
-              content_id: tabContentId,
-              based_on: 'order'
+            url: '/crm/modules/finances/get_last_transaction_id.php',
+            type: 'GET',
+            success: function(lastIdResponse) {
+              const lastId = parseInt(lastIdResponse) || 0;
+              const newNumber = 'ПКО-' + String(lastId + 1).padStart(6, '0');
+              
+              // Создаем ПКО
+              $.ajax({
+                url: '/crm/modules/finances/save.php',
+                type: 'POST',
+                data: {
+                  transaction_type: 'income',
+                  transaction_number: newNumber,
+                  transaction_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                  amount: orderData.data.total_amount,
+                  counterparty_id: orderData.data.customer,
+                  cash_register_id: 1, // Предполагаем, что касса с ID=1 существует
+                  payment_method: 'cash',
+                  description: 'Оплата по заказу №' + orderId,
+                  conducted: 1,
+                  based_on: 'order',
+                  order_id: orderId
+                },
+                success: function(pkoResponse) {
+                  if (pkoResponse === 'OK') {
+                    // Получаем ID созданного ПКО
+                    $.ajax({
+                      url: '/crm/modules/finances/get_last_transaction_id.php',
+                      type: 'GET',
+                      success: function(newPkoId) {
+                        callback(parseInt(newPkoId));
+                      },
+                      error: function() {
+                        alert('Ошибка при получении ID ПКО');
+                        callback(null);
+                      }
+                    });
+                  } else {
+                    alert('Ошибка при создании ПКО');
+                    callback(null);
+                  }
+                },
+                error: function() {
+                  alert('Ошибка сервера при создании ПКО');
+                  callback(null);
+                }
+              });
             },
-            success: function(html) {
-              $(`#${tabContentId}`).html(html);
-            },
-            error: function(xhr, status, error) {
-              $(`#${tabContentId}`).html(`
-                <div class="alert alert-danger">
-                  <h4>Ошибка загрузки формы финансовой операции</h4>
-                  <p>Ответ сервера: ${xhr.responseText}</p>
-                </div>
-              `);
+            error: function() {
+              alert('Ошибка при получении последнего ID транзакции');
+              callback(null);
             }
           });
-          
-          // Обработчик закрытия вкладки
-          $(`#${tabId} .btn-close`).on('click', function(e) {
-            e.stopPropagation();
-            closeModuleTab(tabId, tabContentId);
-          });
-        } else {
-          alert('Ошибка при получении данных заказа: ' + (orderData.message || 'Неизвестная ошибка'));
+          return;
         }
+        
+        // В обычном режиме
+        const tabId = 'finance-tab-' + Math.floor(Math.random() * 1000000);
+        const tabContentId = 'finance-content-' + Math.floor(Math.random() * 1000000);
+        
+        // Заголовок вкладки
+        let tabTitle = 'Новый приход';
+        
+        // Добавляем новую вкладку
+        $('#crm-tabs').append(`
+          <li class="nav-item">
+            <a class="nav-link active" id="${tabId}" data-bs-toggle="tab" href="#${tabContentId}" role="tab">
+              ${tabTitle} <button type="button" class="btn-close btn-close-white ms-2" aria-label="Close"></button>
+            </a>
+          </li>
+        `);
+        
+        // Добавляем содержимое вкладки
+        $('#crm-tab-content').append(`
+          <div class="tab-pane fade show active" id="${tabContentId}" role="tabpanel">
+            <div class="text-center p-5">
+              <div class="spinner-border" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+              </div>
+            </div>
+          </div>
+        `);
+        
+        // Делаем новую вкладку активной
+        $('.nav-link').removeClass('active');
+        $('.tab-pane').removeClass('show active');
+        $(`#${tabId}`).addClass('active');
+        $(`#${tabContentId}`).addClass('show active');
+        
+        // Загружаем содержимое редактирования финансовой операции
+        $.ajax({
+          url: '/crm/modules/finances/edit_partial.php',
+          data: { 
+            id: 0,
+            type: 'income',
+            order_id: orderId,
+            amount: orderData.data.total_amount,
+            counterparty_id: orderData.data.customer,
+            tab: 1,
+            tab_id: tabId,
+            content_id: tabContentId,
+            based_on: 'order'
+          },
+          success: function(html) {
+            $(`#${tabContentId}`).html(html);
+          },
+          error: function(xhr, status, error) {
+            $(`#${tabContentId}`).html(`
+              <div class="alert alert-danger">
+                <h4>Ошибка загрузки формы финансовой операции</h4>
+                <p>Ответ сервера: ${xhr.responseText}</p>
+              </div>
+            `);
+          }
+        });
+        
+        // Обработчик закрытия вкладки
+        $(`#${tabId} .btn-close`).on('click', function(e) {
+          e.stopPropagation();
+          closeModuleTab(tabId, tabContentId);
+        });
       });
-    }
+    };
 
     // Функция для создания возврата на основании заказа
     function createReturnFromOrder(orderId) {
@@ -860,5 +1020,97 @@ $uniquePrefix = 'ord_' . uniqid();
     function addRow() {
       window['<?= $uniquePrefix ?>_addRow']();
     }
+
+    // Добавляем функцию для корректного позиционирования меню
+    function initializeDropdownMenus() {
+      // Находим все выпадающие меню на странице
+      $('.dropdown-toggle').on('click', function(e) {
+        const $button = $(this);
+        const $menu = $button.next('.dropdown-menu');
+        
+        // Устанавливаем позицию меню относительно кнопки
+        const buttonPos = $button[0].getBoundingClientRect();
+        const isRightAligned = $button.closest('.dropdown').hasClass('dropend') || 
+                              $menu.hasClass('dropdown-menu-end');
+        
+        if (isRightAligned) {
+          // Для меню, выровненных по правому краю
+          $menu.css({
+            'left': 'auto',
+            'right': '0'
+          });
+        } else {
+          // Для стандартных меню
+          $menu.css('left', '0');
+        }
+        
+        // Правильное вертикальное расположение
+        $menu.css('top', buttonPos.height + 'px');
+        
+        // Предотвращаем закрытие меню при клике на его элементы
+        $menu.find('.dropdown-item').on('click', function(e) {
+          e.stopPropagation();
+        });
+      });
+    }
+
+    // Функция для сохранения заказа, создания отгрузки и вывода на печать
+    function saveCreateShipmentAndPrint(id) {
+      // Сначала сохраняем заказ с проведением
+      let currentConducted = $('#o-conducted').is(':checked');
+      $('#o-conducted').prop('checked', true);
+      
+      // Выполняем сохранение
+      saveOrder(id, false, function(savedId) {
+        // После сохранения создаем отгрузку
+        const actualId = savedId || id;
+        
+        // Используем существующую функцию создания отгрузки
+        window[`${uniquePrefix}_createShipmentFromOrder`](actualId, function(shipmentId) {
+          if (shipmentId) {
+            // Открываем печатные формы в новых вкладках
+            window.open(`/crm/modules/sales/orders/print.php?id=${actualId}`, '_blank');
+            window.open(`/crm/modules/shipments/print.php?id=${shipmentId}`, '_blank');
+          }
+        });
+      }, function() {
+        // В случае ошибки восстанавливаем состояние проведения
+        $('#o-conducted').prop('checked', currentConducted);
+      });
+    }
+
+    // Функция для сохранения заказа, создания отгрузки и ПКО
+    function saveCreateShipmentAndPKO(id) {
+      // Сначала сохраняем заказ с проведением
+      let currentConducted = $('#o-conducted').is(':checked');
+      $('#o-conducted').prop('checked', true);
+      
+      // Выполняем сохранение
+      saveOrder(id, false, function(savedId) {
+        const actualId = savedId || id;
+        
+        // Используем существующую функцию создания отгрузки
+        window[`${uniquePrefix}_createShipmentFromOrder`](actualId, function(shipmentId) {
+          if (shipmentId) {
+            // Затем создаем ПКО
+            window[`${uniquePrefix}_createFinanceFromOrder`](actualId, function(financeId) {
+              if (financeId) {
+                // Открываем печатные формы в новых вкладках
+                window.open(`/crm/modules/sales/orders/print.php?id=${actualId}`, '_blank');
+                window.open(`/crm/modules/shipments/print.php?id=${shipmentId}`, '_blank');
+                window.open(`/crm/modules/finances/print.php?id=${financeId}`, '_blank');
+              }
+            });
+          }
+        });
+      }, function() {
+        // В случае ошибки восстанавливаем состояние проведения
+        $('#o-conducted').prop('checked', currentConducted);
+      });
+    }
+
+    // Глобальные функции для кнопок в меню "Действия"
+    window.saveCreateShipmentAndPrint = saveCreateShipmentAndPrint;
+    window.saveCreateShipmentAndPKO = saveCreateShipmentAndPKO;
 })();
 </script>

@@ -113,11 +113,11 @@ function getDeliveryType($driver_id) {
         <button class="btn btn-info btn-sm" onclick="printOrder(<?= $order['id'] ?>)">Печать</button>
         
         <!-- Кнопка "Создать на основании" -->
-        <div class="btn-group">
-          <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <div class="btn-group order-dropdown">
+          <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
             На основании
           </button>
-          <ul class="dropdown-menu">
+          <ul class="dropdown-menu position-static">
             <li><a class="dropdown-item" href="#" onclick="createShipmentFromOrder(<?= $order['id'] ?>)">Отгрузка</a></li>
             <li><a class="dropdown-item" href="#" onclick="createReturnFromOrder(<?= $order['id'] ?>)">Возврат</a></li>
             <li><a class="dropdown-item" href="#" onclick="createFinanceFromOrder(<?= $order['id'] ?>, 'income')">Приход денег</a></li>
@@ -153,6 +153,27 @@ function getDeliveryType($driver_id) {
   </ul>
 </nav>
 <?php endif; ?>
+
+<style>
+/* Стили для правильного отображения выпадающих меню в списке */
+.btn-group.order-dropdown {
+  position: relative;
+}
+
+.btn-group.order-dropdown .dropdown-menu.position-static {
+  position: absolute !important;
+  transform: translate(0, 32px) !important;
+  top: 0 !important;
+  left: 0 !important;
+  margin: 0 !important;
+  display: none;
+  z-index: 1021;
+}
+
+.btn-group.order-dropdown.show .dropdown-menu.position-static {
+  display: block;
+}
+</style>
 
 <script>
 function openOrderEditTab(orderId) {
@@ -513,4 +534,44 @@ function createReturnFromOrder(orderId) {
     closeModuleTab(tabId, tabContentId);
   });
 }
+
+// Функция инициализации выпадающих меню
+function initListDropdowns() {
+  $('.order-dropdown .dropdown-toggle').on('click', function(e) {
+    const $button = $(this);
+    const $menu = $button.next('.dropdown-menu');
+    const $container = $button.closest('.order-dropdown');
+    
+    // Убираем все активные меню и контейнеры
+    $('.order-dropdown').not($container).removeClass('show');
+    $('.order-dropdown .dropdown-menu').not($menu).hide();
+    
+    // Устанавливаем позицию меню относительно кнопки
+    $container.toggleClass('show');
+    $menu.toggle();
+    
+    // Предотвращаем закрытие меню при клике на его элементы
+    $menu.find('.dropdown-item').on('click', function(e) {
+      e.stopPropagation();
+      $container.removeClass('show');
+      $menu.hide();
+    });
+    
+    // Останавливаем всплытие события, чтобы не закрывать меню сразу
+    e.stopPropagation();
+  });
+  
+  // Закрываем меню при клике вне его
+  $(document).on('click', function(e) {
+    if (!$(e.target).closest('.order-dropdown').length) {
+      $('.order-dropdown').removeClass('show');
+      $('.order-dropdown .dropdown-menu').hide();
+    }
+  });
+}
+
+// Вызываем инициализацию после загрузки
+$(document).ready(function() {
+  initListDropdowns();
+});
 </script>

@@ -953,69 +953,31 @@ window.patchBootstrapModal = patchBootstrapModal;
 
 // Функция для немедленного патчинга Bootstrap Modal
 function patchBootstrapImmediately() {
-  // Проверяем, что мы находимся в браузерной среде
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    return;
-  }
+  // Проверяем, доступен ли Bootstrap в текущем контексте
+  console.log('Проверка наличия Bootstrap:', typeof bootstrap);
   
-  console.log('Запускаю патч Bootstrap Modal...');
-  
-  // Проверяем, доступен ли Bootstrap
-  if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
-    // Если Bootstrap уже доступен, патчим немедленно
-    console.log('Bootstrap обнаружен, применяю патч немедленно');
-    patchBootstrapModal();
-    return;
-  }
-  
-  console.log('Bootstrap еще не загружен, ожидаю загрузку...');
-  
-  // Ожидаем загрузку Bootstrap с небольшими интервалами
-  let attempts = 0;
-  const maxAttempts = 20; // Максимальное количество попыток
-  
-  const waitForBootstrap = function() {
-    attempts++;
+  // Если bootstrap еще не определен, попробуем отложить выполнение
+  if (typeof bootstrap === 'undefined') {
+    console.log('Bootstrap не найден, устанавливаем обработчик события DOMContentLoaded');
     
-    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
-      console.log(`Bootstrap загружен (попытка ${attempts}), применяю патч`);
-      patchBootstrapModal();
-      return;
-    }
-    
-    if (attempts >= maxAttempts) {
-      console.warn(`Превышено максимальное количество попыток (${maxAttempts}) ожидания загрузки Bootstrap`);
-      return;
-    }
-    
-    // Увеличиваем интервал ожидания с каждой попыткой
-    const timeout = Math.min(50 * attempts, 500);
-    setTimeout(waitForBootstrap, timeout);
-  };
-  
-  // Запускаем ожидание загрузки Bootstrap
-  waitForBootstrap();
-  
-  // Дополнительно подписываемся на событие загрузки DOM
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM загружен, проверяю наличие Bootstrap');
-    
-    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
-      console.log('Bootstrap обнаружен после загрузки DOM, применяю патч');
-      patchBootstrapModal();
+    // Добавляем обработчик для вызова после полной загрузки страницы
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded сработал, пробуем еще раз');
+        setTimeout(patchBootstrapModal, 500); // Даем еще время на загрузку Bootstrap
+      });
     } else {
-      console.warn('Bootstrap не обнаружен после загрузки DOM');
-      // Дополнительная попытка с задержкой после загрузки DOM
-      setTimeout(function() {
-        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
-          console.log('Bootstrap обнаружен после задержки, применяю патч');
-          patchBootstrapModal();
-        } else {
-          console.error('Bootstrap так и не был обнаружен');
-        }
-      }, 1000);
+      // Если DOM уже загружен, пробуем через задержку
+      console.log('DOM уже загружен, пробуем с задержкой');
+      setTimeout(patchBootstrapModal, 500);
     }
-  });
+    
+    return;
+  }
+  
+  // Если bootstrap доступен, вызываем сразу
+  console.log('Bootstrap найден, применяем патч');
+  patchBootstrapModal();
 }
 
 // Экспортируем функцию в глобальную область видимости
@@ -1260,4 +1222,186 @@ window.hideUnsavedChangesModal = hideUnsavedChangesModal;
   } else {
     console.error('jQuery не обнаружен даже после загрузки DOM, патч не применён');
   }
-})(); 
+})();
+
+// Экспортируем функции в глобальное пространство имен для доступа из других скриптов
+window.showConfirmationModal = showConfirmationModal;
+window.cleanupModals = cleanupModals;
+window.patchBootstrapModal = patchBootstrapModal;
+window.patchBootstrapImmediately = patchBootstrapImmediately;
+window.showUnsavedChangesConfirm = showUnsavedChangesConfirm;
+window.hideUnsavedChangesModal = hideUnsavedChangesModal;
+
+// Выполняем патч Bootstrap Modal при загрузке скрипта
+$(document).ready(function() {
+  console.log('modal.js загружен, патчим Bootstrap Modal');
+  if (typeof patchBootstrapImmediately === 'function') {
+    patchBootstrapImmediately();
+  }
+});
+
+// Функция для тестирования работоспособности модальных окон после загрузки страницы
+function testBootstrapModalOnLoad() {
+  console.log('[MODAL_TEST] Запуск тестирования модальных окон после загрузки');
+  
+  // Проверка доступности bootstrap
+  const bootstrapAvailable = typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined';
+  console.log('[MODAL_TEST] Bootstrap доступен:', bootstrapAvailable);
+  
+  if (!bootstrapAvailable) {
+    console.error('[MODAL_TEST] Bootstrap недоступен, тестирование невозможно');
+    return false;
+  }
+  
+  // Создаем тестовое модальное окно
+  const testModalId = 'testBootstrapModal_' + Date.now();
+  
+  // Создаем HTML для модального окна
+  const modalHtml = `
+    <div class="modal fade" id="${testModalId}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Тестовое модальное окно</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Это тест модального окна Bootstrap. Если вы видите это окно, значит Bootstrap Modal работает корректно.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">ОК</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Добавляем модальное окно в документ
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  
+  // Получаем DOM-элемент
+  const modalEl = document.getElementById(testModalId);
+  if (!modalEl) {
+    console.error('[MODAL_TEST] Элемент модального окна не найден после добавления в DOM');
+    return false;
+  }
+  
+  // Создаем экземпляр модального окна
+  try {
+    const modal = new bootstrap.Modal(modalEl);
+    
+    // Показываем модальное окно
+    modal.show();
+    
+    console.log('[MODAL_TEST] Тестовое модальное окно показано успешно');
+    
+    // Через 5 секунд автоматически закрываем окно
+    setTimeout(function() {
+      try {
+        modal.hide();
+        console.log('[MODAL_TEST] Тестовое модальное окно закрыто автоматически');
+        
+        // Удаляем элемент после закрытия
+        setTimeout(function() {
+          if (modalEl.parentNode) {
+            modalEl.parentNode.removeChild(modalEl);
+          }
+        }, 500);
+      } catch (e) {
+        console.error('[MODAL_TEST] Ошибка при закрытии тестового окна:', e);
+      }
+    }, 5000);
+    
+    return true;
+  } catch (e) {
+    console.error('[MODAL_TEST] Ошибка при создании тестового модального окна:', e);
+    return false;
+  }
+}
+
+// Экспортируем функцию тестирования в глобальную область видимости
+window.testBootstrapModalOnLoad = testBootstrapModalOnLoad;
+
+// Запускаем тест через 3 секунды после загрузки страницы
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[MODAL_TEST] DOMContentLoaded событие получено');
+  
+  // Отложенный запуск теста для гарантированной загрузки Bootstrap
+  setTimeout(function() {
+    // Если функция восстановления сессии не была вызвана, запускаем тест
+    if (typeof window.sessionRestoreAttempts === 'undefined' || window.sessionRestoreAttempts === 0) {
+      console.log('[MODAL_TEST] Восстановление сессии не запускалось, выполняем тест модальных окон');
+      testBootstrapModalOnLoad();
+    } else {
+      console.log('[MODAL_TEST] Восстановление сессии уже запускалось, пропускаем тест');
+    }
+  }, 3000);
+});
+
+// Глобальный вызов патча Bootstrap Modal (если он еще не был вызван)
+// Это гарантирует, что все модальные окна будут работать корректно
+// patchBootstrapImmediately(); // Вызов может быть здесь или в app.js
+
+// НОВЫЙ КОД: Фикс "скукоживания" контента при открытии модальных окон Bootstrap
+document.addEventListener('DOMContentLoaded', function () {
+  const mainNavbar = document.querySelector('.navbar'); // Селектор главного меню
+  const mainContentContainer = document.querySelector('.container.mt-3'); // Селектор основного контейнера контента из index.php
+  // Дополнительно, если есть общий content-wrapper, который используется на всех страницах
+  const generalContentWrapper = document.querySelector('.content-wrapper'); 
+
+  function getScrollbarWidth() {
+    const outer = document.createElement('div');
+    outer.style.visibility = 'hidden';
+    outer.style.overflow = 'scroll';
+    document.body.appendChild(outer);
+    const inner = document.createElement('div');
+    outer.appendChild(inner);
+    const scrollbarWidth = outer.offsetWidth - inner.offsetWidth;
+    outer.parentNode.removeChild(outer);
+    return scrollbarWidth;
+  }
+
+  function applyPadding(scrollbarWidth) {
+    if (mainNavbar) {
+      mainNavbar.style.paddingRight = scrollbarWidth + 'px';
+    }
+    if (mainContentContainer) { // Для структуры из index.php
+      mainContentContainer.style.paddingRight = scrollbarWidth + 'px';
+    }
+    if (generalContentWrapper) { // Для общей структуры, если есть
+        generalContentWrapper.style.paddingRight = scrollbarWidth + 'px';
+    }
+    // Если есть другие фиксированные элементы, их селекторы нужно добавить сюда
+  }
+
+  function resetPadding() {
+    if (mainNavbar) {
+      mainNavbar.style.paddingRight = '';
+    }
+    if (mainContentContainer) {
+      mainContentContainer.style.paddingRight = '';
+    }
+    if (generalContentWrapper) {
+        generalContentWrapper.style.paddingRight = '';
+    }
+  }
+
+  // Применяем ко всем модальным окнам Bootstrap на странице
+  const allModals = document.querySelectorAll('.modal');
+  
+  allModals.forEach(modal => {
+    modal.addEventListener('show.bs.modal', function (event) {
+      // Важно: Не добавлять padding к самому модальному окну!
+      if (event.target.classList.contains('modal')) {
+        const scrollbarWidth = getScrollbarWidth();
+        applyPadding(scrollbarWidth); // Эта функция должна применять padding к body/navbar, НЕ к event.target
+      }
+    });
+    modal.addEventListener('hidden.bs.modal', function (event) {
+      // Важно: Не изменять padding самого модального окна!
+      if (event.target.classList.contains('modal')) {
+        resetPadding(); // Эта функция должна сбрасывать padding на body/navbar, НЕ на event.target
+      }
+    });
+  });
+}); 
