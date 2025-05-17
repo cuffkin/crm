@@ -210,14 +210,17 @@ $uniquePrefix = 'sh_' . uniqid();
         <?php foreach ($items as $itm): ?>
         <tr>
           <td>
-            <select class="form-select si-product">
-              <option value="">(не выбран)</option>
-              <?php foreach ($allProducts as $p): ?>
-              <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>" <?= ($p['id'] == $itm['product_id'] ? 'selected' : '') ?>>
-                <?= htmlspecialchars($p['name']) ?>
-              </option>
-              <?php endforeach; ?>
-            </select>
+            <div class="input-group">
+              <select class="form-select si-product">
+                <option value="">(не выбран)</option>
+                <?php foreach ($allProducts as $p): ?>
+                <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>" <?= ($p['id'] == $itm['product_id'] ? 'selected' : '') ?>>
+                  <?= htmlspecialchars($p['name']) ?>
+                </option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
+            </div>
           </td>
           <td><input type="number" step="0.001" class="form-control si-qty" value="<?= $itm['quantity'] ?>"></td>
           <td><input type="number" step="0.01" class="form-control si-price" value="<?= $itm['price'] ?>"></td>
@@ -324,10 +327,13 @@ $uniquePrefix = 'sh_' . uniqid();
         let rowHtml = `
             <tr>
                 <td>
-                    <select class="form-select si-product">
-                        <option value="">(не выбран)</option>
-                        ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name}</option>`).join('')}
-                    </select>
+                    <div class="input-group">
+                        <select class="form-select si-product">
+                            <option value="">(не выбран)</option>
+                            ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name}</option>`).join('')}
+                        </select>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
+                    </div>
                 </td>
                 <td><input type="number" step="0.001" class="form-control si-qty" value="1"></td>
                 <td><input type="number" step="0.01" class="form-control si-price" value="0"></td>
@@ -343,12 +349,15 @@ $uniquePrefix = 'sh_' . uniqid();
     // Добавление строки с данными
     function addItemRowWithData(item) {
         let rowHtml = `
-            <tr>
+            <tr data-id="${item.id || ''}">
                 <td>
-                    <select class="form-select si-product">
-                        <option value="">(не выбран)</option>
-                        ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.price}" ${p.id == item.product_id ? 'selected' : ''}>${p.name}</option>`).join('')}
-                    </select>
+                    <div class="input-group">
+                        <select class="form-select si-product">
+                            <option value="">(не выбран)</option>
+                            ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.price}" ${item.product_id == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                        </select>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
+                    </div>
                 </td>
                 <td><input type="number" step="0.001" class="form-control si-qty" value="${item.quantity}"></td>
                 <td><input type="number" step="0.01" class="form-control si-price" value="${item.price}"></td>
@@ -558,5 +567,36 @@ $.fn.some = function(callback) {
         }
     }
     return false;
+};
+
+// Используем глобальную функцию openNewTab из common.js
+
+// Функция для добавления новой строки товара
+window['<?= $uniquePrefix ?>_addItemRow'] = function() {
+    const newRow = `
+        <tr>
+            <td>
+                <div class="input-group">
+                    <select class="form-select si-product">
+                        <option value="">(не выбран)</option>
+                        <?php foreach ($allProducts as $p): ?>
+                        <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>">
+                            <?= htmlspecialchars($p['name']) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
+                </div>
+            </td>
+            <td><input type="number" step="0.001" class="form-control si-qty" value="1"></td>
+            <td><input type="number" step="0.01" class="form-control si-price" value="0"></td>
+            <td><input type="number" step="0.01" class="form-control si-discount" value="0"></td>
+            <td class="si-sum"></td>
+            <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();window['<?= $uniquePrefix ?>_calcTotal']();">×</button></td>
+        </tr>
+    `;
+    $('#si-table tbody').append(newRow);
+    initRowHandlers();
+    window['<?= $uniquePrefix ?>_calcTotal']();
 };
 </script>

@@ -130,14 +130,17 @@ $headerClass = $transaction_type === 'income' ? 'bg-success text-white' : 'bg-da
     </div>
     <div class="mb-3">
       <label>Контрагент <span class="text-danger">*</span></label>
-      <select id="tr-counterparty" class="form-select required" required>
-        <option value="">(не выбран)</option>
-        <?php foreach ($allCounterparties as $c): ?>
-        <option value="<?= $c['id'] ?>" <?= ($c['id'] == $counterparty_id ? 'selected' : '') ?>>
-          <?= htmlspecialchars($c['name']) ?>
-        </option>
-        <?php endforeach; ?>
-      </select>
+      <div class="input-group">
+        <select id="tr-counterparty" class="form-select required" required>
+          <option value="">(не выбран)</option>
+          <?php foreach ($allCounterparties as $c): ?>
+          <option value="<?= $c['id'] ?>" <?= ($c['id'] == $counterparty_id ? 'selected' : '') ?>>
+            <?= htmlspecialchars($c['name']) ?>
+          </option>
+          <?php endforeach; ?>
+        </select>
+        <button class="btn btn-outline-secondary" type="button" onclick="openNewTab('counterparty/edit_partial')">Создать нового</button>
+      </div>
       <div class="invalid-feedback">Выберите контрагента</div>
     </div>
     <div class="mb-3">
@@ -770,4 +773,6 @@ window.cancelChanges = function() {
     }
   };
 })();
+
+// Используем глобальную функцию openNewTab из common.js
 </script>

@@ -6,6 +6,7 @@
 <script src="/crm/assets/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
 <script src="/crm/js/notification-handler.js"></script>
 <script src="/crm/js/modal.js"></script>
+<script src="/crm/js/common.js"></script>
 <script src="/crm/js/app.js"></script>
 <script src="/crm/js/session-status.js"></script>
 

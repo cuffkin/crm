@@ -1,4 +1,10 @@
 <?php
+// Перенаправление на страницу 404
+header("Location: 404.php");
+exit;
+?>
+
+<?php
 // /crm/modules/access/list_partial.php
 require_once __DIR__ . '/../../config/session.php';
 require_once __DIR__ . '/../../config/db.php';

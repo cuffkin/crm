@@ -1,4 +1,9 @@
 <?php
+// Перенаправление на страницу 404
+header("Location: 404.php");
+exit;
+?>
+
 session_start();
 include_once "../../../config/db.php";
 

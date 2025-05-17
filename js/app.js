@@ -36,11 +36,35 @@
   }
 })();
 
+// Глобальная функция для открытия новой вкладки с модулем
+window.openNewTab = function(module) {
+  console.log('Редиректим на версию функции openNewTab из common.js');
+  // Проверяем наличие функции в common.js
+  if (typeof window.openNewTabFromCommon === 'function') {
+    return window.openNewTabFromCommon(module);
+  }
+  
+  // Запасной вариант, если функция из common.js недоступна
+  console.log('Запасной вариант openNewTab вызван с параметром:', module);
+  const event = new CustomEvent('openNewTab', {
+    detail: { module: module }
+  });
+  document.dispatchEvent(event);
+};
+
 $(function() {
   "use strict";
   
   // Патчим еще раз после полной загрузки страницы для уверенности
   $(document).ready(window.patchBootstrapModal);
+  
+  // Добавляем обработчик события открытия новой вкладки
+  document.addEventListener('openNewTab', function(event) {
+    if (event.detail && event.detail.module) {
+      console.log('Opening new tab with module:', event.detail.module);
+      openModuleTab(event.detail.module);
+    }
+  });
   
   // НОВАЯ РЕАЛИЗАЦИЯ ВЫПАДАЮЩИХ МЕНЮ
   // Создаем свой менеджер меню, полностью отключая Bootstrap dropdown
@@ -326,6 +350,10 @@ function openModuleTab(modulePath) {
   if (modulePath.endsWith('/list')) {
     // Например: purchases/orders/list -> purchases/orders/list_partial.php
     url = '/crm/modules/' + modulePath.replace(/\/list$/, '') + '/list_partial.php';
+  } else if (modulePath.includes('edit_partial')) {
+    // Прямой доступ к страницам редактирования без добавления list_partial.php
+    url = '/crm/modules/' + modulePath + '.php';
+    console.log('Прямой URL для редактирования:', url);
   } else {
     url = '/crm/modules/' + modulePath + '/list_partial.php';
   }
@@ -685,16 +713,19 @@ function showConfirmModal(title, message, confirmCallback, cancelCallback) {
   }
 }
 
-// Глобальная карта открытых вкладок для редактирования заказов и отгрузок
-const openOrderTabs = new Map();
-
-// Глобальное хранилище информации о формах
-const globalFormsData = {
-  // Форматированная дата последнего сохранения
-  lastSaveTime: '',
-  // Объект с данными по формам: {tabContentId: {formData: {...}}}
-  forms: {}
-};
+// Глобальный обработчик на документе для гарантированной работы
+$(document).on('click', '#favorite-tabs button', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const module = $(this).data('module');
+  if (module) {
+    console.log('Global document click handler detected module:', module);
+    openModuleTab(module);
+  } else {
+    console.error('Module not found in clicked button');
+  }
+  return false;
+});
 
 // Функция для открытия редактирования заказа в новой вкладке
 function openOrderEditTab(orderId, orderNumber = null) {
