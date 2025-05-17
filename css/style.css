@@ -1034,3 +1034,58 @@ textarea[data-user-modified="true"] {
   opacity: 1;
   color: #ffc107; /* Золотой цвет для активных звездочек */
 }
+
+/* Стили для уровня категорий */
+.level-category {
+  color: blue; /* Синий цвет для категорий */
+  font-weight: bold;
+}
+
+.level-subcategory {
+  color: green; /* Зеленый цвет для подкатегорий */
+}
+
+/* Фильтры и Сортировка для Списка Категорий */
+.filter-btn.active {
+  background-color: var(--primary-color, #007bff); /* Используем переменную темы или fallback */
+  color: white;
+  border-color: var(--primary-color, #007bff);
+}
+
+.filter-btn:not(.active) {
+    color: var(--text-secondary, #6c757d); /* Цвет для неактивных кнопок, если поддерживается темой */
+    background-color: var(--bg-card, white);
+    border-color: var(--border-color, #dee2e6);
+}
+
+.filter-btn:not(.active):hover {
+    background-color: var(--bg-hover-light, #f8f9fa);
+}
+
+.sortable-header {
+  cursor: pointer;
+  position: relative; /* Для позиционирования иконки, если понадобится абсолютное */
+}
+
+.sortable-header:hover {
+  background-color: var(--bg-hover-light, #f1f1f1); /* Цвет фона при наведении, из темы или fallback */
+}
+
+.sort-icon {
+  font-size: 0.9em;
+  margin-left: 6px;
+  color: var(--text-muted, #6c757d);
+  display: inline-block;
+  width: 1em; /* Резервируем место под иконку */
+  font-style: normal; /* Убираем курсив, если шрифт иконки его добавляет */
+  font-weight: normal; /* Убираем жирность, если шрифт иконки его добавляет */
+}
+
+/* Иконки не будут отображаться, пока нет класса sort-asc или sort-desc,
+   чтобы не занимать место пустым span, если иконка добавляется через :after 
+   В текущей JS-реализации иконки вставляются как HTML-сущности (& #x25B2;), так что это не критично. */
+
+.sortable-header.sort-asc .sort-icon,
+.sortable-header.sort-desc .sort-icon {
+  color: var(--text-primary, #212529); /* Цвет активной иконки сортировки */
+}
