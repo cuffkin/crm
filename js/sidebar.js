@@ -6,7 +6,12 @@ console.log('[SIDEBAR.JS] Начало загрузки скрипта');
 
 // Глобальный обработчик ошибок для отлова проблем
 window.addEventListener('error', function(e) {
-  console.error('[SIDEBAR.JS ERROR]', e.message, e.error ? e.error.stack : '');
+  try {
+    console.error('[SIDEBAR.JS ERROR]', e.message, e.error ? e.error.stack : '');
+  } catch (logError) {
+    console.error('[SIDEBAR.JS LOGGING ERROR] Не удалось залогировать оригинальную ошибку:', logError);
+    console.error('[SIDEBAR.JS ORIGINAL ERROR MSG]', String(e.message)); 
+  }
 });
 
 // Основные переменные

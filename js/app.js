@@ -2258,8 +2258,13 @@ function tryRestoreFromLocalStorage(userId) {
 
 // Добавляем глобальный обработчик ошибок для перехвата проблем с модальными окнами
 window.addEventListener('error', function(e) {
-  console.error('[GLOBAL_ERROR] Перехвачена ошибка:', e.message);
-  console.error('[GLOBAL_ERROR] Стек вызовов:', e.error ? e.error.stack : 'Стек недоступен');
+  try {
+    console.error('[GLOBAL_ERROR] Перехвачена ошибка:', e.message);
+    console.error('[GLOBAL_ERROR] Стек вызовов:', e.error ? e.error.stack : 'Стек недоступен');
+  } catch (logError) {
+    console.error('[APP.JS LOGGING ERROR] Не удалось залогировать оригинальную ошибку:', logError);
+    console.error('[APP.JS ORIGINAL ERROR MSG]', String(e.message));
+  }
   
   // Если ошибка связана с модальными окнами, пытаемся восстановить состояние
   if (e.message.includes('modal') || e.message.includes('Modal') || e.message.includes('bootstrap')) {

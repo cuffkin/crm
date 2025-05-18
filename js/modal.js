@@ -1329,12 +1329,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // Отложенный запуск теста для гарантированной загрузки Bootstrap
   setTimeout(function() {
     // Если функция восстановления сессии не была вызвана, запускаем тест
-    if (typeof window.sessionRestoreAttempts === 'undefined' || window.sessionRestoreAttempts === 0) {
-      console.log('[MODAL_TEST] Восстановление сессии не запускалось, выполняем тест модальных окон');
-      testBootstrapModalOnLoad();
-    } else {
-      console.log('[MODAL_TEST] Восстановление сессии уже запускалось, пропускаем тест');
-    }
+    // if (typeof window.sessionRestoreAttempts === 'undefined' || window.sessionRestoreAttempts === 0) {
+    //   console.log('[MODAL_TEST] Восстановление сессии не запускалось, выполняем тест модальных окон');
+    //   testBootstrapModalOnLoad();
+    // } else {
+    //   console.log('[MODAL_TEST] Восстановление сессии уже запускалось, пропускаем тест');
+    // }
   }, 3000);
 });
 

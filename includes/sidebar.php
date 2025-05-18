@@ -247,11 +247,6 @@
 
 <!-- Скрипт для работы сайдбара (вставляется в конце sidebar.php) -->
 <script>
-// Глобальный перехватчик ошибок для отладки проблем сайдбара
-window.addEventListener('error', function(e) {
-  console.error('[GLOBAL ERROR sidebar]', e.message, e.error ? e.error.stack : '');
-});
-
 // Глобальная функция toggleSidebar, которая будет доступна для вызова из других мест
 window.toggleSidebar = function() {
   try {
