@@ -265,6 +265,9 @@ if ($measurementTableExists) {
       </div>
     </div>
 
+    <!-- В будущем: кнопка для выбора товара через модальное окно -->
+    <!-- <button class="btn btn-outline-info" id="open-product-picker">Выбрать товар из дерева</button> -->
+
     <button class="btn btn-success" onclick="saveProduct(<?= $id ?>)">Сохранить</button>
     <button class="btn btn-secondary" onclick="$('#product-edit-area').html('')">Отмена</button>
 

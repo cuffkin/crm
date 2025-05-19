@@ -50,6 +50,7 @@ $products = $res->fetch_all(MYSQLI_ASSOC);
 <div class="d-flex justify-content-between mb-3">
   <button class="btn btn-primary btn-sm" onclick="editProduct(0)">Добавить товар</button>
   <div class="d-flex align-items-center gap-2">
+    <button id="toggle-view" class="btn btn-outline-secondary btn-sm">Переключить: <span id="view-mode-label">Таблица</span></button>
     <select id="filter-category" class="form-select form-select-sm" style="width:auto;">
       <option value="">Все категории</option>
       <?php
@@ -73,6 +74,7 @@ $products = $res->fetch_all(MYSQLI_ASSOC);
   <?php endif; ?>
 </div>
 
+<div id="products-table-view">
 <table class="table table-bordered" id="products-table">
   <thead>
     <tr>
@@ -121,6 +123,11 @@ $products = $res->fetch_all(MYSQLI_ASSOC);
   <?php endforeach; ?>
   </tbody>
 </table>
+</div>
+<div id="products-tree-view" style="display:none;">
+  <div class="alert alert-info">Здесь будет древовидное отображение товаров (в разработке)</div>
+  <div id="products-tree-container"></div>
+</div>
 
 <div id="product-edit-area"></div>
 
@@ -150,6 +157,20 @@ $(function() {
         alert('Ошибка смены статуса: ' + resp);
       }
     });
+  });
+  // Переключатель Таблица/Древо
+  $('#toggle-view').on('click', function() {
+    var isTable = $('#products-table-view').is(':visible');
+    if (isTable) {
+      $('#products-table-view').hide();
+      $('#products-tree-view').show();
+      $('#view-mode-label').text('Древо');
+      // TODO: AJAX-загрузка дерева, если нужно
+    } else {
+      $('#products-tree-view').hide();
+      $('#products-table-view').show();
+      $('#view-mode-label').text('Таблица');
+    }
   });
 });
 
