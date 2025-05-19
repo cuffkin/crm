@@ -198,8 +198,8 @@ $(function() {
   };
   
   // Инициализируем менеджер меню
-  menuManager.init();
-
+  // menuManager.init(); // <--- ВРЕМЕННО ОТКЛЮЧАЕМ ДЛЯ ДИАГНОСТИКИ ПРОБЛЕМЫ С ВОССТАНОВЛЕНИЕМ СЕССИИ
+  
   // Остальные обработчики (не связанные с меню)
   $('[data-module]').on('click', function(e) {
     e.preventDefault();
@@ -1755,33 +1755,78 @@ function printOrder(orderId) {
 
 // Функция для сохранения состояния вкладок
 function saveTabsState() {
+  console.log('%c[SAVE_TABS_STATE] Запуск saveTabsState', 'color: purple; font-weight: bold;');
   const tabs = [];
   
   // Собираем информацию о всех открытых вкладках
-  $('#crm-tabs .nav-item').each(function() {
+  console.log('%c[SAVE_TABS_STATE] Ищем вкладки в #crm-tabs .nav-item. Найдено элементов:', 'color: purple;', $('#crm-tabs .nav-item').length);
+  $('#crm-tabs .nav-item').each(function(index) {
     const link = $(this).find('.nav-link');
-    const contentId = link.attr('href').substring(1); // Убираем # из href
     const tabId = link.attr('id');
-    const title = link.text().trim().replace('×', '').trim(); // Убираем символ крестика и лишние пробелы
+    const title = link.text().trim().replace('×', '').trim();
+    console.log(`%c[SAVE_TABS_STATE] Обрабатываем вкладку #${index + 1}: ID=${tabId}, Title=${title}`, 'color: purple;');
+    console.log(`%c[SAVE_TABS_STATE]   HTML элемента link:`, 'color: gray;', link.prop('outerHTML')); // ЛОГ HTML ССЫЛКИ
+
+    const contentId = link.attr('href').substring(1); // Убираем # из href
     
-    // Получаем все дата-атрибуты
     const dataAttrs = {};
-    const link_data = link.data();
+    const documentTypeAttr = link.attr('data-document-type');
+    const orderIdAttr = link.attr('data-order-id');
+    const shipmentIdAttr = link.attr('data-shipment-id');
+    const returnIdAttr = link.attr('data-return-id');
+    const financeTypeAttr = link.attr('data-finance-type');
+    const moduleIdAttr = link.attr('data-module');
+
+    console.log(`%c[SAVE_TABS_STATE]   --- Атрибуты перед проверкой ---`, 'color: brown;');
+    console.log(`%c[SAVE_TABS_STATE]     data-document-type: '${documentTypeAttr}' (тип: ${typeof documentTypeAttr})`, 'color: brown;');
+    console.log(`%c[SAVE_TABS_STATE]     data-order-id: '${orderIdAttr}' (тип: ${typeof orderIdAttr})`, 'color: brown;');
+    console.log(`%c[SAVE_TABS_STATE]     data-shipment-id: '${shipmentIdAttr}' (тип: ${typeof shipmentIdAttr})`, 'color: brown;');
+    console.log(`%c[SAVE_TABS_STATE]     data-return-id: '${returnIdAttr}' (тип: ${typeof returnIdAttr})`, 'color: brown;');
+    console.log(`%c[SAVE_TABS_STATE]     data-finance-type: '${financeTypeAttr}' (тип: ${typeof financeTypeAttr})`, 'color: brown;');
+    console.log(`%c[SAVE_TABS_STATE]     data-module: '${moduleIdAttr}' (тип: ${typeof moduleIdAttr})`, 'color: brown;');
     
-    for (const key in link_data) {
-      dataAttrs[key] = link_data[key];
+    if (documentTypeAttr) {
+      dataAttrs['document-type'] = documentTypeAttr;
+      console.log(`%c[SAVE_TABS_STATE]   Найден documentType: ${documentTypeAttr}`, 'color: teal;');
+
+      if (documentTypeAttr === 'order' && orderIdAttr !== undefined) {
+        dataAttrs['order-id'] = orderIdAttr;
+      } else if (documentTypeAttr === 'shipment' && shipmentIdAttr !== undefined) {
+        dataAttrs['shipment-id'] = shipmentIdAttr;
+      } else if (documentTypeAttr === 'return' && returnIdAttr !== undefined) {
+        dataAttrs['return-id'] = returnIdAttr;
+      } else if ((documentTypeAttr === 'shipment-from-order' || documentTypeAttr === 'return-from-order' || documentTypeAttr === 'finance-from-order') && orderIdAttr !== undefined) {
+        dataAttrs['order-id'] = orderIdAttr; 
+        if (documentTypeAttr === 'finance-from-order' && financeTypeAttr !== undefined) {
+            dataAttrs['finance-type'] = financeTypeAttr;
+        }
+      } else if (documentTypeAttr === 'finance-from-return' && returnIdAttr !== undefined) {
+        dataAttrs['return-id'] = returnIdAttr;
+      }
+      // Если documentType есть, но не подошло под ID-специфичные, и есть data-module (маловероятно, но для полноты)
+      else if (moduleIdAttr) {
+         dataAttrs['module'] = moduleIdAttr;
+      }
+
+    } else if (moduleIdAttr) { 
+        dataAttrs['module'] = moduleIdAttr;
+        console.log(`%c[SAVE_TABS_STATE]   Найден data-module (documentType не было): ${dataAttrs['module']}`, 'color: teal;');
     }
+    
+    console.log(`%c[SAVE_TABS_STATE]   Собранные dataAttrs для ${tabId}:`, 'color: teal;', JSON.stringify(dataAttrs, null, 2));
     
     const tabInfo = {
       tabId: tabId,
       contentId: contentId,
       title: title,
       isActive: link.hasClass('active'),
-      data: dataAttrs
+      data: dataAttrs // Здесь теперь будут только нужные, явно считанные атрибуты
     };
     
     tabs.push(tabInfo);
   });
+  
+  console.log('%c[SAVE_TABS_STATE] Собраны следующие вкладки для сохранения:', 'color: purple; font-weight: bold;', JSON.stringify(tabs, null, 2));
   
   // Сохраняем в localStorage с привязкой к текущему пользователю
   if (tabs.length > 0) {
@@ -1914,6 +1959,9 @@ function showSessionRestoreDialog(tabs) {
     const restoreSessionBtn = document.getElementById('restoreSessionBtn');
     const closeBtn = modalEl.querySelector('.btn-close');
     
+    // НОВЫЙ ЛОГ ДЛЯ ПРОВЕРКИ ЭЛЕМЕНТА КНОПКИ
+    console.log('[SESSION_RESTORE_DEBUG] Элемент restoreSessionBtn:', restoreSessionBtn);
+    
     // Определение функций-обработчиков
     // Функция для начала новой сессии
     const startNewAction = function() {
@@ -1954,6 +2002,7 @@ function showSessionRestoreDialog(tabs) {
     
     // Функция для восстановления сессии
     const restoreAction = function() {
+      console.log('%c[SESSION_RESTORE_ACTION] ЗАПУСК restoreAction', 'background: green; color: white; padding: 2px 5px;'); // <--- НОВЫЙ ЛОГ
       console.log('[SESSION_RESTORE] Пользователь выбрал восстановить предыдущую сессию');
       
       // Скрываем модальное окно
@@ -2031,6 +2080,8 @@ function showSessionRestoreDialog(tabs) {
     }
     
     if (restoreSessionBtn) {
+      // НОВЫЙ ЛОГ ПЕРЕД НАЗНАЧЕНИЕМ ОБРАБОТЧИКА
+      console.log('[SESSION_RESTORE_DEBUG] Назначаем обработчик click на элемент:', restoreSessionBtn);
       console.log('[SESSION_RESTORE] Назначаем обработчик для кнопки восстановления сессии');
       restoreSessionBtn.addEventListener('click', restoreAction);
     } else {
@@ -2287,134 +2338,103 @@ window.addEventListener('error', function(e) {
 
 // Функция для восстановления сохраненных вкладок
 function restoreSavedTabs(tabs) {
-  console.log('Начинаем восстановление вкладок:', tabs.length);
+  console.log('%c[SESSION_RESTORE_TABS] Начинаем восстановление вкладок. Всего вкладок:', 'color: blue; font-weight: bold;', tabs.length, tabs);
   
   // Если нет вкладок, выходим
-  if (!tabs || tabs.length === 0) return;
+  if (!tabs || tabs.length === 0) {
+    console.log('%c[SESSION_RESTORE_TABS] Нет вкладок для восстановления.', 'color: blue;');
+    return;
+  }
   
   // Восстанавливаем каждую вкладку по данным
-  tabs.forEach(function(tab) {
-    console.log('Восстанавливаем вкладку:', tab);
+  tabs.forEach(function(tab, index) {
+    console.log(`%c[SESSION_RESTORE_TABS] Восстанавливаем вкладку #${index + 1}:`, 'color: blue; font-weight: bold;', JSON.stringify(tab, null, 2));
     
-    if (tab.data) {
-      // Если есть данные о типе документа и его ID, восстанавливаем соответствующую вкладку
-      if (tab.data.documentType) {
-        const type = tab.data.documentType;
-        
-        // Обычные модули
-        if (tab.data.module) {
-          openModuleTab(tab.data.module);
-          return;
-        }
+    if (tab.data && typeof tab.data === 'object' && !Array.isArray(tab.data)) {
+      console.log('%c[SESSION_RESTORE_TABS] Обнаружен tab.data (объект):', 'color: green;', JSON.stringify(tab.data, null, 2));
+      const docType = tab.data['document-type']; // Используем обновленный ключ
+      const modulePath = tab.data['module']; // Используем обновленный ключ
+
+      if (docType) {
+        console.log(`%c[SESSION_RESTORE_TABS] Обнаружен document-type: ${docType}`, 'color: green;');
         
         // Заказы
-        if (type === 'order' && tab.data.orderId) {
-          openOrderEditTab(tab.data.orderId);
-          return;
+        if (docType === 'order' && tab.data['order-id']) {
+          console.log(`%c[SESSION_RESTORE_TABS] Тип: ЗАКАЗ. Вызов openOrderEditTab(${tab.data['order-id']})`, 'color: green;');
+          openOrderEditTab(tab.data['order-id']);
         }
-        
         // Отгрузки
-        if (type === 'shipment' && tab.data.shipmentId) {
-          openShipmentEditTab(tab.data.shipmentId);
-          return;
+        else if (docType === 'shipment' && tab.data['shipment-id']) {
+          console.log(`%c[SESSION_RESTORE_TABS] Тип: ОТГРУЗКА. Вызов openShipmentEditTab(${tab.data['shipment-id']})`, 'color: green;');
+          openShipmentEditTab(tab.data['shipment-id']);
         }
-        
         // Возвраты
-        if (type === 'return' && tab.data.returnId) {
-          openReturnEditTab(tab.data.returnId);
-          return;
+        else if (docType === 'return' && tab.data['return-id']) {
+          console.log(`%c[SESSION_RESTORE_TABS] Тип: ВОЗВРАТ. Вызов openReturnEditTab(${tab.data['return-id']})`, 'color: green;');
+          openReturnEditTab(tab.data['return-id']);
         }
-        
-        // Финансы
-        if (type === 'finance' && tab.data.transactionId !== undefined) {
-          openFinanceEditTab(tab.data.transactionId, tab.data.transactionType || 'income');
-          return;
+        // Финансы (для примера, если они тоже будут так восстанавливаться)
+        else if (docType === 'finance' && tab.data['transaction-id'] !== undefined) {
+          console.log(`%c[SESSION_RESTORE_TABS] Тип: ФИНАНСЫ. Вызов openFinanceEditTab(${tab.data['transaction-id']}, ${tab.data['transaction-type'] || 'income'})`, 'color: green;');
+          openFinanceEditTab(tab.data['transaction-id'], tab.data['transaction-type'] || 'income');
         }
-        
         // Специальные типы документов на основании других
-        if (type === 'shipment-from-order' && tab.data.orderId) {
-          createShipmentFromOrder(tab.data.orderId);
-          return;
+        else if (docType === 'shipment-from-order' && tab.data['order-id']) {
+          console.log(`%c[SESSION_RESTORE_TABS] Тип: ОТГРУЗКА ИЗ ЗАКАЗА. Вызов createShipmentFromOrder(${tab.data['order-id']})`, 'color: green;');
+          createShipmentFromOrder(tab.data['order-id']);
         }
-        
-        if (type === 'return-from-order' && tab.data.orderId) {
-          createReturnFromOrder(tab.data.orderId);
-          return;
+        else if (docType === 'return-from-order' && tab.data['order-id']) {
+          console.log(`%c[SESSION_RESTORE_TABS] Тип: ВОЗВРАТ ИЗ ЗАКАЗА. Вызов createReturnFromOrder(${tab.data['order-id']})`, 'color: green;');
+          createReturnFromOrder(tab.data['order-id']);
         }
-        
-        if (type === 'finance-from-order' && tab.data.orderId) {
-          createFinanceFromOrder(tab.data.orderId, tab.data.financeType || 'income');
-          return;
+        else if (docType === 'finance-from-order' && tab.data['order-id']) {
+          console.log(`%c[SESSION_RESTORE_TABS] Тип: ФИНАНСЫ ИЗ ЗАКАЗА. Вызов createFinanceFromOrder(${tab.data['order-id']}, ${tab.data['finance-type'] || 'income'})`, 'color: green;');
+          createFinanceFromOrder(tab.data['order-id'], tab.data['finance-type'] || 'income');
         }
-        
-        if (type === 'finance-from-return' && tab.data.returnId) {
-          createRkoFromReturn(tab.data.returnId);
-          return;
+        else if (docType === 'finance-from-return' && tab.data['return-id']) {
+          console.log(`%c[SESSION_RESTORE_TABS] Тип: ФИНАНСЫ ИЗ ВОЗВРАТА. Вызов createRkoFromReturn(${tab.data['return-id']})`, 'color: green;');
+          createRkoFromReturn(tab.data['return-id']);
         }
+        // ... другие типы документов по аналогии ...
+        else {
+          console.log(`%c[SESSION_RESTORE_TABS] Неизвестный или неполный document-type в tab.data: ${docType}`, 'color: orange;', tab.data);
+        }
+      } 
+      // Стандартные модульные вкладки (не привязанные к ID документа)
+      else if (modulePath) {
+        console.log(`%c[SESSION_RESTORE_TABS] Тип: СТАНДАРТНЫЙ МОДУЛЬ. Вызов openModuleTab(${modulePath})`, 'color: green;');
+        openModuleTab(modulePath);
+      } 
+      else {
+        console.log('%c[SESSION_RESTORE_TABS] tab.data является объектом, но нет \'document-type\' или \'module\'. Невозможно восстановить.', 'color: orange;', tab.data);
       }
-      // Стандартные модули
-      else if (tab.data.module) {
-        openModuleTab(tab.data.module);
-        return;
-      }
+    } else if (tab.data && Array.isArray(tab.data)) {
+      console.log('%c[SESSION_RESTORE_TABS] tab.data является массивом. Невозможно восстановить.', 'color: red;', tab.data);
     }
-    
-    // Совместимость со старым форматом
-    if (tab.modulePath) {
-      openModuleTab(tab.modulePath);
-      return;
-    }
-    
-    // Восстанавливаем заказы
-    if (tab.orderId !== undefined) {
-      openOrderEditTab(tab.orderId);
-      return;
-    }
-    
-    // Восстанавливаем отгрузки
-    if (tab.shipmentId !== undefined) {
-      openShipmentEditTab(tab.shipmentId);
-      return;
-    }
-    
-    // Восстанавливаем возвраты
-    if (tab.returnId !== undefined) {
-      openReturnEditTab(tab.returnId);
-      return;
-    }
-    
-    // Восстанавливаем финансовые операции
-    if (tab.transactionId !== undefined && tab.transactionType) {
-      openFinanceEditTab(tab.transactionId, tab.transactionType);
-      return;
-    }
-    
-    // Восстанавливаем специальные типы документов
-    if (tab.documentType) {
-      switch(tab.documentType) {
-        case 'shipment-from-order':
-          if (tab.orderId) createShipmentFromOrder(tab.orderId);
-          break;
-        case 'return-from-order':
-          if (tab.orderId) createReturnFromOrder(tab.orderId);
-          break;
-        case 'finance-from-order':
-          if (tab.orderId) createFinanceFromOrder(tab.orderId, tab.financeType || 'income');
-          break;
-        case 'finance-from-return':
-          if (tab.returnId) createRkoFromReturn(tab.returnId);
-          break;
-      }
-    }
-    
-    // Добавляем возможность восстановления вкладок производственных операций
-    if (tab.documentType === 'production-operation' && tab.data && tab.data.operationId) {
-      openProductionOperationTab(tab.data.operationId);
-      return;
+    else {
+      console.log('%c[SESSION_RESTORE_TABS] tab.data отсутствует или имеет неверный тип. Невозможно восстановить эту вкладку.', 'color: red;', tab.data === undefined ? 'undefined' : JSON.stringify(tab.data));
     }
   });
   
-  console.log('Восстановление вкладок завершено');
+  // Логика активации последней активной вкладки
+  const activeTab = tabs.find(tab => tab.isActive);
+  if (activeTab && activeTab.tabId) {
+    console.log(`%c[SESSION_RESTORE_TABS] Активируем последнюю активную вкладку: ${activeTab.tabId}`, 'color: blue;');
+    // Таймаут нужен, чтобы вкладка успела отрисоваться перед активацией
+    setTimeout(() => {
+        const tabElement = document.getElementById(activeTab.tabId);
+        if (tabElement) {
+            const tabInstance = new bootstrap.Tab(tabElement);
+            tabInstance.show();
+            console.log(`%c[SESSION_RESTORE_TABS] Вкладка ${activeTab.tabId} успешно активирована.`, 'color: blue;');
+        } else {
+            console.warn(`%c[SESSION_RESTORE_TABS] Не удалось найти элемент вкладки для активации: ${activeTab.tabId}`, 'color: orange;');
+        }
+    }, 200); // Небольшая задержка
+  } else {
+    console.log('%c[SESSION_RESTORE_TABS] Активная вкладка не найдена для восстановления.', 'color: blue;');
+  }
+  console.log('%c[SESSION_RESTORE_TABS] Завершение восстановления вкладок.', 'color: blue; font-weight: bold;');
 }
 
 // ======== НОВЫЕ ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ФОРМАМИ ========

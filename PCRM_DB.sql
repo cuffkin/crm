@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost
--- Время создания: Май 17 2025 г., 02:38
+-- Время создания: Май 19 2025 г., 11:31
 -- Версия сервера: 8.0.42-0ubuntu0.22.04.1
 -- Версия PHP: 8.1.2-1ubuntu2.21
 
@@ -66,6 +66,14 @@ CREATE TABLE `PCRM_CashRegister` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Дамп данных таблицы `PCRM_CashRegister`
+--
+
+INSERT INTO `PCRM_CashRegister` (`id`, `name`, `description`, `status`, `created_at`) VALUES
+(1, 'Cash Register 1', 'Main office cash register', 'active', '2025-03-17 02:19:39'),
+(2, 'Cash Register 2', 'Secondary cash register', 'active', '2025-03-17 02:19:39');
+
 -- --------------------------------------------------------
 
 --
@@ -80,6 +88,47 @@ CREATE TABLE `PCRM_Categories` (
   `pc_id` int DEFAULT NULL,
   `status` varchar(50) DEFAULT 'active'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Дамп данных таблицы `PCRM_Categories`
+--
+
+INSERT INTO `PCRM_Categories` (`id`, `name`, `description`, `type`, `pc_id`, `status`) VALUES
+(26, 'Сыпучие', 'Сыпучие материалы (навалом)', 'Товарная категория', NULL, 'active'),
+(27, 'Фасовка', 'Фасованные материалы (в мешках и др.)', 'Товарная категория', NULL, 'active'),
+(28, 'Смеси', 'Строительные смеси', 'Товарная категория', NULL, 'active'),
+(29, 'Утеплители', 'Теплоизоляционные материалы', 'Товарная категория', NULL, 'active'),
+(30, 'Строительная химия', 'Химические составы для строительства', 'Товарная категория', NULL, 'active'),
+(31, 'Металл', 'Металлопродукция для строительства', 'Товарная категория', NULL, 'active'),
+(32, 'Песок', 'Песок речной, карьерный (навалом)', 'Товарная категория', 26, 'active'),
+(33, 'Щебень', 'Щебень гранитный, известняковый (навалом)', 'Товарная категория', 26, 'active'),
+(34, 'Отсев', 'Отсев дробления (навалом)', 'Товарная категория', 26, 'active'),
+(35, 'Бут', 'Бутовый камень', 'Товарная категория', 26, 'active'),
+(36, 'Керамзит', 'Керамзит (навалом)', 'Товарная категория', 26, 'active'),
+(37, 'Крошка', 'Мраморная, гранитная крошка (навалом)', 'Товарная категория', 26, 'active'),
+(38, 'Уголь', 'Уголь каменный, древесный (навалом)', 'Товарная категория', 26, 'active'),
+(39, 'Чернозём', 'Плодородный грунт (навалом)', 'Товарная категория', 26, 'active'),
+(40, 'Известь', 'Известь гашеная, негашеная (навалом)', 'Товарная категория', 26, 'active'),
+(41, 'Другое', 'Прочие сыпучие материалы', 'Товарная категория', 26, 'active'),
+(42, 'Песок', 'Песок в мешках', 'Товарная категория', 27, 'active'),
+(43, 'Щебень', 'Щебень в мешках', 'Товарная категория', 27, 'active'),
+(44, 'Отсев', 'Отсев в мешках', 'Товарная категория', 27, 'active'),
+(45, 'Другое', 'Прочие фасованные материалы', 'Товарная категория', 27, 'active'),
+(46, 'Цемент', 'Портландцемент, шлакопортландцемент', 'Товарная категория', 28, 'active'),
+(47, 'Штукатурки и шпаклёвки', 'Гипсовые, цементные, полимерные смеси', 'Товарная категория', 28, 'active'),
+(48, 'Клей для плитки', 'Для керамической плитки, керамогранита, камня', 'Товарная категория', 28, 'active'),
+(49, 'Смеси для пола', 'Стяжки, наливные полы', 'Товарная категория', 28, 'active'),
+(50, 'Смеси огнеупорные', 'Для кладки печей, каминов', 'Товарная категория', 28, 'active'),
+(51, 'Монтажные смеси', 'Для анкеровки, ремонта бетона', 'Товарная категория', 28, 'active'),
+(52, 'Растворо-бетонные смеси', 'Готовые кладочные, штукатурные растворы', 'Товарная категория', 28, 'active'),
+(53, 'Минвата, каменная вата', 'Рулоны, плиты (базальтовая вата)', 'Товарная категория', 29, 'active'),
+(54, 'Пенопласт', 'Плиты ППС', 'Товарная категория', 29, 'active'),
+(55, 'Экструдер', 'Плиты XPS (экструдированный пенополистирол)', 'Товарная категория', 29, 'active'),
+(56, 'Строительные добавки', 'Пластификаторы, антифризы и т.д.', 'Товарная категория', 30, 'active'),
+(57, 'Пена монтажная', 'Полиуретановая пена', 'Товарная категория', 30, 'active'),
+(58, 'Арматура', 'Арматурная сталь А1, А3', 'Товарная категория', 31, 'active'),
+(59, 'Сетки', 'Кладочная, сварная, рабица', 'Товарная категория', 31, 'active'),
+(60, 'Вязальная проволока', 'Проволока для вязки арматуры', 'Товарная категория', 31, 'inactive');
 
 -- --------------------------------------------------------
 
@@ -97,6 +146,14 @@ CREATE TABLE `PCRM_Counterparty` (
   `inn` varchar(20) DEFAULT NULL,
   `kpp` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Дамп данных таблицы `PCRM_Counterparty`
+--
+
+INSERT INTO `PCRM_Counterparty` (`id`, `name`, `type`, `phone`, `email`, `address`, `inn`, `kpp`) VALUES
+(1, 'тестовый контрагент', 'физлицо', '+79781000000', 'test@gmail.com', 'Тестовая, д.5', '', ''),
+(2, 'Тест заказов', 'физлицо', '', '', 'Петропавловская 222', '', '');
 
 -- --------------------------------------------------------
 
@@ -128,6 +185,13 @@ CREATE TABLE `PCRM_Drivers` (
   `phone` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Дамп данных таблицы `PCRM_Drivers`
+--
+
+INSERT INTO `PCRM_Drivers` (`id`, `name`, `vehicle_name`, `load_capacity`, `max_volume`, `phone`) VALUES
+(1, 'Тестовый Водила Иванович', 'Зил', '7.00', '0.000', '+79781234567');
+
 -- --------------------------------------------------------
 
 --
@@ -143,11 +207,11 @@ CREATE TABLE `PCRM_FinancialTransaction` (
   `counterparty_id` int NOT NULL,
   `cash_register_id` int NOT NULL,
   `payment_method` enum('cash','card','transfer_rncb','transfer_other','bank_account','hybrid') NOT NULL DEFAULT 'cash',
-  `expense_category` varchar(50) DEFAULT NULL,
   `description` text,
   `conducted` tinyint NOT NULL DEFAULT '0',
   `user_id` int NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `expense_category` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -170,8 +234,8 @@ CREATE TABLE `PCRM_FormState` (
 --
 
 INSERT INTO `PCRM_FormState` (`id`, `user_id`, `state_key`, `state_data`, `created_at`, `updated_at`) VALUES
-(1, 1, 'forms', '[]', '2025-05-16 23:33:13', '2025-05-16 23:33:13'),
-(2, 1, 'tabs', '[]', '2025-05-16 23:33:13', '2025-05-16 23:33:13');
+(4354, 1, 'forms', '[]', '2025-05-19 08:03:31', '2025-05-19 08:03:31'),
+(4355, 1, 'tabs', '[]', '2025-05-19 08:03:31', '2025-05-19 08:03:31');
 
 -- --------------------------------------------------------
 
@@ -220,6 +284,13 @@ CREATE TABLE `PCRM_Loaders` (
   `status` varchar(50) DEFAULT 'active' COMMENT 'active/inactive'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
+--
+-- Дамп данных таблицы `PCRM_Loaders`
+--
+
+INSERT INTO `PCRM_Loaders` (`id`, `name`, `phone`, `status`) VALUES
+(1, 'Тестовый Вася', '+79781112345', 'active');
+
 -- --------------------------------------------------------
 
 --
@@ -261,7 +332,6 @@ CREATE TABLE `PCRM_Order` (
   `organization` int DEFAULT NULL,
   `order_number` varchar(50) NOT NULL,
   `customer` int DEFAULT NULL,
-  `contacts` varchar(255) DEFAULT '',
   `created_by` int DEFAULT NULL,
   `order_date` datetime NOT NULL,
   `status` enum('new','confirmed','in_transit','completed','cancelled') NOT NULL DEFAULT 'new',
@@ -272,8 +342,16 @@ CREATE TABLE `PCRM_Order` (
   `comment` varchar(255) DEFAULT NULL,
   `deleted` tinyint DEFAULT '0',
   `conducted` tinyint NOT NULL DEFAULT '0' COMMENT '0=неактивен, 1=активен(не проведён), 2=активен(проведён)',
-  `driver_id` int DEFAULT NULL
+  `driver_id` int DEFAULT NULL,
+  `contacts` varchar(255) DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Дамп данных таблицы `PCRM_Order`
+--
+
+INSERT INTO `PCRM_Order` (`id`, `organization`, `order_number`, `customer`, `created_by`, `order_date`, `status`, `driver`, `total_amount`, `warehouse`, `delivery_address`, `comment`, `deleted`, `conducted`, `driver_id`, `contacts`) VALUES
+(8, 1, 'SO-000001', 2, 1, '2025-03-13 01:57:00', 'confirmed', NULL, '100.00', 1, '', '', 0, 0, NULL, '');
 
 -- --------------------------------------------------------
 
@@ -290,6 +368,13 @@ CREATE TABLE `PCRM_OrderHistory` (
   `timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Дамп данных таблицы `PCRM_OrderHistory`
+--
+
+INSERT INTO `PCRM_OrderHistory` (`id`, `order_id`, `action_type`, `action_details`, `user_id`, `timestamp`) VALUES
+(1, 8, 'update', 'Изменен статус заказа на \"Подтверждён\"', 1, '2025-03-16 22:40:08');
+
 -- --------------------------------------------------------
 
 --
@@ -304,6 +389,15 @@ CREATE TABLE `PCRM_OrderItem` (
   `price` decimal(10,2) NOT NULL DEFAULT '0.00',
   `discount` decimal(10,2) NOT NULL DEFAULT '0.00'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+--
+-- Дамп данных таблицы `PCRM_OrderItem`
+--
+
+INSERT INTO `PCRM_OrderItem` (`id`, `order_id`, `product_id`, `quantity`, `price`, `discount`) VALUES
+(10, 6, 1, '1.000', '100.00', '0.00'),
+(12, 7, 1, '15.000', '100.00', '0.00'),
+(19, 8, 1, '1.000', '100.00', '0.00');
 
 -- --------------------------------------------------------
 
@@ -322,6 +416,13 @@ CREATE TABLE `PCRM_Organization` (
   `email` varchar(100) DEFAULT NULL COMMENT 'E-mail',
   `status` varchar(50) DEFAULT 'active' COMMENT 'active / inactive и т.д.'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+--
+-- Дамп данных таблицы `PCRM_Organization`
+--
+
+INSERT INTO `PCRM_Organization` (`id`, `name`, `inn`, `kpp`, `ogrn`, `address`, `phone`, `email`, `status`) VALUES
+(1, 'ООО \"СтройГигант\"', '7712345678', '771301001', '1157746382975', 'г. Москва, ул. Ленина, д.1, оф.101', '+7 (495) 123-45-67', 'info@stroygiant.ru', 'active');
 
 -- --------------------------------------------------------
 
@@ -382,7 +483,6 @@ CREATE TABLE `PCRM_PaymentMethodDetails` (
 CREATE TABLE `PCRM_Product` (
   `id` int NOT NULL,
   `name` varchar(255) NOT NULL,
-  `default_measurement_id` int DEFAULT NULL,
   `sku` varchar(100) DEFAULT NULL,
   `description` text,
   `category` int DEFAULT NULL,
@@ -392,8 +492,16 @@ CREATE TABLE `PCRM_Product` (
   `unit_of_measure` varchar(20) DEFAULT 'шт',
   `weight` decimal(10,3) DEFAULT '0.000',
   `volume` decimal(10,3) DEFAULT '0.000',
-  `status` varchar(50) DEFAULT 'active'
+  `status` varchar(50) DEFAULT 'active',
+  `default_measurement_id` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Дамп данных таблицы `PCRM_Product`
+--
+
+INSERT INTO `PCRM_Product` (`id`, `name`, `sku`, `description`, `category`, `subcategory`, `price`, `cost_price`, `unit_of_measure`, `weight`, `volume`, `status`, `default_measurement_id`) VALUES
+(1, 'тест', '2212123', '', NULL, NULL, '100.00', '100.00', 'шт', '0.000', '0.000', 'inactive', NULL);
 
 -- --------------------------------------------------------
 
@@ -518,20 +626,14 @@ CREATE TABLE `PCRM_Product_Measurement` (
 
 CREATE TABLE `PCRM_PurchaseOrder` (
   `id` int NOT NULL,
-  `purchase_order_number` varchar(50) DEFAULT NULL,
+  `order_num` varchar(50) DEFAULT NULL,
   `supplier_id` int NOT NULL,
   `date` datetime DEFAULT NULL,
   `status` varchar(50) DEFAULT 'draft',
   `total_amount` decimal(10,2) DEFAULT '0.00',
-  `organization` int DEFAULT NULL,
-  `warehouse_id` int DEFAULT NULL,
-  `delivery_address` varchar(255) DEFAULT NULL,
-  `comment` varchar(255) DEFAULT NULL,
+  `purchase_order_number` varchar(50) DEFAULT NULL,
   `deleted` tinyint DEFAULT '0',
-  `conducted` tinyint DEFAULT '0',
-  `created_by` int DEFAULT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `conducted` tinyint DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -695,6 +797,13 @@ CREATE TABLE `PCRM_Stock` (
   `quantity` decimal(10,2) DEFAULT '0.00'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Дамп данных таблицы `PCRM_Stock`
+--
+
+INSERT INTO `PCRM_Stock` (`id`, `prod_id`, `warehouse`, `quantity`) VALUES
+(1, 1, 1, '15.00');
+
 -- --------------------------------------------------------
 
 --
@@ -824,6 +933,13 @@ CREATE TABLE `PCRM_Warehouse` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
+-- Дамп данных таблицы `PCRM_Warehouse`
+--
+
+INSERT INTO `PCRM_Warehouse` (`id`, `name`, `location`, `status`) VALUES
+(1, 'Кубанская основной', 'Кубанская, 21Б', 'active');
+
+--
 -- Индексы сохранённых таблиц
 --
 
@@ -914,13 +1030,6 @@ ALTER TABLE `PCRM_Loaders`
   ADD PRIMARY KEY (`id`);
 
 --
--- Индексы таблицы `PCRM_Measurement`
---
-ALTER TABLE `PCRM_Measurement`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `short_name` (`short_name`);
-
---
 -- Индексы таблицы `PCRM_Order`
 --
 ALTER TABLE `PCRM_Order`
@@ -983,8 +1092,7 @@ ALTER TABLE `PCRM_Product`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `sku` (`sku`),
   ADD KEY `category` (`category`),
-  ADD KEY `subcategory` (`subcategory`),
-  ADD KEY `fk_product_default_measurement` (`default_measurement_id`);
+  ADD KEY `subcategory` (`subcategory`);
 
 --
 -- Индексы таблицы `PCRM_ProductImages`
@@ -993,86 +1101,10 @@ ALTER TABLE `PCRM_ProductImages`
   ADD PRIMARY KEY (`id`);
 
 --
--- Индексы таблицы `PCRM_ProductionOperation`
---
-ALTER TABLE `PCRM_ProductionOperation`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `order_id` (`order_id`),
-  ADD KEY `warehouse_id` (`warehouse_id`),
-  ADD KEY `product_id` (`product_id`),
-  ADD KEY `created_by` (`created_by`);
-
---
--- Индексы таблицы `PCRM_ProductionOperationItem`
---
-ALTER TABLE `PCRM_ProductionOperationItem`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `operation_id` (`operation_id`),
-  ADD KEY `ingredient_id` (`ingredient_id`);
-
---
--- Индексы таблицы `PCRM_ProductionOrder`
---
-ALTER TABLE `PCRM_ProductionOrder`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `recipe_id` (`recipe_id`),
-  ADD KEY `warehouse_id` (`warehouse_id`),
-  ADD KEY `created_by` (`created_by`);
-
---
--- Индексы таблицы `PCRM_ProductionRecipe`
---
-ALTER TABLE `PCRM_ProductionRecipe`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `product_id` (`product_id`),
-  ADD KEY `created_by` (`created_by`);
-
---
--- Индексы таблицы `PCRM_ProductionRecipeItem`
---
-ALTER TABLE `PCRM_ProductionRecipeItem`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `recipe_id` (`recipe_id`),
-  ADD KEY `ingredient_id` (`ingredient_id`);
-
---
--- Индексы таблицы `PCRM_Product_Measurement`
---
-ALTER TABLE `PCRM_Product_Measurement`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `product_measurement` (`product_id`,`measurement_id`),
-  ADD KEY `measurement_id` (`measurement_id`);
-
---
 -- Индексы таблицы `PCRM_PurchaseOrder`
 --
 ALTER TABLE `PCRM_PurchaseOrder`
   ADD PRIMARY KEY (`id`);
-
---
--- Индексы таблицы `PCRM_PurchaseOrderItem`
---
-ALTER TABLE `PCRM_PurchaseOrderItem`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `purchase_order_id` (`purchase_order_id`),
-  ADD KEY `product_id` (`product_id`);
-
---
--- Индексы таблицы `PCRM_ReceiptHeader`
---
-ALTER TABLE `PCRM_ReceiptHeader`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `purchase_order_id` (`purchase_order_id`),
-  ADD KEY `warehouse_id` (`warehouse_id`);
-
---
--- Индексы таблицы `PCRM_ReceiptItem`
---
-ALTER TABLE `PCRM_ReceiptItem`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `receipt_header_id` (`receipt_header_id`),
-  ADD KEY `product_id` (`product_id`),
-  ADD KEY `unloaded_by` (`unloaded_by`);
 
 --
 -- Индексы таблицы `PCRM_RelatedDocuments`
@@ -1125,23 +1157,6 @@ ALTER TABLE `PCRM_Stock`
   ADD KEY `warehouse` (`warehouse`);
 
 --
--- Индексы таблицы `PCRM_SupplierReturnHeader`
---
-ALTER TABLE `PCRM_SupplierReturnHeader`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `purchase_order_id` (`purchase_order_id`),
-  ADD KEY `warehouse_id` (`warehouse_id`),
-  ADD KEY `created_by` (`created_by`);
-
---
--- Индексы таблицы `PCRM_SupplierReturnItem`
---
-ALTER TABLE `PCRM_SupplierReturnItem`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `return_id` (`return_id`),
-  ADD KEY `product_id` (`product_id`);
-
---
 -- Индексы таблицы `PCRM_TrainingMaterial`
 --
 ALTER TABLE `PCRM_TrainingMaterial`
@@ -1163,13 +1178,6 @@ ALTER TABLE `PCRM_Transfers`
 --
 ALTER TABLE `PCRM_User`
   ADD PRIMARY KEY (`id`);
-
---
--- Индексы таблицы `PCRM_UserSession`
---
-ALTER TABLE `PCRM_UserSession`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `user_id` (`user_id`,`session_id`);
 
 --
 -- Индексы таблицы `PCRM_Warehouse`
@@ -1197,19 +1205,19 @@ ALTER TABLE `PCRM_AnalyticsDashboard`
 -- AUTO_INCREMENT для таблицы `PCRM_CashRegister`
 --
 ALTER TABLE `PCRM_CashRegister`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Categories`
 --
 ALTER TABLE `PCRM_Categories`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Counterparty`
 --
 ALTER TABLE `PCRM_Counterparty`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_DocumentRelation`
@@ -1221,19 +1229,19 @@ ALTER TABLE `PCRM_DocumentRelation`
 -- AUTO_INCREMENT для таблицы `PCRM_Drivers`
 --
 ALTER TABLE `PCRM_Drivers`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_FinancialTransaction`
 --
 ALTER TABLE `PCRM_FinancialTransaction`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_FormState`
 --
 ALTER TABLE `PCRM_FormState`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4428;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_InboundOperations`
@@ -1251,37 +1259,31 @@ ALTER TABLE `PCRM_InboundReturns`
 -- AUTO_INCREMENT для таблицы `PCRM_Loaders`
 --
 ALTER TABLE `PCRM_Loaders`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_Measurement`
---
-ALTER TABLE `PCRM_Measurement`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Order`
 --
 ALTER TABLE `PCRM_Order`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_OrderHistory`
 --
 ALTER TABLE `PCRM_OrderHistory`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_OrderItem`
 --
 ALTER TABLE `PCRM_OrderItem`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Organization`
 --
 ALTER TABLE `PCRM_Organization`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_OutboundOperations`
@@ -1305,7 +1307,7 @@ ALTER TABLE `PCRM_PaymentMethodDetails`
 -- AUTO_INCREMENT для таблицы `PCRM_Product`
 --
 ALTER TABLE `PCRM_Product`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_ProductImages`
@@ -1314,63 +1316,9 @@ ALTER TABLE `PCRM_ProductImages`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `PCRM_ProductionOperation`
---
-ALTER TABLE `PCRM_ProductionOperation`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_ProductionOperationItem`
---
-ALTER TABLE `PCRM_ProductionOperationItem`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_ProductionOrder`
---
-ALTER TABLE `PCRM_ProductionOrder`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_ProductionRecipe`
---
-ALTER TABLE `PCRM_ProductionRecipe`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_ProductionRecipeItem`
---
-ALTER TABLE `PCRM_ProductionRecipeItem`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_Product_Measurement`
---
-ALTER TABLE `PCRM_Product_Measurement`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT для таблицы `PCRM_PurchaseOrder`
 --
 ALTER TABLE `PCRM_PurchaseOrder`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_PurchaseOrderItem`
---
-ALTER TABLE `PCRM_PurchaseOrderItem`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_ReceiptHeader`
---
-ALTER TABLE `PCRM_ReceiptHeader`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_ReceiptItem`
---
-ALTER TABLE `PCRM_ReceiptItem`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
@@ -1407,19 +1355,7 @@ ALTER TABLE `PCRM_Shipments`
 -- AUTO_INCREMENT для таблицы `PCRM_Stock`
 --
 ALTER TABLE `PCRM_Stock`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_SupplierReturnHeader`
---
-ALTER TABLE `PCRM_SupplierReturnHeader`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `PCRM_SupplierReturnItem`
---
-ALTER TABLE `PCRM_SupplierReturnItem`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_TrainingMaterial`
@@ -1440,16 +1376,10 @@ ALTER TABLE `PCRM_User`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT для таблицы `PCRM_UserSession`
---
-ALTER TABLE `PCRM_UserSession`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT для таблицы `PCRM_Warehouse`
 --
 ALTER TABLE `PCRM_Warehouse`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Ограничения внешнего ключа сохраненных таблиц
@@ -1534,75 +1464,8 @@ ALTER TABLE `PCRM_PaymentMethodDetails`
 -- Ограничения внешнего ключа таблицы `PCRM_Product`
 --
 ALTER TABLE `PCRM_Product`
-  ADD CONSTRAINT `fk_product_default_measurement` FOREIGN KEY (`default_measurement_id`) REFERENCES `PCRM_Measurement` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `PCRM_Product_ibfk_1` FOREIGN KEY (`category`) REFERENCES `PCRM_Categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `PCRM_Product_ibfk_2` FOREIGN KEY (`subcategory`) REFERENCES `PCRM_Categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `PCRM_ProductionOperation`
---
-ALTER TABLE `PCRM_ProductionOperation`
-  ADD CONSTRAINT `PCRM_ProductionOperation_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `PCRM_ProductionOrder` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `PCRM_ProductionOperation_ibfk_2` FOREIGN KEY (`warehouse_id`) REFERENCES `PCRM_Warehouse` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  ADD CONSTRAINT `PCRM_ProductionOperation_ibfk_3` FOREIGN KEY (`product_id`) REFERENCES `PCRM_Product` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  ADD CONSTRAINT `PCRM_ProductionOperation_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `PCRM_User` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `PCRM_ProductionOperationItem`
---
-ALTER TABLE `PCRM_ProductionOperationItem`
-  ADD CONSTRAINT `PCRM_ProductionOperationItem_ibfk_1` FOREIGN KEY (`operation_id`) REFERENCES `PCRM_ProductionOperation` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `PCRM_ProductionOperationItem_ibfk_2` FOREIGN KEY (`ingredient_id`) REFERENCES `PCRM_Product` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `PCRM_ProductionOrder`
---
-ALTER TABLE `PCRM_ProductionOrder`
-  ADD CONSTRAINT `PCRM_ProductionOrder_ibfk_1` FOREIGN KEY (`recipe_id`) REFERENCES `PCRM_ProductionRecipe` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  ADD CONSTRAINT `PCRM_ProductionOrder_ibfk_2` FOREIGN KEY (`warehouse_id`) REFERENCES `PCRM_Warehouse` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  ADD CONSTRAINT `PCRM_ProductionOrder_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `PCRM_User` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `PCRM_ProductionRecipe`
---
-ALTER TABLE `PCRM_ProductionRecipe`
-  ADD CONSTRAINT `PCRM_ProductionRecipe_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `PCRM_Product` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  ADD CONSTRAINT `PCRM_ProductionRecipe_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `PCRM_User` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `PCRM_ProductionRecipeItem`
---
-ALTER TABLE `PCRM_ProductionRecipeItem`
-  ADD CONSTRAINT `PCRM_ProductionRecipeItem_ibfk_1` FOREIGN KEY (`recipe_id`) REFERENCES `PCRM_ProductionRecipe` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `PCRM_ProductionRecipeItem_ibfk_2` FOREIGN KEY (`ingredient_id`) REFERENCES `PCRM_Product` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `PCRM_Product_Measurement`
---
-ALTER TABLE `PCRM_Product_Measurement`
-  ADD CONSTRAINT `fk_product_measurement_measurement` FOREIGN KEY (`measurement_id`) REFERENCES `PCRM_Measurement` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_product_measurement_product` FOREIGN KEY (`product_id`) REFERENCES `PCRM_Product` (`id`) ON DELETE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `PCRM_PurchaseOrderItem`
---
-ALTER TABLE `PCRM_PurchaseOrderItem`
-  ADD CONSTRAINT `PCRM_PurchaseOrderItem_ibfk_1` FOREIGN KEY (`purchase_order_id`) REFERENCES `PCRM_PurchaseOrder` (`id`),
-  ADD CONSTRAINT `PCRM_PurchaseOrderItem_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `PCRM_Product` (`id`);
-
---
--- Ограничения внешнего ключа таблицы `PCRM_ReceiptHeader`
---
-ALTER TABLE `PCRM_ReceiptHeader`
-  ADD CONSTRAINT `PCRM_ReceiptHeader_ibfk_1` FOREIGN KEY (`purchase_order_id`) REFERENCES `PCRM_PurchaseOrder` (`id`),
-  ADD CONSTRAINT `PCRM_ReceiptHeader_ibfk_2` FOREIGN KEY (`warehouse_id`) REFERENCES `PCRM_Warehouse` (`id`);
-
---
--- Ограничения внешнего ключа таблицы `PCRM_ReceiptItem`
---
-ALTER TABLE `PCRM_ReceiptItem`
-  ADD CONSTRAINT `PCRM_ReceiptItem_ibfk_1` FOREIGN KEY (`receipt_header_id`) REFERENCES `PCRM_ReceiptHeader` (`id`),
-  ADD CONSTRAINT `PCRM_ReceiptItem_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `PCRM_Product` (`id`);
 
 --
 -- Ограничения внешнего ключа таблицы `PCRM_ReturnHeader`
@@ -1641,20 +1504,6 @@ ALTER TABLE `PCRM_Shipments`
 ALTER TABLE `PCRM_Stock`
   ADD CONSTRAINT `PCRM_Stock_ibfk_1` FOREIGN KEY (`prod_id`) REFERENCES `PCRM_Product` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   ADD CONSTRAINT `PCRM_Stock_ibfk_2` FOREIGN KEY (`warehouse`) REFERENCES `PCRM_Warehouse` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
---
--- Ограничения внешнего ключа таблицы `PCRM_SupplierReturnHeader`
---
-ALTER TABLE `PCRM_SupplierReturnHeader`
-  ADD CONSTRAINT `PCRM_SupplierReturnHeader_ibfk_1` FOREIGN KEY (`purchase_order_id`) REFERENCES `PCRM_PurchaseOrder` (`id`),
-  ADD CONSTRAINT `PCRM_SupplierReturnHeader_ibfk_2` FOREIGN KEY (`warehouse_id`) REFERENCES `PCRM_Warehouse` (`id`);
-
---
--- Ограничения внешнего ключа таблицы `PCRM_SupplierReturnItem`
---
-ALTER TABLE `PCRM_SupplierReturnItem`
-  ADD CONSTRAINT `PCRM_SupplierReturnItem_ibfk_1` FOREIGN KEY (`return_id`) REFERENCES `PCRM_SupplierReturnHeader` (`id`),
-  ADD CONSTRAINT `PCRM_SupplierReturnItem_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `PCRM_Product` (`id`);
 
 --
 -- Ограничения внешнего ключа таблицы `PCRM_TrainingMaterial`
