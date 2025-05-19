@@ -8,6 +8,20 @@ if (!check_access($conn, $_SESSION['user_id'], 'products')) {
     die("Нет доступа");
 }
 
+// Обработка только смены статуса (AJAX)
+if (isset($_POST['status_only']) && $_POST['status_only'] == 1 && isset($_POST['id'], $_POST['status'])) {
+  $id = (int)$_POST['id'];
+  $status = $_POST['status'] === 'active' ? 'active' : 'inactive';
+  $st = $conn->prepare("UPDATE PCRM_Product SET status=? WHERE id=?");
+  $st->bind_param("si", $status, $id);
+  if ($st->execute()) {
+    echo 'OK';
+  } else {
+    echo 'Ошибка: ' . $conn->error;
+  }
+  exit;
+}
+
 // Получаем данные из POST
 $id             = (int)($_POST['id'] ?? 0);
 $name           = trim($_POST['name'] ?? '');

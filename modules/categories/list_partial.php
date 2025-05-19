@@ -87,10 +87,17 @@ $current_params_json = json_encode([
             <button type="button" class="btn btn-outline-secondary btn-sm filter-btn <?php if ($filter_level === 'category') echo 'active'; ?>" data-filter="category">Категории</button>
             <button type="button" class="btn btn-outline-secondary btn-sm filter-btn <?php if ($filter_level === 'subcategory') echo 'active'; ?>" data-filter="subcategory">Подкатегории</button>
         </div>
+        <div class="d-flex align-items-center gap-2">
+            <select id="filter-status" class="form-select form-select-sm" style="width:auto;">
+                <option value="">Все статусы</option>
+                <option value="active">Активные</option>
+                <option value="inactive">Неактивные</option>
+            </select>
+        </div>
         <button class="btn btn-primary btn-sm" onclick="editCategory(0)">Добавить новую</button>
     </div>
 
-    <table class="table table-bordered">
+    <table class="table table-bordered" id="categories-table">
       <thead>
         <tr>
           <th class="sortable-header" data-sort="id">ID <span class="sort-icon"></span></th>
@@ -118,14 +125,20 @@ $current_params_json = json_encode([
                     $levelClass = 'level-subcategory';
                 }
                 $typeText = htmlspecialchars($c['type']);
+                $statusColor = $c['status'] === 'active' ? 'text-success' : 'text-danger';
               ?>
-              <tr>
+              <tr data-status="<?= $c['status'] ?>" data-level="<?= $levelText ?>">
                 <td><?= $c['id'] ?></td>
                 <td><?= htmlspecialchars($c['name']) ?></td>
                 <td class="<?= $levelClass ?>"><?= $levelText ?></td>
                 <td><?= $typeText ?></td>
                 <td><?= htmlspecialchars($c['pc_id']) ?></td>
-                <td><?= htmlspecialchars($c['status']) ?></td>
+                <td>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input status-switch" type="checkbox" data-id="<?= $c['id'] ?>" <?= $c['status']==='active'?'checked':'' ?>>
+                    <span class="fw-bold ms-2 <?= $statusColor ?>"><?= $c['status'] === 'active' ? 'Активна' : 'Неактивна' ?></span>
+                  </div>
+                </td>
                 <td>
                   <button class="btn btn-warning btn-sm" onclick="editCategory(<?= $c['id'] ?>)">Редактировать</button>
                   <button class="btn btn-danger btn-sm"  onclick="deleteCategory(<?= $c['id'] ?>)">Удалить</button>
@@ -359,4 +372,26 @@ function deleteCategory(catId) {
     }
   });
 }
+
+$(function() {
+  $('#filter-status').on('change', function() {
+    var stat = $(this).val();
+    $('#categories-table tbody tr').each(function() {
+      var show = true;
+      if (stat && $(this).data('status') != stat) show = false;
+      $(this).toggle(show);
+    });
+  });
+  $('.status-switch').on('change', function() {
+    var id = $(this).data('id');
+    var newStatus = $(this).is(':checked') ? 'active' : 'inactive';
+    $.post('/crm/modules/categories/save.php', { id: id, status_only: 1, status: newStatus }, function(resp) {
+      if (resp === 'OK') {
+        location.reload();
+      } else {
+        alert('Ошибка смены статуса: ' + resp);
+      }
+    });
+  });
+});
 </script>

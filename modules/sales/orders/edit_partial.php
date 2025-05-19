@@ -63,7 +63,7 @@ $allWh = $whRes->fetch_all(MYSQLI_ASSOC);
 $drvRes = $conn->query("SELECT id, name FROM PCRM_Drivers ORDER BY name");
 $allDrivers = $drvRes->fetch_all(MYSQLI_ASSOC);
 
-$prodRes = $conn->query("SELECT id, name, price FROM PCRM_Product ORDER BY name");
+$prodRes = $conn->query("SELECT id, name, price FROM PCRM_Product WHERE status='active' ORDER BY name");
 $allProducts = $prodRes->fetch_all(MYSQLI_ASSOC);
 
 $items = [];

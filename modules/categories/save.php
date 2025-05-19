@@ -44,6 +44,19 @@ if ($db_type !== 'Товарная категория') {
     $db_type = 'Товарная категория'; 
 }
 
+if (isset($_POST['status_only']) && $_POST['status_only'] == 1 && isset($_POST['id'], $_POST['status'])) {
+  $id = (int)$_POST['id'];
+  $status = $_POST['status'] === 'active' ? 'active' : 'inactive';
+  $st = $conn->prepare("UPDATE PCRM_Categories SET status=? WHERE id=?");
+  $st->bind_param("si", $status, $id);
+  if ($st->execute()) {
+    echo 'OK';
+  } else {
+    echo 'Ошибка: ' . $conn->error;
+  }
+  exit;
+}
+
 try {
     if ($id > 0) {
         // UPDATE

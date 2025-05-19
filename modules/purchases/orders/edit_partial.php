@@ -55,7 +55,7 @@ $allSuppliers = $supplierRes->fetch_all(MYSQLI_ASSOC);
 $whRes = $conn->query("SELECT id,name FROM PCRM_Warehouse WHERE status='active' ORDER BY name");
 $allWh = $whRes->fetch_all(MYSQLI_ASSOC);
 
-$prodRes = $conn->query("SELECT id,name,price,cost_price FROM PCRM_Product WHERE status='active' ORDER BY name");
+$prodRes = $conn->query("SELECT id, name, price FROM PCRM_Product WHERE status='active' ORDER BY name");
 $allProducts = $prodRes->fetch_all(MYSQLI_ASSOC);
 
 $items = [];

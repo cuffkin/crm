@@ -256,11 +256,13 @@ if ($measurementTableExists) {
     <?php endif; ?>
 
     <div class="mb-3">
-      <label>Статус</label>
-      <select id="p-status" class="form-select">
-        <option value="active"   <?= ($status == 'active'   ? 'selected' : '') ?>>active</option>
-        <option value="inactive" <?= ($status == 'inactive' ? 'selected' : '') ?>>inactive</option>
-      </select>
+      <label>Статус</label><br>
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="p-status" <?= ($status === 'active' ? 'checked' : '') ?>>
+        <label class="form-check-label fw-bold ms-2" for="p-status">
+          <span class="<?= $status === 'active' ? 'text-success' : 'text-danger' ?>"><?= $status === 'active' ? 'Активен' : 'Неактивен' ?></span>
+        </label>
+      </div>
     </div>
 
     <button class="btn btn-success" onclick="saveProduct(<?= $id ?>)">Сохранить</button>
@@ -282,7 +284,7 @@ function saveProduct(pid) {
     description: $('#p-description').val(),
     weight: $('#p-weight').val(),
     volume: $('#p-volume').val(),
-    status: $('#p-status').val()
+    status: $('#p-status').is(':checked') ? 'active' : 'inactive'
   };
 
   <?php if ($useOldUnitOfMeasure || empty($measurements)): ?>
@@ -392,4 +394,15 @@ $(document).ready(function() {
   $('#p-default-measurement').trigger('change');
 });
 <?php endif; ?>
+
+$(function() {
+  $('#p-status').on('change', function() {
+    var label = $(this).closest('.form-check').find('span');
+    if ($(this).is(':checked')) {
+      label.text('Активен').removeClass('text-danger').addClass('text-success');
+    } else {
+      label.text('Неактивен').removeClass('text-success').addClass('text-danger');
+    }
+  });
+});
 </script>

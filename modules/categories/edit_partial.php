@@ -77,11 +77,14 @@ $allParents = $catRes->fetch_all(MYSQLI_ASSOC);
     </div>
     
     <div class="mb-3">
-      <label for="cat-status-modal" class="form-label">Статус</label>
-      <select id="cat-status-modal" name="status" class="form-select">
-        <option value="active"   <?= ($status === 'active'   ? 'selected' : '') ?>>active</option>
-        <option value="inactive" <?= ($status === 'inactive' ? 'selected' : '') ?>>inactive</option>
-      </select>
+      <label for="cat-status-modal" class="form-label">Статус</label><br>
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="cat-status-switch" name="status_switch" <?= ($status === 'active' ? 'checked' : '') ?>>
+        <label class="form-check-label fw-bold ms-2" for="cat-status-switch">
+          <span class="<?= $status === 'active' ? 'text-success' : 'text-danger' ?>"><?= $status === 'active' ? 'Активна' : 'Неактивна' ?></span>
+        </label>
+      </div>
+      <input type="hidden" name="status" id="cat-status-hidden" value="<?= $status ?>">
     </div>
 
     <div class="d-flex justify-content-end">
@@ -157,6 +160,18 @@ $(document).ready(function() {
                 $submitButton.prop('disabled', false).html(originalButtonText);
             }
         });
+    });
+
+    $('#cat-status-switch').on('change', function() {
+        var label = $(this).closest('.form-check').find('span');
+        var hidden = $('#cat-status-hidden');
+        if ($(this).is(':checked')) {
+            label.text('Активна').removeClass('text-danger').addClass('text-success');
+            hidden.val('active');
+        } else {
+            label.text('Неактивна').removeClass('text-success').addClass('text-danger');
+            hidden.val('inactive');
+        }
     });
 });
 </script>
