@@ -464,4 +464,50 @@ body.dark-theme .login-subtitle {
 .btn-sm:hover,
 .btn-lg:hover {
   color: #ffffff !important;
+}
+
+/* ================================================
+   СТИЛИ ДЛЯ ВКЛАДОК И КРЕСТИКОВ ЗАКРЫТИЯ
+   ================================================ */
+
+/* Светлая тема - темные крестики */
+.nav-tabs .nav-link .btn-close {
+  filter: invert(1); /* Делаем крестик темным */
+  opacity: 0.6;
+}
+
+.nav-tabs .nav-link:hover .btn-close,
+.nav-tabs .nav-link.active .btn-close {
+  opacity: 0.8;
+}
+
+.nav-tabs .nav-link .btn-close:hover {
+  opacity: 1;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Темная тема */
+body.dark-theme {
+  /* Активные вкладки в темной теме должны быть темными */
+  .nav-tabs .nav-link.active {
+    background-color: #2a3441 !important;
+    color: #e2e8f0 !important;
+    border-color: #3a4553 !important;
+  }
+  
+  /* Светлые крестики в темной теме */
+  .nav-tabs .nav-link .btn-close {
+    filter: invert(0); /* Убираем инверсию - крестик остается светлым */
+    opacity: 0.6;
+  }
+  
+  .nav-tabs .nav-link:hover .btn-close,
+  .nav-tabs .nav-link.active .btn-close {
+    opacity: 0.8;
+  }
+  
+  .nav-tabs .nav-link .btn-close:hover {
+    opacity: 1;
+    background-color: rgba(220, 53, 69, 0.2);
+  }
 } 
