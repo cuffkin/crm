@@ -566,8 +566,8 @@ body.sidebar-open {
 }
 
 /* Ð£Ð»ÑƒÑ‡ÑˆÐµÐ½Ð¸Ñ Ð´Ð»Ñ Ð²Ñ‹Ð¿Ð°Ð´Ð°ÑŽÑ‰Ð¸Ñ… Ð¼ÐµÐ½ÑŽ Ð² Ñ‚Ð°Ð±Ð»Ð¸Ñ†Ð°Ñ… */
-.table-responsive {
-  border-radius: 8px;
+.table-responsive,
+.dropdown-menu {
   overflow: visible;
 }
 
@@ -618,21 +618,8 @@ body.sidebar-open {
   position: relative;
 }
 
-.table-responsive,
-.dropdown-menu {
-  overflow: visible;
-}
-
-.tab-content {
-  background-color: var(--bg-card);
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
-}
-
 /* ================================================
-   ÐÐÐ˜ÐœÐÐ¦Ð˜Ð˜
+   АНИМАЦИИ
    ================================================ */
 
 /* Ð‘Ð°Ð·Ð¾Ð²Ñ‹Ðµ Ð°Ð½Ð¸Ð¼Ð°Ñ†Ð¸Ð¸ */
@@ -848,7 +835,7 @@ body.sidebar-open {
   border-width: 4px;
 }
 
-/* ÐÐ½Ð¸Ð¼Ð°Ñ†Ð¸Ñ Ð´Ð»Ñ ÑÐ¿Ð¸ÑÐºÐ¾Ð² */
+/* ÐÐ½Ð¸Ð¼Ð°Ñ†Ð¸Ð¸ Ð´Ð»Ñ ÑÐ¿Ð¸ÑÐºÐ¾Ð² */
 .list-item-animated {
   animation: fadeInLeft 0.5s ease-out both;
 }
