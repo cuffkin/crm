@@ -466,6 +466,91 @@ body.dark-theme .login-subtitle {
   color: #ffffff !important;
 }
 
+/* Стили для outline кнопок */
+.btn-outline-primary {
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color);
+  background-color: transparent;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  color: #ffffff !important;
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.btn-outline-secondary {
+  color: var(--text-secondary) !important;
+  border-color: var(--border-color);
+  background-color: transparent;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:active {
+  color: #ffffff !important;
+  background-color: var(--text-secondary) !important;
+  border-color: var(--text-secondary) !important;
+}
+
+.btn-outline-success {
+  color: var(--success-color) !important;
+  border-color: var(--success-color);
+  background-color: transparent;
+}
+
+.btn-outline-success:hover,
+.btn-outline-success:focus,
+.btn-outline-success:active {
+  color: #ffffff !important;
+  background-color: var(--success-color) !important;
+  border-color: var(--success-color) !important;
+}
+
+.btn-outline-danger {
+  color: var(--danger-color) !important;
+  border-color: var(--danger-color);
+  background-color: transparent;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus,
+.btn-outline-danger:active {
+  color: #ffffff !important;
+  background-color: var(--danger-color) !important;
+  border-color: var(--danger-color) !important;
+}
+
+.btn-outline-warning {
+  color: var(--warning-color) !important;
+  border-color: var(--warning-color);
+  background-color: transparent;
+}
+
+.btn-outline-warning:hover,
+.btn-outline-warning:focus,
+.btn-outline-warning:active {
+  color: #ffffff !important;
+  background-color: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+}
+
+.btn-outline-info {
+  color: var(--info-color) !important;
+  border-color: var(--info-color);
+  background-color: transparent;
+}
+
+.btn-outline-info:hover,
+.btn-outline-info:focus,
+.btn-outline-info:active {
+  color: #ffffff !important;
+  background-color: var(--info-color) !important;
+  border-color: var(--info-color) !important;
+}
+
 /* ================================================
    СТИЛИ ДЛЯ ВКЛАДОК И КРЕСТИКОВ ЗАКРЫТИЯ
    ================================================ */

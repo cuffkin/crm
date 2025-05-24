@@ -251,7 +251,9 @@ $('#erp-products-table').on('dblclick', 'tbody tr', function() {
 });
 // --- Кнопки ---
 $('#btn-add-product').on('click', function() { window.editProduct(0); });
-$('.erp-panel .btn-outline-primary, .erp-panel .btn-outline-secondary').on('click', function() {
+
+// Исключаем кнопку фильтра из общего обработчика
+$('.erp-panel .btn-outline-primary, .erp-panel .btn-outline-secondary').not('#btn-filter-products').on('click', function() {
   alert('В разработке');
 });
 // --- Слайдер статуса ---
