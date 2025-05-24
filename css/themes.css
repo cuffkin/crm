@@ -4,6 +4,10 @@
    CSS ПЕРЕМЕННЫЕ (СВЕТЛАЯ ТЕМА ПО УМОЛЧАНИЮ)
    ================================================ */
 :root {
+  /* Переопределение Bootstrap primary цвета для навбара */
+  --bs-primary-rgb: 30, 47, 69; /* #1e2f45 в RGB */
+  --bs-primary: #1e2f45;
+  
   /* Основные цвета */
   --primary-color: #ff5a14; /* Оранжевый */
   --primary-light: #ff7a44;
@@ -299,11 +303,15 @@ input:checked + .theme-slider .theme-icon-dark {
 body.dark-theme {
   background-color: #121728;
   color: #e2e8f0;
+  /* Переопределение Bootstrap primary цвета для навбара */
+  --bs-primary-rgb: 30, 47, 69; /* #1e2f45 в RGB */
+  --bs-primary: #1e2f45;
+  
+  --bg-main: #121728;
 }
 
 /* Переопределение переменных для темной темы */
 body.dark-theme {
-  --bg-main: #121728;
   --bg-card: #1a2035;
   --bg-nav: linear-gradient(135deg, #1e2f45 0%, #0f1419 100%);
   --bg-header: #151c2c;
