@@ -528,6 +528,7 @@ h5 {
   overflow: hidden;
   font-weight: 500;
   border: none;
+  color: #ffffff !important;
 }
 
 .btn::before {
@@ -554,6 +555,7 @@ h5 {
   background: linear-gradient(45deg, var(--primary-dark), var(--primary-color));
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.3);
+  color: #ffffff !important;
 }
 
 .btn-success:hover,
@@ -563,6 +565,7 @@ h5 {
 .btn-secondary:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  color: #ffffff !important;
 }
 
 .btn-sm {
@@ -619,6 +622,7 @@ h5 {
 .table .btn {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
+  color: #ffffff !important;
 }
 
 .table-striped tbody tr:nth-of-type(odd) {

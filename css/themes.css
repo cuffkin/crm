@@ -8,6 +8,12 @@
   --bs-primary-rgb: 30, 47, 69; /* #1e2f45 в RGB */
   --bs-primary: #1e2f45;
   
+  /* Переопределение цветов текста кнопок Bootstrap для светлого текста */
+  --bs-btn-color: #ffffff;
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-disabled-color: #ffffff;
+  
   /* Основные цвета */
   --primary-color: #ff5a14; /* Оранжевый */
   --primary-light: #ff7a44;
@@ -307,6 +313,12 @@ body.dark-theme {
   --bs-primary-rgb: 30, 47, 69; /* #1e2f45 в RGB */
   --bs-primary: #1e2f45;
   
+  /* Переопределение цветов текста кнопок Bootstrap для светлого текста */
+  --bs-btn-color: #ffffff;
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-disabled-color: #ffffff;
+  
   --bg-main: #121728;
 }
 
@@ -392,4 +404,64 @@ body.dark-theme .login-subtitle {
 
 .slide-in-up {
   animation: slideInUp 0.4s ease-out;
+}
+
+/* ================================================
+   ПЕРЕОПРЕДЕЛЕНИЕ ЦВЕТОВ КНОПОК ДЛЯ СВЕТЛОГО ТЕКСТА
+   ================================================ */
+
+/* Обеспечиваем белый цвет текста для всех Bootstrap кнопок */
+.btn-primary,
+.btn-secondary, 
+.btn-success,
+.btn-danger,
+.btn-warning,
+.btn-info,
+.btn-dark,
+.btn-light {
+  color: #ffffff !important;
+}
+
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-success:hover, 
+.btn-danger:hover,
+.btn-warning:hover,
+.btn-info:hover,
+.btn-dark:hover,
+.btn-light:hover {
+  color: #ffffff !important;
+}
+
+.btn-primary:focus,
+.btn-secondary:focus,
+.btn-success:focus,
+.btn-danger:focus,
+.btn-warning:focus,
+.btn-info:focus,
+.btn-dark:focus,
+.btn-light:focus {
+  color: #ffffff !important;
+}
+
+.btn-primary:active,
+.btn-secondary:active,
+.btn-success:active,
+.btn-danger:active,
+.btn-warning:active,
+.btn-info:active,
+.btn-dark:active,
+.btn-light:active {
+  color: #ffffff !important;
+}
+
+/* Для всех размеров кнопок */
+.btn-sm,
+.btn-lg {
+  color: #ffffff !important;
+}
+
+.btn-sm:hover,
+.btn-lg:hover {
+  color: #ffffff !important;
 } 
