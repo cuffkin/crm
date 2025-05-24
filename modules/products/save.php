@@ -22,6 +22,47 @@ if (isset($_POST['status_only']) && $_POST['status_only'] == 1 && isset($_POST['
   exit;
 }
 
+// Обработка быстрого редактирования отдельных полей (AJAX)
+if (isset($_POST['quick_edit']) && $_POST['quick_edit'] == 1 && isset($_POST['id'], $_POST['field'], $_POST['value'])) {
+  $id = (int)$_POST['id'];
+  $field = $_POST['field'];
+  $value = $_POST['value'];
+  
+  // Проверка безопасности для поля (белый список разрешенных полей)
+  $allowedFields = ['name', 'sku', 'price', 'unit_of_measure'];
+  
+  if (!in_array($field, $allowedFields)) {
+    die("Ошибка: Недопустимое поле");
+  }
+  
+  // Специальная обработка для полей
+  if ($field === 'price') {
+    // Преобразуем цену в числовой формат
+    $value = str_replace(',', '.', $value);
+    if (!is_numeric($value)) {
+      die("Ошибка: Цена должна быть числом");
+    }
+    $value = (float)$value;
+  }
+  
+  // Подготовка и выполнение запроса
+  $sql = "UPDATE PCRM_Product SET {$field}=? WHERE id=?";
+  $st = $conn->prepare($sql);
+  
+  if ($field === 'price') {
+    $st->bind_param("di", $value, $id);
+  } else {
+    $st->bind_param("si", $value, $id);
+  }
+  
+  if ($st->execute()) {
+    echo 'OK';
+  } else {
+    echo 'Ошибка: ' . $conn->error;
+  }
+  exit;
+}
+
 // Получаем данные из POST
 $id             = (int)($_POST['id'] ?? 0);
 $name           = trim($_POST['name'] ?? '');

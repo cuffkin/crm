@@ -31,6 +31,7 @@
 }
 
 /* Боковое меню */
+/*
 .sidebar {
   position: fixed;
   top: 56px;
@@ -214,6 +215,7 @@
 .sidebar.collapsed + .content-wrapper {
   margin-left: 70px;
 }
+*/
 
 /* Навигационные хлебные крошки */
 .breadcrumb {
@@ -528,6 +530,7 @@
 }
 
 /* Адаптивные стили */
+/*
 @media (max-width: 992px) {
   .sidebar {
     transform: translateX(-100%);
@@ -549,6 +552,7 @@
     flex-direction: column;
   }
 }
+*/
 
 @media (max-width: 768px) {
   .content-wrapper {

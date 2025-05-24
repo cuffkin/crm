@@ -15,16 +15,26 @@
   <link rel="stylesheet" href="/crm/assets/bootstrap-5.3.3-dist/css/bootstrap.min.css">
   <!-- Font Awesome для иконок -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  
   <!-- Основные стили -->
   <link rel="stylesheet" href="/crm/css/style.css">
+  
   <!-- Улучшенный визуальный стиль -->
   <link rel="stylesheet" href="/crm/css/enhanced-style.css">
+  
+  <!-- Стили сайдбара -->
+  <link rel="stylesheet" href="/crm/css/sidebar.css">
+  
+  <!-- Стили приложения -->
+  <link rel="stylesheet" href="/crm/css/app.css">
+  
+  <!-- Анимации -->
+  <link rel="stylesheet" href="/crm/css/animations.css">
+  
   <!-- jQuery - перемещено из footer для правильной инициализации -->
   <script src="/crm/assets/jquery-3.3.1/jquery.min.js"></script>
   <!-- Скрипт переключения тем -->
   <script src="/crm/js/theme-switcher.js"></script>
-  <!-- Добавляем файл sidebar.css -->
-  <link rel="stylesheet" href="/crm/css/sidebar.css">
   <!-- JavaScript для сайдбара -->
   <script src="/crm/js/sidebar.js"></script>
 </head>
@@ -42,7 +52,7 @@
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
       <div class="collapse navbar-collapse" id="mainNavbar">
       <!-- Избранные табы -->
-      <div id="favorite-tabs" class="d-flex ms-3" style="position: relative; z-index: 100; min-height: 38px; pointer-events: auto;"></div>
+      <div id="favorite-tabs" class="d-flex ms-3 favorite-tabs-container"></div>
       <!-- Статус и профиль -->
       <div class="d-flex align-items-center text-light ms-auto">
         <div id="session-status" class="d-flex align-items-center me-3"><small id="session-info" class="text-light me-2"></small><span id="sync-status" class="badge bg-secondary rounded-pill"><i class="fas fa-sync-alt"></i></span></div>

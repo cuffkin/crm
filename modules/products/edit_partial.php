@@ -269,12 +269,18 @@ if ($measurementTableExists) {
     <!-- <button class="btn btn-outline-info" id="open-product-picker">Выбрать товар из дерева</button> -->
 
     <button class="btn btn-success" onclick="saveProduct(<?= $id ?>)">Сохранить</button>
-    <button class="btn btn-secondary" onclick="$('#product-edit-area').html('')">Отмена</button>
+    <button class="btn btn-secondary" onclick="closeEditForm()">Отмена</button>
 
   </div>
 </div>
 
 <script>
+// Функция закрытия формы редактирования и возврата к списку товаров
+function closeEditForm() {
+  $('#product-edit-area').html('').removeClass('fade-in');
+  $('.product-list-view').removeClass('hidden');
+}
+
 function saveProduct(pid) {
   let data = {
     id: pid,
@@ -316,7 +322,7 @@ function saveProduct(pid) {
   $.post('/crm/modules/products/save.php', data, function(resp) {
     if (resp === 'OK') {
       // Закрываем форму
-      $('#product-edit-area').html('');
+      closeEditForm();
       // Перезагружаем список
       $.get('/crm/modules/products/list_partial.php', function(h) {
         $('#crm-tab-content .tab-pane.active').html(h);
