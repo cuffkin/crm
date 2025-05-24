@@ -317,8 +317,14 @@ function openModuleTab(modulePath) {
     return;
   }
   
+  // Сворачиваем сайдбар при открытии любого модуля, кроме настроек
+  if (modulePath !== 'settings' && typeof window.closeSidebar === 'function') {
+    window.closeSidebar();
+    console.log('Sidebar collapsed for module:', modulePath);
+  }
+  
   let safePath = modulePath.replace(/\//g, '-');
-
+  
   let tabId = 'tab-' + safePath;
   let tabContentId = 'content-' + safePath;
 

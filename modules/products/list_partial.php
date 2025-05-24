@@ -131,7 +131,7 @@ input:checked + .slider:before { transform: translateX(16px); }
     <div class="erp-panel d-flex align-items-center flex-wrap gap-2">
       <button class="btn btn-primary btn-sm" id="btn-add-product">Товар</button>
       <button class="btn btn-outline-primary btn-sm">Услуга</button>
-      <button class="btn btn-outline-secondary btn-sm" id="btn-filter-products">Фильтр</button>
+      <button class="btn btn-outline-primary btn-sm" id="btn-filter-products">Фильтр</button>
       <input type="text" id="erp-search" class="form-control form-control-sm" style="width:220px;" placeholder="Наименование, код или артикул">
       <button class="btn btn-outline-secondary btn-sm">Печать</button>
       <button class="btn btn-outline-secondary btn-sm">Импорт</button>
@@ -253,7 +253,7 @@ $('#erp-products-table').on('dblclick', 'tbody tr', function() {
 $('#btn-add-product').on('click', function() { window.editProduct(0); });
 
 // Исключаем кнопку фильтра из общего обработчика
-$('.erp-panel .btn-outline-primary, .erp-panel .btn-outline-secondary').not('#btn-filter-products').on('click', function() {
+$('.erp-panel .btn-outline-secondary').not('#btn-filter-products').on('click', function() {
   alert('В разработке');
 });
 // --- Слайдер статуса ---

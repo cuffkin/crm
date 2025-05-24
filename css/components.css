@@ -132,6 +132,7 @@ body.sidebar-open {
 #sidebar-toggle {
   position: relative;
   z-index: 1000;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 /* Ð¯Ð²Ð½Ð¾Ðµ ÑƒÐºÐ°Ð·Ð°Ð½Ð¸Ðµ Ð¿Ñ€ÐµÐ¸Ð¼ÑƒÑ‰ÐµÑÑ‚Ð²Ð° Ð´Ð»Ñ Ñ€Ð°Ð·Ð»Ð¸Ñ‡Ð½Ñ‹Ñ… ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ð¹ */
@@ -803,7 +804,7 @@ body.sidebar-open {
   to { background-position: 0 0; }
 }
 
-/* ÐÐ½Ð¸Ð¼Ð°Ñ†Ð¸Ñ Ð¼ÐµÑ€Ñ†Ð°Ð½Ð¸Ñ Ð´Ð»Ñ Ð¿Ñ€Ð¸Ð²Ð»ÐµÑ‡ÐµÐ½Ð¸Ñ Ð²Ð½Ð¸Ð¼Ð°Ð½Ð¸Ñ */
+/* ÐÐ½Ð¸Ð¼Ð°Ñ†Ð¸Ð¸ Ð¼ÐµÑ€Ñ†Ð°Ð½Ð¸Ñ Ð´Ð»Ñ Ð¿Ñ€Ð¸Ð²Ð»ÐµÑ‡ÐµÐ½Ð¸Ñ Ð²Ð½Ð¸Ð¼Ð°Ð½Ð¸Ñ */
 .blink {
   animation: blink 1s infinite;
 }
@@ -998,4 +999,11 @@ body.sidebar-open {
 }
 #settingsModal .btn-outline-danger {
   font-weight: 600;
+}
+
+/* Скрываем кнопку toggle при открытом сайдбаре */
+body.sidebar-open #sidebar-toggle {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 } 
