@@ -131,7 +131,7 @@ input:checked + .slider:before { transform: translateX(16px); }
     <div class="erp-panel d-flex align-items-center flex-wrap gap-2">
       <button class="btn btn-primary btn-sm" id="btn-add-product">Товар</button>
       <button class="btn btn-outline-primary btn-sm">Услуга</button>
-      <button class="btn btn-outline-secondary btn-sm">Фильтр</button>
+      <button class="btn btn-outline-secondary btn-sm" id="btn-filter-products">Фильтр</button>
       <input type="text" id="erp-search" class="form-control form-control-sm" style="width:220px;" placeholder="Наименование, код или артикул">
       <button class="btn btn-outline-secondary btn-sm">Печать</button>
       <button class="btn btn-outline-secondary btn-sm">Импорт</button>
@@ -158,11 +158,26 @@ input:checked + .slider:before { transform: translateX(16px); }
         <table class="table table-sm erp-products-table" id="erp-products-table">
           <thead>
             <tr>
-              <th>Наименование</th>
-              <th>Код</th>
-              <th>Артикул</th>
-              <th>Ед. изм.</th>
-              <th>Цена продажи</th>
+              <th class="sortable-header" data-sort="name">
+                Наименование 
+                <i class="fas fa-sort sort-icon"></i>
+              </th>
+              <th class="sortable-header" data-sort="id">
+                Код 
+                <i class="fas fa-sort sort-icon"></i>
+              </th>
+              <th class="sortable-header" data-sort="sku">
+                Артикул 
+                <i class="fas fa-sort sort-icon"></i>
+              </th>
+              <th class="sortable-header" data-sort="unit_of_measure">
+                Ед. изм. 
+                <i class="fas fa-sort sort-icon"></i>
+              </th>
+              <th class="sortable-header" data-sort="price">
+                Цена продажи 
+                <i class="fas fa-sort sort-icon"></i>
+              </th>
               <th style="width:60px;">Статус</th>
               <th style="width:40px;" title="Полное редактирование">Ред.</th>
             </tr>
@@ -482,4 +497,263 @@ $(document).on('click', function(e) {
     }
   }
 });
+
+// === СОРТИРОВКА ТАБЛИЦЫ ===
+let currentSort = { field: null, direction: 'asc' };
+
+$('.sortable-header').on('click', function() {
+  const field = $(this).data('sort');
+  
+  // Определяем направление сортировки
+  if (currentSort.field === field) {
+    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.direction = 'asc';
+  }
+  currentSort.field = field;
+  
+  // Обновляем иконки
+  $('.sortable-header').removeClass('sort-asc sort-desc');
+  $('.sort-icon').removeClass('fa-sort-up fa-sort-down').addClass('fa-sort');
+  
+  $(this).addClass('sort-' + currentSort.direction);
+  $(this).find('.sort-icon').removeClass('fa-sort').addClass(
+    currentSort.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down'
+  );
+  
+  // Сортируем таблицу
+  sortTable(field, currentSort.direction);
+});
+
+function sortTable(field, direction) {
+  const tbody = $('#erp-products-table tbody');
+  const rows = tbody.find('tr').toArray();
+  
+  rows.sort(function(a, b) {
+    let aVal, bVal;
+    
+    if (field === 'price') {
+      // Для цены берем числовое значение
+      aVal = parseFloat($(a).find('[data-field="price"]').text().replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      bVal = parseFloat($(b).find('[data-field="price"]').text().replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+    } else if (field === 'id') {
+      // Для кода сравниваем как числа
+      aVal = parseInt($(a).data('id')) || 0;
+      bVal = parseInt($(b).data('id')) || 0;
+    } else {
+      // Для текстовых полей
+      if (field === 'name') {
+        aVal = $(a).data('name').toLowerCase();
+        bVal = $(b).data('name').toLowerCase();
+      } else if (field === 'sku') {
+        aVal = $(a).data('sku').toLowerCase();
+        bVal = $(b).data('sku').toLowerCase();
+      } else {
+        aVal = $(a).find('[data-field="' + field + '"]').text().toLowerCase();
+        bVal = $(b).find('[data-field="' + field + '"]').text().toLowerCase();
+      }
+    }
+    
+    if (direction === 'asc') {
+      return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+    } else {
+      return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+    }
+  });
+  
+  tbody.empty().append(rows);
+}
+
+// === ФИЛЬТРЫ ===
+let activeFilters = {
+  category: null,
+  priceMin: null,
+  priceMax: null,
+  status: null,
+  measurement: null
+};
+
+// Обработчик кнопки фильтров
+$('#btn-filter-products').on('click', function() {
+  $('#productsFilterModal').modal('show');
+});
+
+// Применение фильтров
+function applyFilters() {
+  $('#erp-products-table tbody tr').each(function() {
+    const row = $(this);
+    let show = true;
+    
+    // Фильтр по поиску (уже существующий)
+    const search = $('#erp-search').val().toLowerCase();
+    if (search) {
+      const name = row.data('name').toLowerCase();
+      const sku = row.data('sku').toLowerCase();
+      const code = row.data('code').toString();
+      if (!(name.includes(search) || sku.includes(search) || code.includes(search))) {
+        show = false;
+      }
+    }
+    
+    // Фильтр по категории
+    if (selectedCat && row.data('cat') != selectedCat) {
+      show = false;
+    }
+    
+    // Фильтр по цене
+    if (activeFilters.priceMin !== null || activeFilters.priceMax !== null) {
+      const priceText = row.find('[data-field="price"]').text();
+      const price = parseFloat(priceText.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      
+      if (activeFilters.priceMin !== null && price < activeFilters.priceMin) {
+        show = false;
+      }
+      if (activeFilters.priceMax !== null && price > activeFilters.priceMax) {
+        show = false;
+      }
+    }
+    
+    // Фильтр по статусу
+    if (activeFilters.status !== null) {
+      const isActive = row.find('.status-switch').is(':checked');
+      const rowStatus = isActive ? 'active' : 'inactive';
+      if (rowStatus !== activeFilters.status) {
+        show = false;
+      }
+    }
+    
+    // Фильтр по единице измерения
+    if (activeFilters.measurement !== null) {
+      const measurement = row.find('[data-field="unit_of_measure"]').text().toLowerCase();
+      if (measurement !== activeFilters.measurement.toLowerCase()) {
+        show = false;
+      }
+    }
+    
+    row.toggle(show);
+  });
+  
+  updateFilterBadge();
+}
+
+// Обновление счетчика активных фильтров
+function updateFilterBadge() {
+  const count = Object.values(activeFilters).filter(val => val !== null).length;
+  const btn = $('#btn-filter-products');
+  
+  btn.find('.filter-badge').remove();
+  if (count > 0) {
+    btn.append(`<span class="badge badge-primary filter-badge ms-1">${count}</span>`);
+  }
+}
+
+// Сброс фильтров
+function resetFilters() {
+  activeFilters = {
+    category: null,
+    priceMin: null,
+    priceMax: null,
+    status: null,
+    measurement: null
+  };
+  
+  // Сброс формы в модальном окне
+  $('#filter-price-min').val('');
+  $('#filter-price-max').val('');
+  $('#filter-status').val('');
+  $('#filter-measurement').val('');
+  
+  applyFilters();
+}
+</script>
+
+<!-- Модальное окно фильтров -->
+<div class="modal fade" id="productsFilterModal" tabindex="-1" aria-labelledby="productsFilterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productsFilterModalLabel">
+          <i class="fas fa-filter me-2"></i>Фильтры товаров
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <!-- Ценовой диапазон -->
+          <div class="col-md-6">
+            <label for="filter-price-min" class="form-label">Цена от</label>
+            <input type="number" step="0.01" class="form-control" id="filter-price-min" placeholder="Минимальная цена">
+          </div>
+          <div class="col-md-6">
+            <label for="filter-price-max" class="form-label">Цена до</label>
+            <input type="number" step="0.01" class="form-control" id="filter-price-max" placeholder="Максимальная цена">
+          </div>
+          
+          <!-- Статус -->
+          <div class="col-md-6">
+            <label for="filter-status" class="form-label">Статус</label>
+            <select class="form-select" id="filter-status">
+              <option value="">Все</option>
+              <option value="active">Активные</option>
+              <option value="inactive">Неактивные</option>
+            </select>
+          </div>
+          
+          <!-- Единица измерения -->
+          <div class="col-md-6">
+            <label for="filter-measurement" class="form-label">Единица измерения</label>
+            <select class="form-select" id="filter-measurement">
+              <option value="">Все</option>
+              <option value="шт">Штука</option>
+              <option value="кг">Килограмм</option>
+              <option value="м">Метр</option>
+              <option value="л">Литр</option>
+              <option value="м²">Кв. метр</option>
+              <option value="м³">Куб. метр</option>
+            </select>
+          </div>
+          
+          <!-- Информация -->
+          <div class="col-12">
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Подсказка:</strong> Фильтры работают в дополнение к поиску по наименованию и выбранной категории в дереве слева.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()">
+          <i class="fas fa-eraser me-1"></i>Сбросить
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+        <button type="button" class="btn btn-primary" onclick="applyFiltersFromModal()">
+          <i class="fas fa-check me-1"></i>Применить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Применение фильтров из модального окна
+function applyFiltersFromModal() {
+  // Считываем значения из формы
+  activeFilters.priceMin = $('#filter-price-min').val() ? parseFloat($('#filter-price-min').val()) : null;
+  activeFilters.priceMax = $('#filter-price-max').val() ? parseFloat($('#filter-price-max').val()) : null;
+  activeFilters.status = $('#filter-status').val() || null;
+  activeFilters.measurement = $('#filter-measurement').val() || null;
+  
+  // Применяем фильтры
+  applyFilters();
+  
+  // Закрываем модальное окно
+  $('#productsFilterModal').modal('hide');
+}
+
+// Переопределяем существующую функцию фильтрации для работы с новыми фильтрами
+const originalFilterProducts = filterProducts;
+filterProducts = function() {
+  applyFilters();
+};
 </script>

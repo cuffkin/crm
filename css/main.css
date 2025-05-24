@@ -1002,29 +1002,39 @@ textarea.form-control {
 .sortable-header {
   cursor: pointer;
   user-select: none;
+  position: relative;
+  transition: background-color 0.2s ease;
 }
 
 .sortable-header:hover {
-  background-color: var(--bg-hover);
+  background-color: var(--bg-hover) !important;
 }
 
-.sort-icon {
-  display: inline-block;
-  width: 0;
-  height: 0;
-  margin-left: 5px;
-  vertical-align: middle;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-bottom: 4px solid var(--text-muted);
-  transition: all 0.2s ease;
+.sortable-header .sort-icon {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.sortable-header:hover .sort-icon {
+  opacity: 1;
 }
 
 .sortable-header.sort-asc .sort-icon,
 .sortable-header.sort-desc .sort-icon {
-  border-bottom-color: var(--primary-color);
+  opacity: 1;
+  color: var(--primary-color);
 }
 
-.sortable-header.sort-desc .sort-icon {
-  transform: rotate(180deg);
+/* Стили для счетчика фильтров */
+.filter-badge {
+  font-size: 0.6rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 50%;
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  font-weight: 600;
+  min-width: 1.2rem;
+  text-align: center;
 } 
