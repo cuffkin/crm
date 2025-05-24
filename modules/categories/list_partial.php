@@ -9,6 +9,27 @@ if (!check_access($conn, $_SESSION['user_id'], 'categories')) {
     die("<div class='text-danger'>Доступ запрещён</div>");
 }
 
+// Получаем все категории для построения дерева
+$allCatsRes = $conn->query("SELECT id, name, pc_id, status FROM PCRM_Categories ORDER BY name");
+$allCats = [];
+while ($row = $allCatsRes->fetch_assoc()) {
+    $allCats[] = $row;
+}
+
+// Строим дерево категорий
+function buildCatTree($cats, $parent = null) {
+    $branch = [];
+    foreach ($cats as $cat) {
+        if ((string)$cat['pc_id'] === (string)$parent) {
+            $children = buildCatTree($cats, $cat['id']);
+            if ($children) $cat['children'] = $children;
+            $branch[] = $cat;
+        }
+    }
+    return $branch;
+}
+$catTree = buildCatTree($allCats, null);
+
 // Параметры фильтрации, сортировки и пагинации
 $filter_level = isset($_GET['filter_level']) ? $_GET['filter_level'] : 'all';
 $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : 'id';
@@ -82,10 +103,10 @@ $current_params_json = json_encode([
     <h4>Категории / Подкатегории</h4>
 
     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
-        <div class="btn-group mb-2 mb-md-0" role="group" aria-label="Filter categories">
-            <button type="button" class="btn btn-outline-secondary btn-sm filter-btn <?php if ($filter_level === 'all') echo 'active'; ?>" data-filter="all">Все</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm filter-btn <?php if ($filter_level === 'category') echo 'active'; ?>" data-filter="category">Категории</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm filter-btn <?php if ($filter_level === 'subcategory') echo 'active'; ?>" data-filter="subcategory">Подкатегории</button>
+        <div class="btn-group mb-2 mb-md-0" role="group" aria-label="Filter categories" style="gap: 8px;">
+            <button type="button" class="btn btn-sm filter-btn category-filter-btn <?php if ($filter_level === 'all') echo 'active'; ?>" data-filter="all">Все</button>
+            <button type="button" class="btn btn-sm filter-btn category-filter-btn <?php if ($filter_level === 'category') echo 'active'; ?>" data-filter="category">Категории</button>
+            <button type="button" class="btn btn-sm filter-btn category-filter-btn <?php if ($filter_level === 'subcategory') echo 'active'; ?>" data-filter="subcategory">Подкатегории</button>
         </div>
         <div class="d-flex align-items-center gap-2">
             <select id="filter-status" class="form-select form-select-sm" style="width:auto;">
@@ -97,57 +118,80 @@ $current_params_json = json_encode([
         <button class="btn btn-primary btn-sm" onclick="editCategory(0)">Добавить новую</button>
     </div>
 
-    <table class="table table-bordered" id="categories-table">
-      <thead>
-        <tr>
-          <th class="sortable-header" data-sort="id">ID <span class="sort-icon"></span></th>
-          <th class="sortable-header" data-sort="name">Название <span class="sort-icon"></span></th>
-          <th class="sortable-header" data-sort="level">Уровень <span class="sort-icon"></span></th>
-          <th>Тип</th>
-          <th>Parent ID</th>
-          <th class="sortable-header" data-sort="status">Статус <span class="sort-icon"></span></th>
-          <th>Действия</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php if (empty($cats)): ?>
-            <tr><td colspan="7" class="text-center">Нет категорий для отображения с учетом текущих фильтров.</td></tr>
-        <?php else: ?>
-            <?php foreach ($cats as $c): ?>
-              <?php
-                $levelText = '';
-                $levelClass = '';
-                if (is_null($c['pc_id']) || $c['pc_id'] == 0 || $c['pc_id'] == '') {
-                    $levelText = 'Категория';
-                    $levelClass = 'level-category';
-                } else {
-                    $levelText = 'Подкатегория';
-                    $levelClass = 'level-subcategory';
+    <!-- Основная структура с деревом и таблицей -->
+    <div class="d-flex" style="height:calc(100vh - 180px); min-height:500px;">
+        <!-- Дерево категорий слева -->
+        <div class="categories-tree p-2" id="categories-tree" style="min-width: 250px; max-width: 300px; border-right: 1px solid #dee2e6; background: #fff; height: 100%; overflow-y: auto;">
+            <?php
+            function renderCatTree($tree, $activeId = null) {
+                echo '<ul style="list-style: none; padding-left: 18px;">';
+                foreach ($tree as $cat) {
+                    $cls = ($cat['status'] !== 'active' ? 'cat-inactive ' : '') . ($cat['id'] == $activeId ? 'cat-active' : '');
+                    echo '<li data-id="'.$cat['id'].'" class="'.$cls.'" style="cursor: pointer; padding: 2px 0;">'.htmlspecialchars($cat['name']);
+                    if (!empty($cat['children'])) renderCatTree($cat['children'], $activeId);
+                    echo '</li>';
                 }
-                $typeText = htmlspecialchars($c['type']);
-                $statusColor = $c['status'] === 'active' ? 'text-success' : 'text-danger';
-              ?>
-              <tr data-status="<?= $c['status'] ?>" data-level="<?= $levelText ?>">
-                <td><?= $c['id'] ?></td>
-                <td><?= htmlspecialchars($c['name']) ?></td>
-                <td class="<?= $levelClass ?>"><?= $levelText ?></td>
-                <td><?= $typeText ?></td>
-                <td><?= htmlspecialchars($c['pc_id']) ?></td>
-                <td>
-                  <div class="form-check form-switch">
-                    <input class="form-check-input status-switch" type="checkbox" data-id="<?= $c['id'] ?>" <?= $c['status']==='active'?'checked':'' ?>>
-                    <span class="fw-bold ms-2 <?= $statusColor ?>"><?= $c['status'] === 'active' ? 'Активна' : 'Неактивна' ?></span>
-                  </div>
-                </td>
-                <td>
-                  <button class="btn btn-warning btn-sm" onclick="editCategory(<?= $c['id'] ?>)">Редактировать</button>
-                  <button class="btn btn-danger btn-sm"  onclick="deleteCategory(<?= $c['id'] ?>)">Удалить</button>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-        <?php endif; ?>
-      </tbody>
-    </table>
+                echo '</ul>';
+            }
+            renderCatTree($catTree, null);
+            ?>
+        </div>
+
+        <!-- Основная таблица справа -->
+        <div class="categories-table-wrap p-3" style="flex: 1 1 0; overflow-x: auto;">
+            <table class="table table-bordered" id="categories-table">
+              <thead>
+                <tr>
+                  <th class="sortable-header" data-sort="id">ID <span class="sort-icon"></span></th>
+                  <th class="sortable-header" data-sort="name">Название <span class="sort-icon"></span></th>
+                  <th class="sortable-header" data-sort="level">Уровень <span class="sort-icon"></span></th>
+                  <th>Тип</th>
+                  <th>Parent ID</th>
+                  <th class="sortable-header" data-sort="status">Статус <span class="sort-icon"></span></th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($cats)): ?>
+                    <tr><td colspan="7" class="text-center">Нет категорий для отображения с учетом текущих фильтров.</td></tr>
+                <?php else: ?>
+                    <?php foreach ($cats as $c): ?>
+                      <?php
+                        $levelText = '';
+                        $levelClass = '';
+                        if (is_null($c['pc_id']) || $c['pc_id'] == 0 || $c['pc_id'] == '') {
+                            $levelText = 'Категория';
+                            $levelClass = 'level-category';
+                        } else {
+                            $levelText = 'Подкатегория';
+                            $levelClass = 'level-subcategory';
+                        }
+                        $typeText = htmlspecialchars($c['type']);
+                        $statusColor = $c['status'] === 'active' ? 'text-success' : 'text-danger';
+                      ?>
+                      <tr data-status="<?= $c['status'] ?>" data-level="<?= $levelText ?>" data-id="<?= $c['id'] ?>" id="category-row-<?= $c['id'] ?>">
+                        <td><?= $c['id'] ?></td>
+                        <td><?= htmlspecialchars($c['name']) ?></td>
+                        <td class="<?= $levelClass ?>"><?= $levelText ?></td>
+                        <td><?= $typeText ?></td>
+                        <td><?= htmlspecialchars($c['pc_id']) ?></td>
+                        <td>
+                          <div class="form-check form-switch">
+                            <input class="form-check-input status-switch" type="checkbox" data-id="<?= $c['id'] ?>" <?= $c['status']==='active'?'checked':'' ?>>
+                            <span class="fw-bold ms-2 <?= $statusColor ?>"><?= $c['status'] === 'active' ? 'Активна' : 'Неактивна' ?></span>
+                          </div>
+                        </td>
+                        <td>
+                          <button class="btn btn-warning btn-sm" onclick="editCategory(<?= $c['id'] ?>)">Редактировать</button>
+                          <button class="btn btn-danger btn-sm"  onclick="deleteCategory(<?= $c['id'] ?>)">Удалить</button>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+        </div>
+    </div>
 
     <!-- Пагинация -->
     <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap">
@@ -310,7 +354,137 @@ function initializeCategoryListUI() {
 
 $(document).ready(function() {
     initializeCategoryListUI();
+    initializeCategoryTree();
 });
+
+function initializeCategoryTree() {
+    // Стили для дерева категорий
+    const treeStyles = `
+        <style>
+        .categories-tree ul {
+            list-style: none !important;
+            padding-left: 18px !important;
+        }
+        .categories-tree li {
+            cursor: pointer !important;
+            padding: 2px 0 !important;
+            transition: background-color 0.2s ease;
+        }
+        .categories-tree li:hover {
+            background-color: #f0f8ff;
+            border-radius: 3px;
+        }
+        .categories-tree .cat-active {
+            font-weight: bold !important;
+            color: #0d6efd !important;
+            background-color: #e7f3ff;
+            border-radius: 3px;
+        }
+        .categories-tree .cat-inactive {
+            color: #bbb !important;
+        }
+        .table-row-highlight {
+            background-color: #fff3cd !important;
+            animation: highlightFade 3s ease-out forwards;
+        }
+        @keyframes highlightFade {
+            0% { background-color: #fff3cd !important; }
+            100% { background-color: transparent !important; }
+        }
+        
+        /* Стили для кнопок фильтров категорий */
+        .btn-group[style*="gap"] {
+            display: flex !important;
+        }
+        .btn-group[style*="gap"] .category-filter-btn {
+            margin-right: 8px;
+        }
+        .btn-group[style*="gap"] .category-filter-btn:last-child {
+            margin-right: 0;
+        }
+        
+        .category-filter-btn {
+            /* Неактивная кнопка - серая */
+            background: linear-gradient(45deg, #6c757d, #8a9ba8) !important;
+            border: none !important;
+            color: #ffffff !important;
+            transition: all 0.3s ease;
+        }
+        
+        .category-filter-btn:hover {
+            background: linear-gradient(45deg, #5a6268, #6c757d) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3);
+        }
+        
+        .category-filter-btn.active {
+            /* Активная кнопка - оранжевая */
+            background: linear-gradient(45deg, #ff5a14, #ff7a44) !important;
+            border: none !important;
+            color: #ffffff !important;
+        }
+        
+        .category-filter-btn.active:hover {
+            background: linear-gradient(45deg, #e64a00, #ff5a14) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255, 90, 20, 0.3);
+        }
+        </style>
+    `;
+    
+    // Добавляем стили в head если их еще нет
+    if (!$('#category-tree-styles').length) {
+        $('head').append('<div id="category-tree-styles">' + treeStyles + '</div>');
+    }
+    
+    // Обработчик клика по элементам дерева
+    $('#categories-tree').on('click', 'li[data-id]', function(e) {
+        e.stopPropagation();
+        
+        const categoryId = $(this).data('id');
+        
+        // Убираем активный класс со всех элементов
+        $('#categories-tree li').removeClass('cat-active');
+        // Добавляем активный класс к выбранному элементу
+        $(this).addClass('cat-active');
+        
+        // Находим строку в таблице и прокручиваем к ней
+        scrollToAndHighlightCategory(categoryId);
+    });
+}
+
+function scrollToAndHighlightCategory(categoryId) {
+    const targetRow = $('#category-row-' + categoryId);
+    
+    if (targetRow.length) {
+        // Убираем предыдущую подсветку
+        $('.table-row-highlight').removeClass('table-row-highlight');
+        
+        // Прокручиваем к строке
+        const tableContainer = $('.categories-table-wrap');
+        const rowPosition = targetRow.position().top;
+        const containerScrollTop = tableContainer.scrollTop();
+        const containerHeight = tableContainer.height();
+        
+        // Прокручиваем если элемент не виден
+        if (rowPosition < 0 || rowPosition > containerHeight) {
+            tableContainer.animate({
+                scrollTop: containerScrollTop + rowPosition - containerHeight/2
+            }, 500);
+        }
+        
+        // Добавляем подсветку с задержкой для лучшего эффекта
+        setTimeout(function() {
+            targetRow.addClass('table-row-highlight');
+        }, 100);
+        
+        console.log('Scrolled to and highlighted category:', categoryId);
+    } else {
+        console.warn('Category row not found:', categoryId);
+        // Возможно, категория не отображается из-за фильтров
+        alert('Категория не найдена в текущем списке. Возможно, она скрыта фильтрами.');
+    }
+}
 
 function editCategory(catId) {
   const modalId = 'categoryEditModal';
