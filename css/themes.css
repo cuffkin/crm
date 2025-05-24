@@ -482,17 +482,20 @@ body.dark-theme .login-subtitle {
 }
 
 .btn-outline-secondary {
-  color: #6c757d !important; /* Более темный серый цвет для лучшей видимости */
-  border-color: #6c757d !important; /* Используем более темную границу */
-  background-color: transparent;
+  /* Статичный градиентный фон как у btn-primary, но серый */
+  background: linear-gradient(45deg, #6c757d, #8a9ba8) !important;
+  border: none !important;
+  color: #ffffff !important;
 }
 
 .btn-outline-secondary:hover,
 .btn-outline-secondary:focus,
 .btn-outline-secondary:active {
+  background: linear-gradient(45deg, #5a6268, #6c757d) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3);
   color: #ffffff !important;
-  background-color: #6c757d !important;
-  border-color: #6c757d !important;
+  border: none !important;
 }
 
 .btn-outline-success {
