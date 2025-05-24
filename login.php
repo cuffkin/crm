@@ -44,8 +44,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="theme-color" content="#003366">
   <title>PRORABCRM - Вход в систему</title>
   <link rel="stylesheet" href="/crm/assets/bootstrap-5.3.3-dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/crm/css/style.css">
-  <link rel="stylesheet" href="/crm/css/enhanced-style.css">
+  <!-- Темы и CSS переменные -->
+  <link rel="stylesheet" href="/crm/css/themes.css">
+  <!-- Основные стили -->
+  <link rel="stylesheet" href="/crm/css/main.css">
+  <!-- Компоненты приложения -->
+  <link rel="stylesheet" href="/crm/css/components.css">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <!-- Скрипт переключения тем -->

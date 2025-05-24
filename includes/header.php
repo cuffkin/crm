@@ -16,20 +16,17 @@
   <!-- Font Awesome для иконок -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   
+  <!-- Темы и CSS переменные -->
+  <link rel="stylesheet" href="/crm/css/themes.css">
+  
   <!-- Основные стили -->
-  <link rel="stylesheet" href="/crm/css/style.css">
+  <link rel="stylesheet" href="/crm/css/main.css">
   
-  <!-- Улучшенный визуальный стиль -->
-  <link rel="stylesheet" href="/crm/css/enhanced-style.css">
+  <!-- Компоненты приложения -->
+  <link rel="stylesheet" href="/crm/css/components.css">
   
-  <!-- Стили сайдбара -->
-  <link rel="stylesheet" href="/crm/css/sidebar.css">
-  
-  <!-- Стили приложения -->
-  <link rel="stylesheet" href="/crm/css/app.css">
-  
-  <!-- Анимации -->
-  <link rel="stylesheet" href="/crm/css/animations.css">
+  <!-- Уведомления -->
+  <link rel="stylesheet" href="/crm/css/notification.css">
   
   <!-- jQuery - перемещено из footer для правильной инициализации -->
   <script src="/crm/assets/jquery-3.3.1/jquery.min.js"></script>
