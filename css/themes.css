@@ -23,7 +23,7 @@
   /* Нейтральные цвета */
   --bg-main: #f9fafc;
   --bg-card: #ffffff;
-  --bg-nav: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%);
+  --bg-nav: linear-gradient(135deg, #1e2f45 0%, #0f1419 100%);
   --bg-header: #f8f9fa;
   --bg-hover: #f3f6fa;
   
@@ -305,7 +305,7 @@ body.dark-theme {
 body.dark-theme {
   --bg-main: #121728;
   --bg-card: #1a2035;
-  --bg-nav: linear-gradient(135deg, #151c2c 0%, #0f141f 100%);
+  --bg-nav: linear-gradient(135deg, #1e2f45 0%, #0f1419 100%);
   --bg-header: #151c2c;
   --bg-hover: #232b3e;
   

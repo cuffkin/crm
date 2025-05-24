@@ -26,21 +26,6 @@
 <!-- Основной сайдбар -->
 <nav class="sidebar">
   <ul class="nav flex-column">
-    <li class="nav-item">
-      <a class="nav-link" href="#" data-module="users/list">
-        <i class="fas fa-users"></i>
-        <span>Пользователи</span>
-        <i class="fas fa-star star-icon" data-favorite="users/list"></i>
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#" data-module="access/list">
-        <i class="fas fa-lock"></i>
-        <span>Управление доступом</span>
-        <i class="fas fa-star star-icon" data-favorite="access/list"></i>
-      </a>
-    </li>
-    
     <!-- Группа Продажи -->
     <li class="nav-item sidebar-category">
       <a class="nav-link sidebar-toggle" href="#" data-submenu="sales">
@@ -233,14 +218,30 @@
         <i class="fas fa-star star-icon" data-favorite="finances/list"></i>
       </a>
     </li>
-    <!-- Кнопка настроек администратора -->
-    <li class="nav-item mt-4">
-      <button id="adminSettingsBtnSidebar" data-admin-settings-btn type="button" 
-              data-bs-toggle="modal" data-bs-target="#adminSettingsModal"
-              class="btn btn-dark w-100" style="font-weight:500; font-size:1.1rem; padding:12px 0;">
+    
+    <!-- Пользователи и доступ -->
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-module="users/list">
+        <i class="fas fa-users"></i>
+        <span>Пользователи</span>
+        <i class="fas fa-star star-icon" data-favorite="users/list"></i>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-module="access/list">
+        <i class="fas fa-lock"></i>
+        <span>Управление доступом</span>
+        <i class="fas fa-star star-icon" data-favorite="access/list"></i>
+      </a>
+    </li>
+    
+    <!-- Настройки администратора -->
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#adminSettingsModal">
         <i class="fas fa-cog"></i>
         <span>Настройки</span>
-      </button>
+        <i class="fas fa-star star-icon" data-favorite="settings"></i>
+      </a>
     </li>
   </ul>
 </nav> 
