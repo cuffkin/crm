@@ -1338,6 +1338,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 3000);
 });
 
+
 // Глобальный вызов патча Bootstrap Modal (если он еще не был вызван)
 // Это гарантирует, что все модальные окна будут работать корректно
 // patchBootstrapImmediately(); // Вызов может быть здесь или в app.js
