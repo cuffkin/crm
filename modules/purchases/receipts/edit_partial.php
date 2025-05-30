@@ -122,7 +122,7 @@ foreach ($items as $item) {
 }
 
 // Уникальный идентификатор для объектов на этой странице
-$uniquePrefix = 'rc_' . uniqid();
+$uniquePrefix = 'rc_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
 ?>
 <div class="card">
   <div class="card-header">
@@ -189,9 +189,23 @@ $uniquePrefix = 'rc_' . uniqid();
       <label>Комментарий</label>
       <textarea id="rc-comment" class="form-control" rows="2"><?= htmlspecialchars($comment) ?></textarea>
     </div>
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" id="rc-conducted" <?= ($conducted == 1 ? 'checked' : '') ?>>
-      <label class="form-check-label" for="rc-conducted">Проведена</label>
+    <!-- Слайдер проведения приёмки -->
+    <div class="mb-3">
+      <!-- Скрытый чекбокс для совместимости -->
+      <input class="form-check-input" type="checkbox" id="rc-conducted" <?= ($conducted == 1 ? 'checked' : '') ?> style="display: none;">
+      <!-- Слайдер проведения -->
+      <div class="conduct-slider-wrapper <?= ($conducted == 1 ? 'active' : '') ?>">
+        <div class="conduct-slider <?= ($conducted == 1 ? 'active' : '') ?>" 
+             id="rc-conducted-slider"
+             data-checked="<?= ($conducted == 1 ? 'true' : 'false') ?>"
+             data-original-checkbox="rc-conducted"
+             tabindex="0"
+             role="switch"
+             aria-checked="<?= ($conducted == 1 ? 'true' : 'false') ?>"
+             aria-label="Проведена">
+        </div>
+        <label class="conduct-slider-label" for="rc-conducted-slider">Проведена</label>
+      </div>
     </div>
     
     <h5>Товары</h5>
@@ -263,6 +277,9 @@ $uniquePrefix = 'rc_' . uniqid();
     ?>
   </div>
 </div>
+
+<!-- Подключение общих JavaScript функций -->
+<script src="/crm/js/common.js"></script>
 
 <script>
 // Внимание! Переменные теперь в локальной области видимости
@@ -344,6 +361,18 @@ $uniquePrefix = 'rc_' . uniqid();
                 }
             }
             calcTotal();
+        });
+        
+        // Инициализация слайдера проведения
+        if (typeof window.initAllConductSliders === 'function') {
+            window.initAllConductSliders();
+        }
+        
+        // Синхронизация слайдера с чекбоксом
+        $(document).on('click', '#rc-conducted-slider', function() {
+            const isActive = $(this).hasClass('active');
+            $('#rc-conducted').prop('checked', isActive).trigger('change');
+            console.log('Слайдер проведения приёмки:', isActive ? 'Включён' : 'Выключен');
         });
     });
 
@@ -557,6 +586,84 @@ $uniquePrefix = 'rc_' . uniqid();
         }
     }
 })();
+
+// Функция инициализации выпадающих меню (глобальная)
+function initDropdowns() {
+  console.log('🔧 [PURCHASES/RECEIPTS] Инициализация dropdown кнопок...');
+  
+  // Проверяем наличие Bootstrap
+  if (typeof bootstrap !== 'undefined') {
+    console.log('✅ Bootstrap найден, используем стандартные dropdown');
+    // Bootstrap 5 сам обрабатывает data-bs-toggle="dropdown"
+    return;
+  }
+  
+  console.log('⚠️ Bootstrap не найден, используем кастомные обработчики');
+  
+  // Кастомная обработка для кнопок с data-bs-toggle="dropdown"
+  $('[data-bs-toggle="dropdown"], .dropdown-toggle').off('click.customDropdown').on('click.customDropdown', function(e) {
+    console.log('👆 Клик по dropdown кнопке:', $(this).text().trim());
+    
+    const $button = $(this);
+    const $menu = $button.next('.dropdown-menu').length > 0 
+                  ? $button.next('.dropdown-menu') 
+                  : $button.siblings('.dropdown-menu');
+    const $container = $button.closest('.dropdown, .btn-group');
+    
+    console.log('📋 Найдено меню:', $menu.length > 0);
+    console.log('📦 Найден контейнер:', $container.length > 0);
+    
+    // Закрываем все другие меню
+    $('.dropdown, .btn-group').not($container).removeClass('show');
+    $('.dropdown-menu').not($menu).removeClass('show').hide();
+    
+    // Переключаем текущее меню
+    const isOpen = $container.hasClass('show');
+    $container.toggleClass('show', !isOpen);
+    $menu.toggleClass('show', !isOpen);
+    
+    if (!isOpen) {
+      $menu.show();
+      console.log('🟢 Меню открыто');
+    } else {
+      $menu.hide();
+      console.log('🔴 Меню закрыто');
+    }
+    
+    // Обновляем aria-expanded
+    $button.attr('aria-expanded', !isOpen);
+    
+    // Предотвращаем всплытие
+    e.preventDefault();
+    e.stopPropagation();
+    
+    return false;
+  });
+  
+  // Закрытие при клике вне меню
+  $(document).off('click.customDropdown').on('click.customDropdown', function(e) {
+    if (!$(e.target).closest('.dropdown, .btn-group').length) {
+      $('.dropdown, .btn-group').removeClass('show');
+      $('.dropdown-menu').removeClass('show').hide();
+      $('[data-bs-toggle="dropdown"], .dropdown-toggle').attr('aria-expanded', 'false');
+    }
+  });
+  
+  // Предотвращаем закрытие при клике на элементы меню
+  $('.dropdown-menu').off('click.customDropdown').on('click.customDropdown', function(e) {
+    e.stopPropagation();
+  });
+  
+  console.log('✅ Кастомные dropdown обработчики установлены');
+}
+
+// Вызываем инициализацию после загрузки
+$(document).ready(function() {
+  console.log('📄 [PURCHASES/RECEIPTS] Документ загружен, инициализируем dropdown...');
+  setTimeout(function() {
+    initDropdowns();
+  }, 100);
+});
 
 // Расширение для метода some в jQuery
 $.fn.some = function(callback) {

@@ -312,4 +312,68 @@ function createFinanceFromSupplierReturn(returnId, type = 'income') {
     }
   });
 }
+
+// Функция инициализации выпадающих меню (глобальная)
+function initDropdowns() {
+  console.log('🔧 [PURCHASES/RETURNS/LIST] Инициализация dropdown кнопок...');
+  
+  // Проверяем наличие Bootstrap
+  if (typeof bootstrap !== 'undefined') {
+    console.log('✅ Bootstrap найден, используем стандартные dropdown');
+    return;
+  }
+  
+  console.log('⚠️ Bootstrap не найден, используем кастомные обработчики');
+  
+  $('[data-bs-toggle="dropdown"], .dropdown-toggle').off('click.customDropdown').on('click.customDropdown', function(e) {
+    console.log('👆 Клик по dropdown кнопке:', $(this).text().trim());
+    
+    const $button = $(this);
+    const $menu = $button.next('.dropdown-menu').length > 0 
+                  ? $button.next('.dropdown-menu') 
+                  : $button.siblings('.dropdown-menu');
+    const $container = $button.closest('.dropdown, .btn-group');
+    
+    $('.dropdown, .btn-group').not($container).removeClass('show');
+    $('.dropdown-menu').not($menu).removeClass('show').hide();
+    
+    const isOpen = $container.hasClass('show');
+    $container.toggleClass('show', !isOpen);
+    $menu.toggleClass('show', !isOpen);
+    
+    if (!isOpen) {
+      $menu.show();
+      console.log('🟢 Меню открыто');
+    } else {
+      $menu.hide();
+      console.log('🔴 Меню закрыто');
+    }
+    
+    $button.attr('aria-expanded', !isOpen);
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  });
+  
+  $(document).off('click.customDropdown').on('click.customDropdown', function(e) {
+    if (!$(e.target).closest('.dropdown, .btn-group').length) {
+      $('.dropdown, .btn-group').removeClass('show');
+      $('.dropdown-menu').removeClass('show').hide();
+      $('[data-bs-toggle="dropdown"], .dropdown-toggle').attr('aria-expanded', 'false');
+    }
+  });
+  
+  $('.dropdown-menu').off('click.customDropdown').on('click.customDropdown', function(e) {
+    e.stopPropagation();
+  });
+  
+  console.log('✅ Кастомные dropdown обработчики установлены');
+}
+
+$(document).ready(function() {
+  console.log('📄 [PURCHASES/RETURNS/LIST] Документ загружен, инициализируем dropdown...');
+  setTimeout(function() {
+    initDropdowns();
+  }, 100);
+});
 </script>

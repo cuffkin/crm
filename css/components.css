@@ -213,7 +213,7 @@ body.sidebar-open {
   margin-right: 0.5rem;
 }
 
-/* Ð¡Ñ‚Ñ€Ð°Ð½Ð¸Ñ†Ð° 404 */
+/* Ð¡Ñ‚Ð°Ñ€Ð½Ð¸Ñ†Ð° 404 */
 .page-not-found {
   text-align: center;
   padding: 3rem 0;
@@ -1006,4 +1006,222 @@ body.sidebar-open #sidebar-toggle {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+} 
+
+/* ==============================
+   СЛАЙДЕР ПРОВЕДЕНИЯ ДОКУМЕНТОВ
+   ============================== */
+
+/* Основной контейнер слайдера */
+.conduct-slider {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 60px;
+  height: 32px;
+  background: linear-gradient(145deg, #e2e8f0, #f1f5f9);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid #e2e8f0;
+  box-shadow: 
+    inset 2px 2px 4px rgba(0, 0, 0, 0.1),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.8);
+}
+
+/* Слайдер во включённом состоянии */
+.conduct-slider.active {
+  background: linear-gradient(145deg, #10b981, #059669);
+  border-color: #059669;
+  box-shadow: 
+    inset 2px 2px 4px rgba(0, 0, 0, 0.2),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.3),
+    0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+/* Ползунок внутри слайдера */
+.conduct-slider::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.05);
+  transform: translateX(0);
+}
+
+/* Ползунок во включённом состоянии */
+.conduct-slider.active::before {
+  transform: translateX(28px);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Иконки внутри слайдера */
+.conduct-slider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+
+/* Иконка "крестик" в выключенном состоянии */
+.conduct-slider:not(.active)::after {
+  left: 8px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ef4444'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E");
+}
+
+/* Иконка "галочка" во включённом состоянии */
+.conduct-slider.active::after {
+  right: 8px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E");
+  opacity: 0.9;
+}
+
+/* Эффект при наведении */
+.conduct-slider:hover {
+  transform: scale(1.05);
+  box-shadow: 
+    inset 2px 2px 4px rgba(0, 0, 0, 0.15),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.9),
+    0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.conduct-slider.active:hover {
+  box-shadow: 
+    inset 2px 2px 4px rgba(0, 0, 0, 0.25),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.4),
+    0 0 0 2px rgba(16, 185, 129, 0.3),
+    0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Анимация при фокусе */
+.conduct-slider:focus-visible {
+  outline: none;
+  box-shadow: 
+    inset 2px 2px 4px rgba(0, 0, 0, 0.1),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.8),
+    0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Контейнер для слайдера с лейблом */
+.conduct-slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.conduct-slider-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--bs-body-color, #374151);
+  user-select: none;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.conduct-slider-wrapper.active .conduct-slider-label {
+  color: #059669;
+  font-weight: 600;
+}
+
+/* Состояние "отключено" */
+.conduct-slider.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Анимация при изменении состояния */
+.conduct-slider.changing {
+  animation: conductSliderPulse 0.6s ease-out;
+}
+
+@keyframes conductSliderPulse {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Размеры для разных вариантов */
+.conduct-slider.sm {
+  width: 48px;
+  height: 26px;
+}
+
+.conduct-slider.sm::before {
+  width: 20px;
+  height: 20px;
+  top: 2px;
+  left: 2px;
+}
+
+.conduct-slider.sm.active::before {
+  transform: translateX(22px);
+}
+
+.conduct-slider.lg {
+  width: 72px;
+  height: 38px;
+}
+
+.conduct-slider.lg::before {
+  width: 30px;
+  height: 30px;
+  top: 3px;
+  left: 3px;
+}
+
+.conduct-slider.lg.active::before {
+  transform: translateX(34px);
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  .conduct-slider {
+    width: 56px;
+    height: 30px;
+  }
+  
+  .conduct-slider::before {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .conduct-slider.active::before {
+    transform: translateX(26px);
+  }
+}
+
+/* Интеграция с темами */
+[data-bs-theme="dark"] .conduct-slider {
+  background: linear-gradient(145deg, #374151, #4b5563);
+  border-color: #4b5563;
+}
+
+[data-bs-theme="dark"] .conduct-slider::before {
+  background: linear-gradient(145deg, #f9fafb, #e5e7eb);
+}
+
+[data-bs-theme="dark"] .conduct-slider-label {
+  color: #d1d5db;
+}
+
+[data-bs-theme="dark"] .conduct-slider-wrapper.active .conduct-slider-label {
+  color: #34d399;
 } 

@@ -86,7 +86,7 @@ if ($id > 0) {
 $isDelivery = !empty($driver_id);
 
 // Уникальный идентификатор для этого экземпляра редактирования заказа
-$uniquePrefix = 'ord_' . uniqid();
+$uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
 ?>
 <div class="card">
   <div class="card-header">
@@ -167,13 +167,14 @@ $uniquePrefix = 'ord_' . uniqid();
     </div>
     
     <div class="mb-3">
-      <label>Контакты <span class="text-danger">*</span></label>
-      <input type="text" id="o-contacts" class="form-control required" value="<?= htmlspecialchars($contacts) ?>" required>
+      <label>Контакты <span class="text-danger contacts-required-indicator" id="contacts-required-indicator" <?= $isDelivery ? '' : 'style="display:none;"' ?>>*</span></label>
+      <input type="text" id="o-contacts" class="form-control <?= $isDelivery ? 'required' : '' ?>" value="<?= htmlspecialchars($contacts) ?>" <?= $isDelivery ? 'required' : '' ?>>
       <div class="invalid-feedback">Введите контактную информацию</div>
     </div>
     
-    <div class="mb-3">
-      <label>Адрес доставки</label>
+    <!-- Блок с адресом доставки (показывается только при выборе доставки) -->
+    <div class="mb-3" id="delivery-address-container" <?= $isDelivery ? '' : 'style="display:none;"' ?>>
+      <label>Адрес доставки <span class="text-danger">*</span></label>
       <input type="text" id="o-delivery" class="form-control <?= $isDelivery ? 'required' : '' ?>" 
              value="<?= htmlspecialchars($delivery_address) ?>"
              <?= $isDelivery ? 'required' : '' ?>>
@@ -194,9 +195,23 @@ $uniquePrefix = 'ord_' . uniqid();
         <option value="cancelled" <?= ($status == 'cancelled' ? 'selected' : '') ?>>Отменён</option>
       </select>
     </div>
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" id="o-conducted" <?= ($conducted == 2 ? 'checked' : '') ?>>
-      <label class="form-check-label" for="o-conducted">Проведён</label>
+    <!-- Слайдер проведения заказа -->
+    <div class="mb-3">
+      <!-- Скрытый чекбокс для совместимости -->
+      <input class="form-check-input" type="checkbox" id="o-conducted" <?= ($conducted == 2 ? 'checked' : '') ?> style="display: none;">
+      <!-- Слайдер проведения -->
+      <div class="conduct-slider-wrapper <?= ($conducted == 2 ? 'active' : '') ?>">
+        <div class="conduct-slider <?= ($conducted == 2 ? 'active' : '') ?>" 
+             id="o-conducted-slider"
+             data-checked="<?= ($conducted == 2 ? 'true' : 'false') ?>"
+             data-original-checkbox="o-conducted"
+             tabindex="0"
+             role="switch"
+             aria-checked="<?= ($conducted == 2 ? 'true' : 'false') ?>"
+             aria-label="Проведён">
+        </div>
+        <label class="conduct-slider-label" for="o-conducted-slider">Проведён</label>
+      </div>
     </div>
     <h5>Товары</h5>
     <table class="table table-sm table-bordered" id="oi-table">
@@ -241,41 +256,38 @@ $uniquePrefix = 'ord_' . uniqid();
       <input type="text" id="o-total" class="form-control" readonly value="<?= $total_amount ?>">
     </div>
     <div class="mt-3">
-      <div class="d-flex justify-content-between">
-        <div>
-          <button class="btn btn-success" onclick="window['<?= $uniquePrefix ?>_saveOrderAndClose'](<?= $id ?>)">Сохранить и закрыть</button>
-          <button class="btn btn-success" onclick="window['<?= $uniquePrefix ?>_saveOrder'](<?= $id ?>)">Сохранить</button>
-          
-          <?php if ($id > 0): ?>
-          <!-- Кнопка "Создать на основании" с выпадающим меню -->
-          <div class="btn-group dropend">
-            <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-              Создать на основании
-            </button>
-            <ul class="dropdown-menu position-static">
-              <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createShipmentFromOrder'](<?= $id ?>)">Создать отгрузку</a></li>
-              <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createFinanceFromOrder'](<?= $id ?>)">Создать ПКО</a></li>
-              <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createReturnFromOrder'](<?= $id ?>)">Создать возврат</a></li>
-            </ul>
-          </div>
-          <?php endif; ?>
-        </div>
-        
-        <!-- Кнопка-бургер с дополнительными действиями для заказа -->
-        <div class="dropdown">
-          <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-            <i class="fas fa-bars"></i> Действия
-          </button>
-          <ul class="dropdown-menu position-static">
-            <li><a class="dropdown-item" href="#" onclick="saveCreateShipmentAndPrint(<?= $id ?>)">
-              <i class="fas fa-print"></i> Сохранить, создать отгрузку на печать
-            </a></li>
-            <li><a class="dropdown-item" href="#" onclick="saveCreateShipmentAndPKO(<?= $id ?>)">
-              <i class="fas fa-money-bill"></i> Сохранить, создать отгрузку и ПКО на печать
-            </a></li>
-          </ul>
-        </div>
+      <button class="btn btn-success" onclick="window['<?= $uniquePrefix ?>_saveOrderAndClose'](<?= $id ?>)">Сохранить и закрыть</button>
+      <button class="btn btn-success" onclick="window['<?= $uniquePrefix ?>_saveOrder'](<?= $id ?>)">Сохранить</button>
+      <button class="btn btn-secondary" onclick="window['<?= $uniquePrefix ?>_cancelChanges']()">Отмена</button>
+      
+      <?php if ($id > 0): ?>
+      <!-- Кнопка "Создать на основании" с выпадающим меню -->
+      <div class="btn-group dropend">
+        <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+          Создать на основании
+        </button>
+        <ul class="dropdown-menu position-static">
+          <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createShipmentFromOrder'](<?= $id ?>)">Создать отгрузку</a></li>
+          <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createFinanceFromOrder'](<?= $id ?>)">Создать ПКО</a></li>
+          <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createReturnFromOrder'](<?= $id ?>)">Создать возврат</a></li>
+        </ul>
       </div>
+      
+      <!-- Кнопка с дополнительными действиями для заказа -->
+      <div class="btn-group">
+        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+          <i class="fas fa-bars"></i> Действия
+        </button>
+        <ul class="dropdown-menu position-static">
+          <li><a class="dropdown-item" href="#" onclick="saveCreateShipmentAndPrint(<?= $id ?>)">
+            <i class="fas fa-print"></i> Сохранить, создать отгрузку на печать
+          </a></li>
+          <li><a class="dropdown-item" href="#" onclick="saveCreateShipmentAndPKO(<?= $id ?>)">
+            <i class="fas fa-money-bill"></i> Сохранить, создать отгрузку и ПКО на печать
+          </a></li>
+        </ul>
+      </div>
+      <?php endif; ?>
     </div>
     
     <?php
@@ -299,7 +311,8 @@ $uniquePrefix = 'ord_' . uniqid();
   display: none;
 }
 
-.dropdown.show .dropdown-menu.position-static {
+.dropdown.show .dropdown-menu.position-static,
+.btn-group.show .dropdown-menu.position-static {
   display: block;
 }
 
@@ -307,10 +320,20 @@ $uniquePrefix = 'ord_' . uniqid();
   left: 0 !important;
   right: auto !important;
 }
+
+/* Дополнительные стили для кнопок */
+.btn-group {
+  margin-left: 5px;
+}
 </style>
 
+<!-- Подключение общих JavaScript функций -->
+<script src="/crm/js/common.js"></script>
+
 <script>
-// Используем анонимную функцию для создания локальной области видимости
+// Переменная с уникальным префиксом для этого модуля
+const uniquePrefix = '<?= $uniquePrefix ?>';
+
 (function() {
     // Создаем локальные переменные, недоступные извне этой функции
     const ALL_PRODUCTS = <?= json_encode($allProducts, JSON_UNESCAPED_UNICODE) ?>;
@@ -320,7 +343,7 @@ $uniquePrefix = 'ord_' . uniqid();
     let currentTabContentId = '';
 
     // Регистрируем функции в глобальной области видимости с уникальными именами
-    window['<?= $uniquePrefix ?>_addRow'] = function() {
+    window[`${uniquePrefix}_addRow`] = function() {
       const newRow = `
         <tr>
           <td>
@@ -473,16 +496,29 @@ $uniquePrefix = 'ord_' . uniqid();
         // Показываем/скрываем блок с выбором водителя
         $('#driver-container').toggle(isDelivery);
         
-        // Сбрасываем значение водителя при переключении на самовывоз
+        // Показываем/скрываем блок с адресом доставки
+        $('#delivery-address-container').toggle(isDelivery);
+        
+        // Сбрасываем значения при переключении на самовывоз
         if (!isDelivery) {
           $('#o-driver').val('');
+          $('#o-delivery').val('');
         }
         
         // Обновляем валидацию адреса доставки
         if (isDelivery) {
           $('#o-delivery').addClass('required').attr('required', 'required');
         } else {
-          $('#o-delivery').removeClass('required').removeAttr('required');
+          $('#o-delivery').removeClass('required').removeAttr('required').removeClass('is-invalid');
+        }
+        
+        // Обновляем валидацию контактов
+        if (isDelivery) {
+          $('#o-contacts').addClass('required').attr('required', 'required');
+          $('#contacts-required-indicator').show();
+        } else {
+          $('#o-contacts').removeClass('required').removeAttr('required').removeClass('is-invalid');
+          $('#contacts-required-indicator').hide();
         }
       });
       
@@ -500,13 +536,40 @@ $uniquePrefix = 'ord_' . uniqid();
         calcTotal();
       });
       
-      // Инициализируем выпадающие меню
-      initializeDropdownMenus();
+      // Инициализация состояния валидации в зависимости от типа доставки
+      const isDeliveryInit = $('#o-delivery-type').is(':checked');
       
-      // Обработчик для переключения статуса проведения
-      $('#o-conducted').on('change', function() {
-        let isChecked = $(this).is(':checked');
-        $('#conduct-status-text').text(isChecked ? 'Проведён' : 'Не проведён');
+      // Инициализация состояния контактов
+      if (isDeliveryInit) {
+        $('#o-contacts').addClass('required').attr('required', 'required');
+        $('#contacts-required-indicator').show();
+      } else {
+        $('#o-contacts').removeClass('required').removeAttr('required');
+        $('#contacts-required-indicator').hide();
+      }
+      
+      // Инициализация состояния адреса доставки
+      if (isDeliveryInit) {
+        $('#o-delivery').addClass('required').attr('required', 'required');
+        $('#delivery-address-container').show();
+      } else {
+        $('#o-delivery').removeClass('required').removeAttr('required');
+        $('#delivery-address-container').hide();
+      }
+      
+      // Инициализация состояния водителя
+      $('#driver-container').toggle(isDeliveryInit);
+      
+      // Инициализация слайдера проведения
+      if (typeof window.initAllConductSliders === 'function') {
+        window.initAllConductSliders();
+      }
+      
+      // Синхронизация слайдера с чекбоксом
+      $(document).on('click', '#o-conducted-slider', function() {
+        const isActive = $(this).hasClass('active');
+        $('#o-conducted').prop('checked', isActive).trigger('change');
+        console.log('Слайдер проведения:', isActive ? 'Включён' : 'Выключен');
       });
     });
 
@@ -548,8 +611,9 @@ $uniquePrefix = 'ord_' . uniqid();
         $('#o-cust').removeClass('is-invalid');
       }
       
-      // Проверка контактов
-      if (!$('#o-contacts').val().trim()) {
+      // Проверка контактов (только при доставке)
+      const isDelivery = $('#o-delivery-type').is(':checked');
+      if (isDelivery && !$('#o-contacts').val().trim()) {
         $('#o-contacts').addClass('is-invalid');
         valid = false;
       } else {
@@ -583,7 +647,6 @@ $uniquePrefix = 'ord_' . uniqid();
       }
       
       // Проверка валидации адреса доставки
-      const isDelivery = $('#o-delivery-type').is(':checked');
       const deliveryAddress = $('#o-delivery').val().trim();
       
       if (isDelivery && deliveryAddress === '') {
@@ -1021,39 +1084,6 @@ $uniquePrefix = 'ord_' . uniqid();
       window['<?= $uniquePrefix ?>_addRow']();
     }
 
-    // Добавляем функцию для корректного позиционирования меню
-    function initializeDropdownMenus() {
-      // Находим все выпадающие меню на странице
-      $('.dropdown-toggle').on('click', function(e) {
-        const $button = $(this);
-        const $menu = $button.next('.dropdown-menu');
-        
-        // Устанавливаем позицию меню относительно кнопки
-        const buttonPos = $button[0].getBoundingClientRect();
-        const isRightAligned = $button.closest('.dropdown').hasClass('dropend') || 
-                              $menu.hasClass('dropdown-menu-end');
-        
-        if (isRightAligned) {
-          // Для меню, выровненных по правому краю
-          $menu.css({
-            'left': 'auto',
-            'right': '0'
-          });
-        } else {
-          // Для стандартных меню
-          $menu.css('left', '0');
-        }
-        
-        // Правильное вертикальное расположение
-        $menu.css('top', buttonPos.height + 'px');
-        
-        // Предотвращаем закрытие меню при клике на его элементы
-        $menu.find('.dropdown-item').on('click', function(e) {
-          e.stopPropagation();
-        });
-      });
-    }
-
     // Функция для сохранения заказа, создания отгрузки и вывода на печать
     function saveCreateShipmentAndPrint(id) {
       // Сначала сохраняем заказ с проведением
@@ -1066,7 +1096,7 @@ $uniquePrefix = 'ord_' . uniqid();
         const actualId = savedId || id;
         
         // Используем существующую функцию создания отгрузки
-        window[`${uniquePrefix}_createShipmentFromOrder`](actualId, function(shipmentId) {
+        window['<?= $uniquePrefix ?>_createShipmentFromOrder'](actualId, function(shipmentId) {
           if (shipmentId) {
             // Открываем печатные формы в новых вкладках
             window.open(`/crm/modules/sales/orders/print.php?id=${actualId}`, '_blank');
@@ -1090,10 +1120,10 @@ $uniquePrefix = 'ord_' . uniqid();
         const actualId = savedId || id;
         
         // Используем существующую функцию создания отгрузки
-        window[`${uniquePrefix}_createShipmentFromOrder`](actualId, function(shipmentId) {
+        window['<?= $uniquePrefix ?>_createShipmentFromOrder'](actualId, function(shipmentId) {
           if (shipmentId) {
             // Затем создаем ПКО
-            window[`${uniquePrefix}_createFinanceFromOrder`](actualId, function(financeId) {
+            window['<?= $uniquePrefix ?>_createFinanceFromOrder'](actualId, function(financeId) {
               if (financeId) {
                 // Открываем печатные формы в новых вкладках
                 window.open(`/crm/modules/sales/orders/print.php?id=${actualId}`, '_blank');
@@ -1113,4 +1143,94 @@ $uniquePrefix = 'ord_' . uniqid();
     window.saveCreateShipmentAndPrint = saveCreateShipmentAndPrint;
     window.saveCreateShipmentAndPKO = saveCreateShipmentAndPKO;
 })();
+
+// Функция инициализации выпадающих меню (глобальная)
+function initDropdowns() {
+  console.log('🔧 [SALES/ORDERS] Инициализация dropdown кнопок...');
+  
+  // Проверяем наличие Bootstrap
+  if (typeof bootstrap !== 'undefined') {
+    console.log('✅ Bootstrap найден, используем стандартные dropdown');
+    // Bootstrap 5 сам обрабатывает data-bs-toggle="dropdown"
+    return;
+  }
+  
+  console.log('⚠️ Bootstrap не найден, используем кастомные обработчики');
+  
+  // Кастомная обработка для кнопок с data-bs-toggle="dropdown"
+  $('[data-bs-toggle="dropdown"], .dropdown-toggle').off('click.customDropdown').on('click.customDropdown', function(e) {
+    console.log('👆 Клик по dropdown кнопке:', $(this).text().trim());
+    
+    const $button = $(this);
+    const $menu = $button.next('.dropdown-menu').length > 0 
+                  ? $button.next('.dropdown-menu') 
+                  : $button.siblings('.dropdown-menu');
+    const $container = $button.closest('.dropdown, .btn-group');
+    
+    console.log('📋 Найдено меню:', $menu.length > 0);
+    console.log('📦 Найден контейнер:', $container.length > 0);
+    
+    // Закрываем все другие меню
+    $('.dropdown, .btn-group').not($container).removeClass('show');
+    $('.dropdown-menu').not($menu).removeClass('show').hide();
+    
+    // Переключаем текущее меню
+    const isOpen = $container.hasClass('show');
+    $container.toggleClass('show', !isOpen);
+    $menu.toggleClass('show', !isOpen);
+    
+    if (!isOpen) {
+      $menu.show();
+      console.log('🟢 Меню открыто');
+    } else {
+      $menu.hide();
+      console.log('🔴 Меню закрыто');
+    }
+    
+    // Обновляем aria-expanded
+    $button.attr('aria-expanded', !isOpen);
+    
+    // Предотвращаем всплытие
+    e.preventDefault();
+    e.stopPropagation();
+    
+    return false;
+  });
+  
+  // Закрытие при клике вне меню
+  $(document).off('click.customDropdown').on('click.customDropdown', function(e) {
+    if (!$(e.target).closest('.dropdown, .btn-group').length) {
+      $('.dropdown, .btn-group').removeClass('show');
+      $('.dropdown-menu').removeClass('show').hide();
+      $('[data-bs-toggle="dropdown"], .dropdown-toggle').attr('aria-expanded', 'false');
+    }
+  });
+  
+  // Предотвращаем закрытие при клике на элементы меню
+  $('.dropdown-menu').off('click.customDropdown').on('click.customDropdown', function(e) {
+    e.stopPropagation();
+  });
+  
+  console.log('✅ Кастомные dropdown обработчики установлены');
+}
+
+// Вызываем инициализацию после загрузки
+$(document).ready(function() {
+  console.log('📄 [SALES/ORDERS] Документ загружен, инициализируем dropdown...');
+  console.log('🔍 ПРОВЕРКА: typeof initDropdowns =', typeof initDropdowns);
+  console.log('🔍 ПРОВЕРКА: найдено dropdown кнопок =', $('[data-bs-toggle="dropdown"], .dropdown-toggle').length);
+  
+  // Задержка для убеждения что всё загрузилось
+  setTimeout(function() {
+    initDropdowns();
+    
+    // Дополнительная диагностика
+    const dropdownButtons = $('[data-bs-toggle="dropdown"], .dropdown-toggle');
+    console.log(`🔍 Найдено dropdown кнопок: ${dropdownButtons.length}`);
+    
+    dropdownButtons.each(function(i) {
+      console.log(`   ${i+1}. "${$(this).text().trim()}" (${$(this).prop('tagName')})`);
+    });
+  }, 100);
+});
 </script>

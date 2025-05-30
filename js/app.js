@@ -198,7 +198,7 @@ $(function() {
   };
   
   // Инициализируем менеджер меню
-  // menuManager.init(); // <--- ВРЕМЕННО ОТКЛЮЧАЕМ ДЛЯ ДИАГНОСТИКИ ПРОБЛЕМЫ С ВОССТАНОВЛЕНИЕМ СЕССИИ
+  menuManager.init(); // <--- ВКЛЮЧАЕМ ОБРАТНО ДЛЯ РАБОТЫ DROPDOWN КНОПОК
   
   // Остальные обработчики (не связанные с меню)
   $('[data-module]').on('click', function(e) {
@@ -1761,18 +1761,13 @@ function printOrder(orderId) {
 
 // Функция для сохранения состояния вкладок
 function saveTabsState() {
-  console.log('%c[SAVE_TABS_STATE] Запуск saveTabsState', 'color: purple; font-weight: bold;');
   const tabs = [];
   
   // Собираем информацию о всех открытых вкладках
-  console.log('%c[SAVE_TABS_STATE] Ищем вкладки в #crm-tabs .nav-item. Найдено элементов:', 'color: purple;', $('#crm-tabs .nav-item').length);
   $('#crm-tabs .nav-item').each(function(index) {
     const link = $(this).find('.nav-link');
     const tabId = link.attr('id');
     const title = link.text().trim().replace('×', '').trim();
-    console.log(`%c[SAVE_TABS_STATE] Обрабатываем вкладку #${index + 1}: ID=${tabId}, Title=${title}`, 'color: purple;');
-    console.log(`%c[SAVE_TABS_STATE]   HTML элемента link:`, 'color: gray;', link.prop('outerHTML')); // ЛОГ HTML ССЫЛКИ
-
     const contentId = link.attr('href').substring(1); // Убираем # из href
     
     const dataAttrs = {};
@@ -1782,18 +1777,9 @@ function saveTabsState() {
     const returnIdAttr = link.attr('data-return-id');
     const financeTypeAttr = link.attr('data-finance-type');
     const moduleIdAttr = link.attr('data-module');
-
-    console.log(`%c[SAVE_TABS_STATE]   --- Атрибуты перед проверкой ---`, 'color: brown;');
-    console.log(`%c[SAVE_TABS_STATE]     data-document-type: '${documentTypeAttr}' (тип: ${typeof documentTypeAttr})`, 'color: brown;');
-    console.log(`%c[SAVE_TABS_STATE]     data-order-id: '${orderIdAttr}' (тип: ${typeof orderIdAttr})`, 'color: brown;');
-    console.log(`%c[SAVE_TABS_STATE]     data-shipment-id: '${shipmentIdAttr}' (тип: ${typeof shipmentIdAttr})`, 'color: brown;');
-    console.log(`%c[SAVE_TABS_STATE]     data-return-id: '${returnIdAttr}' (тип: ${typeof returnIdAttr})`, 'color: brown;');
-    console.log(`%c[SAVE_TABS_STATE]     data-finance-type: '${financeTypeAttr}' (тип: ${typeof financeTypeAttr})`, 'color: brown;');
-    console.log(`%c[SAVE_TABS_STATE]     data-module: '${moduleIdAttr}' (тип: ${typeof moduleIdAttr})`, 'color: brown;');
     
     if (documentTypeAttr) {
       dataAttrs['document-type'] = documentTypeAttr;
-      console.log(`%c[SAVE_TABS_STATE]   Найден documentType: ${documentTypeAttr}`, 'color: teal;');
 
       if (documentTypeAttr === 'order' && orderIdAttr !== undefined) {
         dataAttrs['order-id'] = orderIdAttr;
@@ -1816,10 +1802,7 @@ function saveTabsState() {
 
     } else if (moduleIdAttr) { 
         dataAttrs['module'] = moduleIdAttr;
-        console.log(`%c[SAVE_TABS_STATE]   Найден data-module (documentType не было): ${dataAttrs['module']}`, 'color: teal;');
     }
-    
-    console.log(`%c[SAVE_TABS_STATE]   Собранные dataAttrs для ${tabId}:`, 'color: teal;', JSON.stringify(dataAttrs, null, 2));
     
     const tabInfo = {
       tabId: tabId,
@@ -1831,8 +1814,6 @@ function saveTabsState() {
     
     tabs.push(tabInfo);
   });
-  
-  console.log('%c[SAVE_TABS_STATE] Собраны следующие вкладки для сохранения:', 'color: purple; font-weight: bold;', JSON.stringify(tabs, null, 2));
   
   // Сохраняем в localStorage с привязкой к текущему пользователю
   if (tabs.length > 0) {

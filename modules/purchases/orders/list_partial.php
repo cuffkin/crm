@@ -398,3 +398,82 @@ function createFinanceFromPurchaseOrder(orderId, type = 'expense') {
     }
   });
 }
+
+// Функция инициализации выпадающих меню (глобальная)
+function initDropdowns() {
+  console.log('🔧 [PURCHASES/ORDERS/LIST] Инициализация dropdown кнопок...');
+  
+  // Проверяем наличие Bootstrap
+  if (typeof bootstrap !== 'undefined') {
+    console.log('✅ Bootstrap найден, используем стандартные dropdown');
+    // Bootstrap 5 сам обрабатывает data-bs-toggle="dropdown"
+    return;
+  }
+  
+  console.log('⚠️ Bootstrap не найден, используем кастомные обработчики');
+  
+  // Кастомная обработка для кнопок с data-bs-toggle="dropdown"
+  $('[data-bs-toggle="dropdown"], .dropdown-toggle').off('click.customDropdown').on('click.customDropdown', function(e) {
+    console.log('👆 Клик по dropdown кнопке:', $(this).text().trim());
+    
+    const $button = $(this);
+    const $menu = $button.next('.dropdown-menu').length > 0 
+                  ? $button.next('.dropdown-menu') 
+                  : $button.siblings('.dropdown-menu');
+    const $container = $button.closest('.dropdown, .btn-group');
+    
+    console.log('📋 Найдено меню:', $menu.length > 0);
+    console.log('📦 Найден контейнер:', $container.length > 0);
+    
+    // Закрываем все другие меню
+    $('.dropdown, .btn-group').not($container).removeClass('show');
+    $('.dropdown-menu').not($menu).removeClass('show').hide();
+    
+    // Переключаем текущее меню
+    const isOpen = $container.hasClass('show');
+    $container.toggleClass('show', !isOpen);
+    $menu.toggleClass('show', !isOpen);
+    
+    if (!isOpen) {
+      $menu.show();
+      console.log('🟢 Меню открыто');
+    } else {
+      $menu.hide();
+      console.log('🔴 Меню закрыто');
+    }
+    
+    // Обновляем aria-expanded
+    $button.attr('aria-expanded', !isOpen);
+    
+    // Предотвращаем всплытие
+    e.preventDefault();
+    e.stopPropagation();
+    
+    return false;
+  });
+  
+  // Закрытие при клике вне меню
+  $(document).off('click.customDropdown').on('click.customDropdown', function(e) {
+    if (!$(e.target).closest('.dropdown, .btn-group').length) {
+      $('.dropdown, .btn-group').removeClass('show');
+      $('.dropdown-menu').removeClass('show').hide();
+      $('[data-bs-toggle="dropdown"], .dropdown-toggle').attr('aria-expanded', 'false');
+    }
+  });
+  
+  // Предотвращаем закрытие при клике на элементы меню
+  $('.dropdown-menu').off('click.customDropdown').on('click.customDropdown', function(e) {
+    e.stopPropagation();
+  });
+  
+  console.log('✅ Кастомные dropdown обработчики установлены');
+}
+
+// Вызываем инициализацию после загрузки
+$(document).ready(function() {
+  console.log('📄 [PURCHASES/ORDERS/LIST] Документ загружен, инициализируем dropdown...');
+  setTimeout(function() {
+    initDropdowns();
+  }, 100);
+});
+</script>
