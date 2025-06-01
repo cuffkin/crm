@@ -405,6 +405,13 @@ function openModuleTab(modulePath) {
       tabPane.html(html).addClass('fade-in');
       initFormTracking(tabContentId);
       saveTabsState();
+      
+      // Инициализируем адаптивные таблицы для нового контента
+      setTimeout(() => {
+        if (typeof initResponsiveTables === 'function') {
+          initResponsiveTables();
+        }
+      }, 100);
     },
     error: function(xhr) {
       tabPane.html('<div class="alert alert-danger">Ошибка загрузки ('+xhr.status+')</div>');
@@ -4412,6 +4419,7 @@ function hideFAB() {
 document.addEventListener('DOMContentLoaded', function() {
     // Ожидаем немного, чтобы все элементы загрузились
     setTimeout(initFAB, 500);
+    setTimeout(initResponsiveTables, 600);
     
     // Обновляем контекст при изменении hash
     window.addEventListener('hashchange', function() {
@@ -4460,8 +4468,8 @@ function initResponsiveTables() {
         if (headers.includes('номер') && headers.includes('клиент')) {
             // Таблица заказов
             return {
-                mainFields: ['номер', 'дата и время', 'клиент', 'сумма'],
-                detailFields: ['контакты', 'статус', 'тип', 'проведен', 'создал'],
+                mainFields: ['номер', 'дата и время', 'клиент', 'контакт'],
+                detailFields: ['статус', 'тип', 'проведен', 'создал'],
                 actionsField: 'действия'
             };
         }
