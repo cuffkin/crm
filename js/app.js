@@ -4438,23 +4438,274 @@ function initResponsiveTables() {
         
         tables.forEach(table => {
             if (isMobile && !table.closest('.modal')) {
-                // Добавляем data-label атрибуты для карточного вида
-                const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                // Определяем основные поля для каждого типа таблицы
+                const mainFieldsConfig = getMainFieldsConfig(table);
                 
-                table.querySelectorAll('tbody tr').forEach(row => {
-                    const cells = row.querySelectorAll('td');
-                    cells.forEach((cell, index) => {
-                        if (headers[index]) {
-                            cell.setAttribute('data-label', headers[index]);
-                        }
-                    });
-                });
-                
-                table.classList.add('table-mobile-cards');
+                if (mainFieldsConfig) {
+                    convertToCompactCards(table, mainFieldsConfig);
+                }
             } else {
                 table.classList.remove('table-mobile-cards');
+                // Восстанавливаем оригинальную структуру если нужно
+                restoreOriginalTable(table);
             }
         });
+    }
+    
+    // Определение основных полей для разных типов таблиц
+    function getMainFieldsConfig(table) {
+        // Определяем тип таблицы по содержимому заголовков
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim().toLowerCase());
+        
+        if (headers.includes('номер') && headers.includes('клиент')) {
+            // Таблица заказов
+            return {
+                mainFields: ['номер', 'дата и время', 'клиент', 'сумма'],
+                detailFields: ['контакты', 'статус', 'тип', 'проведен', 'создал'],
+                actionsField: 'действия'
+            };
+        }
+        
+        if (headers.includes('контрагент') || headers.includes('название')) {
+            // Таблица контрагентов или других справочников
+            return {
+                mainFields: ['название', 'контактное лицо', 'телефон'],
+                detailFields: ['email', 'адрес', 'примечание'],
+                actionsField: 'действия'
+            };
+        }
+        
+        if (headers.includes('транзакция') || headers.includes('операция')) {
+            // Таблица финансов
+            return {
+                mainFields: ['номер', 'дата', 'тип', 'сумма'],
+                detailFields: ['контрагент', 'касса', 'тип оплаты', 'проведена'],
+                actionsField: 'действия'
+            };
+        }
+        
+        // Универсальная конфигурация для остальных таблиц
+        if (headers.length >= 4) {
+            return {
+                mainFields: headers.slice(0, 3), // Первые 3 поля
+                detailFields: headers.slice(3, -1), // Остальные кроме последнего (действия)
+                actionsField: headers[headers.length - 1] // Последнее поле
+            };
+        }
+        
+        return null;
+    }
+    
+    // Конвертация таблицы в компактные карточки
+    function convertToCompactCards(table, config) {
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+        const headerMap = {};
+        headers.forEach((header, index) => {
+            headerMap[header.toLowerCase()] = index;
+        });
+        
+        table.querySelectorAll('tbody tr').forEach((row, rowIndex) => {
+            const cells = row.querySelectorAll('td');
+            
+            // Очищаем существующую структуру
+            cells.forEach(cell => {
+                cell.className = '';
+                cell.innerHTML = cell.textContent || cell.innerHTML;
+            });
+            
+            // Добавляем контейнер для действий
+            if (!row.querySelector('.card-actions')) {
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'card-actions';
+                
+                // Кнопка расширения деталей
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'card-expand-btn';
+                expandBtn.innerHTML = '▼';
+                expandBtn.onclick = () => toggleCardDetails(row);
+                
+                // Кнопка меню действий
+                const menuBtn = document.createElement('button');
+                menuBtn.className = 'card-menu-btn';
+                menuBtn.innerHTML = '⋮';
+                menuBtn.onclick = (e) => showCardMenu(e, row, rowIndex);
+                
+                actionsContainer.appendChild(expandBtn);
+                actionsContainer.appendChild(menuBtn);
+                row.appendChild(actionsContainer);
+            }
+            
+            // Классифицируем поля
+            cells.forEach((cell, cellIndex) => {
+                if (cellIndex >= headers.length) return; // Пропускаем лишние ячейки
+                
+                const headerText = headers[cellIndex].toLowerCase();
+                const isMainField = config.mainFields.some(field => headerText.includes(field));
+                const isDetailField = config.detailFields.some(field => headerText.includes(field));
+                const isActionsField = headerText.includes(config.actionsField);
+                
+                if (isMainField) {
+                    cell.className = 'card-main-field';
+                    cell.innerHTML = `
+                        <span class="field-label">${headers[cellIndex]}</span>
+                        <span class="field-value">${cell.innerHTML}</span>
+                    `;
+                } else if (isDetailField) {
+                    cell.className = 'card-detail-field';
+                    cell.innerHTML = `
+                        <span class="field-label">${headers[cellIndex]}</span>
+                        <span class="field-value">${cell.innerHTML}</span>
+                    `;
+                } else if (isActionsField) {
+                    // Скрываем оригинальные действия, они будут в dropdown
+                    cell.style.display = 'none';
+                    cell.setAttribute('data-original-actions', cell.innerHTML);
+                }
+            });
+        });
+        
+        table.classList.add('table-mobile-cards');
+    }
+    
+    // Восстановление оригинальной структуры таблицы
+    function restoreOriginalTable(table) {
+        table.querySelectorAll('tbody tr').forEach(row => {
+            // Удаляем добавленные контейнеры действий
+            const actionsContainer = row.querySelector('.card-actions');
+            if (actionsContainer) {
+                actionsContainer.remove();
+            }
+            
+            // Восстанавливаем оригинальные ячейки
+            row.querySelectorAll('td').forEach(cell => {
+                if (cell.style.display === 'none' && cell.hasAttribute('data-original-actions')) {
+                    cell.style.display = '';
+                    cell.innerHTML = cell.getAttribute('data-original-actions');
+                    cell.removeAttribute('data-original-actions');
+                }
+                
+                // Убираем классы карточек
+                cell.classList.remove('card-main-field', 'card-detail-field');
+                
+                // Восстанавливаем простую структуру
+                if (cell.querySelector('.field-value')) {
+                    const fieldValue = cell.querySelector('.field-value');
+                    cell.innerHTML = fieldValue.innerHTML;
+                }
+            });
+            
+            row.classList.remove('expanded');
+        });
+    }
+    
+    // Переключение видимости деталей карточки
+    function toggleCardDetails(row) {
+        row.classList.toggle('expanded');
+        const expandBtn = row.querySelector('.card-expand-btn');
+        if (expandBtn) {
+            expandBtn.innerHTML = row.classList.contains('expanded') ? '▲' : '▼';
+        }
+    }
+    
+    // Показ меню действий для карточки
+    function showCardMenu(event, row, rowIndex) {
+        event.stopPropagation();
+        
+        // Закрываем все открытые меню
+        document.querySelectorAll('.card-dropdown.show').forEach(dropdown => {
+            dropdown.classList.remove('show');
+        });
+        
+        // Получаем оригинальные действия
+        const actionsCell = row.querySelector('td[data-original-actions]');
+        if (!actionsCell) return;
+        
+        // Создаем или находим dropdown
+        let dropdown = row.querySelector('.card-dropdown');
+        if (!dropdown) {
+            dropdown = createCardDropdown(actionsCell.getAttribute('data-original-actions'), row);
+            event.target.parentElement.appendChild(dropdown);
+        }
+        
+        dropdown.classList.add('show');
+        
+        // Закрытие по клику вне меню
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu(e) {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }, 100);
+    }
+    
+    // Создание dropdown меню на основе оригинальных действий
+    function createCardDropdown(originalActions, row) {
+        const dropdown = document.createElement('div');
+        dropdown.className = 'card-dropdown';
+        
+        const menu = document.createElement('div');
+        menu.className = 'card-dropdown-menu';
+        
+        // Парсим оригинальные кнопки и создаем пункты меню
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = originalActions;
+        
+        const buttons = tempDiv.querySelectorAll('button, a');
+        
+        // Добавляем пункт "Показать детали"
+        const detailsItem = document.createElement('button');
+        detailsItem.className = 'card-dropdown-item';
+        detailsItem.innerHTML = '<i class="fas fa-info-circle"></i> Показать детали';
+        detailsItem.onclick = () => {
+            toggleCardDetails(row);
+            dropdown.classList.remove('show');
+        };
+        menu.appendChild(detailsItem);
+        
+        // Добавляем разделитель
+        if (buttons.length > 0) {
+            const separator = document.createElement('div');
+            separator.style.borderTop = '1px solid var(--bs-border-color)';
+            separator.style.margin = '0.25rem 0';
+            menu.appendChild(separator);
+        }
+        
+        // Добавляем оригинальные действия
+        buttons.forEach(button => {
+            const item = document.createElement('button');
+            item.className = 'card-dropdown-item';
+            
+            // Определяем иконку по тексту кнопки
+            let icon = 'fas fa-cog';
+            const text = button.textContent.toLowerCase();
+            if (text.includes('ред')) icon = 'fas fa-edit';
+            else if (text.includes('удал')) icon = 'fas fa-trash';
+            else if (text.includes('печать')) icon = 'fas fa-print';
+            else if (text.includes('основании')) icon = 'fas fa-plus-circle';
+            
+            item.innerHTML = `<i class="${icon}"></i> ${button.textContent}`;
+            
+            // Копируем обработчик события
+            if (button.onclick) {
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    button.onclick.call(button, e);
+                    dropdown.classList.remove('show');
+                };
+            } else if (button.getAttribute('onclick')) {
+                item.setAttribute('onclick', button.getAttribute('onclick'));
+                item.onclick = (e) => {
+                    dropdown.classList.remove('show');
+                };
+            }
+            
+            menu.appendChild(item);
+        });
+        
+        dropdown.appendChild(menu);
+        return dropdown;
     }
     
     // Проверяем при загрузке
@@ -4477,8 +4728,5 @@ function initResponsiveTables() {
         subtree: true
     });
 }
-
-// Инициализация адаптивных таблиц
-document.addEventListener('DOMContentLoaded', initResponsiveTables);
 
  
