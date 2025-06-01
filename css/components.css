@@ -562,18 +562,19 @@ body.sidebar-open {
 
   .table-mobile-cards tr {
     display: block;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
     background: var(--bs-body-bg);
     border: 1px solid var(--bs-border-color);
-    border-radius: 8px;
-    padding: 0.75rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     position: relative;
   }
 
   .table-mobile-cards tr:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     border-color: var(--bs-primary);
+    transform: translateY(-1px);
   }
 
   /* Основные поля - всегда видимы */
@@ -582,7 +583,7 @@ body.sidebar-open {
     justify-content: space-between;
     align-items: center;
     border: none !important;
-    padding: 0.25rem 0;
+    padding: 0.5rem 0;
     text-align: left !important;
     word-wrap: break-word;
   }
@@ -591,14 +592,17 @@ body.sidebar-open {
     font-weight: 600;
     color: var(--bs-secondary);
     font-size: 0.8rem;
-    min-width: 60px;
-    margin-right: 0.5rem;
+    min-width: 80px;
+    margin-right: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .table-mobile-cards td.card-main-field .field-value {
     flex: 1;
     text-align: right;
     font-weight: 500;
+    color: var(--bs-body-color);
   }
 
   /* Дополнительные поля - скрыты по умолчанию */
@@ -607,10 +611,10 @@ body.sidebar-open {
     justify-content: space-between;
     align-items: center;
     border: none !important;
-    padding: 0.25rem 0;
+    padding: 0.4rem 0;
     text-align: left !important;
     word-wrap: break-word;
-    border-top: 1px solid var(--bs-border-color);
+    border-top: 1px solid var(--bs-border-color-translucent) !important;
     margin-top: 0.5rem;
     padding-top: 0.5rem;
   }
@@ -620,16 +624,20 @@ body.sidebar-open {
   }
 
   .table-mobile-cards td.card-detail-field .field-label {
-    font-weight: 600;
+    font-weight: 500;
     color: var(--bs-secondary);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     min-width: 80px;
-    margin-right: 0.5rem;
+    margin-right: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
   }
 
   .table-mobile-cards td.card-detail-field .field-value {
     flex: 1;
     text-align: right;
+    color: var(--bs-body-color);
+    font-size: 0.85rem;
   }
 
   /* Кнопка действий */
@@ -639,111 +647,32 @@ body.sidebar-open {
     right: 0.5rem;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-  }
-
-  .table-mobile-cards .card-menu-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--bs-light);
-    border: 1px solid var(--bs-border-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    color: var(--bs-secondary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .table-mobile-cards .card-menu-btn:hover {
-    background: var(--bs-primary);
-    color: white;
-    transform: scale(1.1);
   }
 
   .table-mobile-cards .card-expand-btn {
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    background: transparent;
-    border: 1px solid var(--bs-border-color);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    color: var(--bs-secondary);
+    color: var(--bs-primary);
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
   .table-mobile-cards .card-expand-btn:hover {
-    background: var(--bs-light);
-    color: var(--bs-primary);
+    background: var(--bs-primary);
+    color: white;
   }
 
   .table-mobile-cards tr.expanded .card-expand-btn {
     background: var(--bs-primary);
     color: white;
     transform: rotate(180deg);
-  }
-
-  /* Dropdown меню для карточек */
-  .table-mobile-cards .card-dropdown {
-    position: relative;
-  }
-
-  .table-mobile-cards .card-dropdown-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: white;
-    border: 1px solid var(--bs-border-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    min-width: 180px;
-    z-index: 1000;
-    display: none;
-    overflow: hidden;
-  }
-
-  .table-mobile-cards .card-dropdown.show .card-dropdown-menu {
-    display: block;
-    animation: fadeInDown 0.2s ease;
-  }
-
-  .table-mobile-cards .card-dropdown-item {
-    display: block;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: none;
-    border: none;
-    text-align: left;
-    color: var(--bs-body-color);
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    border-bottom: 1px solid var(--bs-border-color);
-  }
-
-  .table-mobile-cards .card-dropdown-item:last-child {
-    border-bottom: none;
-  }
-
-  .table-mobile-cards .card-dropdown-item:hover {
-    background: var(--bs-light);
-    color: var(--bs-primary);
-  }
-
-  .table-mobile-cards .card-dropdown-item i {
-    width: 16px;
-    margin-right: 0.5rem;
-  }
-
-  /* Скрытие оригинальных действий */
-  .table-mobile-cards td:last-child {
-    display: none !important;
   }
 
   /* Статусы и badges в карточках */
@@ -1464,15 +1393,23 @@ body.sidebar-open #sidebar-toggle {
    FLOATING ACTION BUTTON (FAB)
    ============================== */
 
+/* FAB показывается только на мобильных устройствах */
 .fab-container {
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 1050;
-  display: flex;
+  display: none; /* Скрыт по умолчанию на десктопе */
   flex-direction: column;
   align-items: flex-end;
   gap: 12px;
+}
+
+/* Показываем FAB только на планшетах и мобильных */
+@media (max-width: 992px) {
+  .fab-container {
+    display: flex;
+  }
 }
 
 .fab-main {

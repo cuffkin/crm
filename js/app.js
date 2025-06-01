@@ -4532,14 +4532,7 @@ function initResponsiveTables() {
                 expandBtn.innerHTML = '▼';
                 expandBtn.onclick = () => toggleCardDetails(row);
                 
-                // Кнопка меню действий
-                const menuBtn = document.createElement('button');
-                menuBtn.className = 'card-menu-btn';
-                menuBtn.innerHTML = '⋮';
-                menuBtn.onclick = (e) => showCardMenu(e, row, rowIndex);
-                
                 actionsContainer.appendChild(expandBtn);
-                actionsContainer.appendChild(menuBtn);
                 row.appendChild(actionsContainer);
             }
             
@@ -4613,107 +4606,6 @@ function initResponsiveTables() {
         if (expandBtn) {
             expandBtn.innerHTML = row.classList.contains('expanded') ? '▲' : '▼';
         }
-    }
-    
-    // Показ меню действий для карточки
-    function showCardMenu(event, row, rowIndex) {
-        event.stopPropagation();
-        
-        // Закрываем все открытые меню
-        document.querySelectorAll('.card-dropdown.show').forEach(dropdown => {
-            dropdown.classList.remove('show');
-        });
-        
-        // Получаем оригинальные действия
-        const actionsCell = row.querySelector('td[data-original-actions]');
-        if (!actionsCell) return;
-        
-        // Создаем или находим dropdown
-        let dropdown = row.querySelector('.card-dropdown');
-        if (!dropdown) {
-            dropdown = createCardDropdown(actionsCell.getAttribute('data-original-actions'), row);
-            event.target.parentElement.appendChild(dropdown);
-        }
-        
-        dropdown.classList.add('show');
-        
-        // Закрытие по клику вне меню
-        setTimeout(() => {
-            document.addEventListener('click', function closeMenu(e) {
-                if (!dropdown.contains(e.target)) {
-                    dropdown.classList.remove('show');
-                    document.removeEventListener('click', closeMenu);
-                }
-            });
-        }, 100);
-    }
-    
-    // Создание dropdown меню на основе оригинальных действий
-    function createCardDropdown(originalActions, row) {
-        const dropdown = document.createElement('div');
-        dropdown.className = 'card-dropdown';
-        
-        const menu = document.createElement('div');
-        menu.className = 'card-dropdown-menu';
-        
-        // Парсим оригинальные кнопки и создаем пункты меню
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = originalActions;
-        
-        const buttons = tempDiv.querySelectorAll('button, a');
-        
-        // Добавляем пункт "Показать детали"
-        const detailsItem = document.createElement('button');
-        detailsItem.className = 'card-dropdown-item';
-        detailsItem.innerHTML = '<i class="fas fa-info-circle"></i> Показать детали';
-        detailsItem.onclick = () => {
-            toggleCardDetails(row);
-            dropdown.classList.remove('show');
-        };
-        menu.appendChild(detailsItem);
-        
-        // Добавляем разделитель
-        if (buttons.length > 0) {
-            const separator = document.createElement('div');
-            separator.style.borderTop = '1px solid var(--bs-border-color)';
-            separator.style.margin = '0.25rem 0';
-            menu.appendChild(separator);
-        }
-        
-        // Добавляем оригинальные действия
-        buttons.forEach(button => {
-            const item = document.createElement('button');
-            item.className = 'card-dropdown-item';
-            
-            // Определяем иконку по тексту кнопки
-            let icon = 'fas fa-cog';
-            const text = button.textContent.toLowerCase();
-            if (text.includes('ред')) icon = 'fas fa-edit';
-            else if (text.includes('удал')) icon = 'fas fa-trash';
-            else if (text.includes('печать')) icon = 'fas fa-print';
-            else if (text.includes('основании')) icon = 'fas fa-plus-circle';
-            
-            item.innerHTML = `<i class="${icon}"></i> ${button.textContent}`;
-            
-            // Копируем обработчик события
-            if (button.onclick) {
-                item.onclick = (e) => {
-                    e.stopPropagation();
-                    button.onclick.call(button, e);
-                    dropdown.classList.remove('show');
-                };
-            } else if (button.getAttribute('onclick')) {
-                item.setAttribute('onclick', button.getAttribute('onclick'));
-                item.onclick = (e) => {
-                    dropdown.classList.remove('show');
-                };
-            }
-            
-            menu.appendChild(item);
-        });
-        
-        dropdown.appendChild(menu);
-        return dropdown;
     }
     
     // Проверяем при загрузке
