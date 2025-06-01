@@ -186,7 +186,7 @@ $uniquePrefix = 'sret_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
       <?php endif; ?>
     </div>
     <div class="mb-3">
-      <label>Склад <span class="text-danger">*</span></label>
+      <label>Склад</label>
       <select id="sr-warehouse" class="form-select required" required>
         <option value="">(не выбран)</option>
         <?php foreach ($allWarehouses as $w): ?>
@@ -195,10 +195,9 @@ $uniquePrefix = 'sret_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </option>
         <?php endforeach; ?>
       </select>
-      <div class="invalid-feedback">Выберите склад</div>
     </div>
     <div class="mb-3">
-      <label>Грузчик <span class="text-danger">*</span></label>
+      <label>Грузчик</label>
       <select id="sr-loader" class="form-select required" required>
         <option value="">(не выбран)</option>
         <?php foreach ($allLoaders as $l): ?>
@@ -207,10 +206,9 @@ $uniquePrefix = 'sret_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </option>
         <?php endforeach; ?>
       </select>
-      <div class="invalid-feedback">Выберите грузчика</div>
     </div>
     <div class="mb-3">
-      <label>Причина возврата <span class="text-danger">*</span></label>
+      <label>Причина возврата</label>
       <select id="sr-reason" class="form-select required" required onchange="window['<?= $uniquePrefix ?>_checkOtherReason']()">
         <option value="">(не выбрана)</option>
         <option value="Брак" <?= ($reason === 'Брак' ? 'selected' : '') ?>>Брак</option>
@@ -219,12 +217,10 @@ $uniquePrefix = 'sret_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         <option value="Перепутал" <?= ($reason === 'Перепутал' ? 'selected' : '') ?>>Перепутал</option>
         <option value="Другое" <?= ($reason === 'Другое' ? 'selected' : '') ?>>Другое</option>
       </select>
-      <div class="invalid-feedback">Выберите причину возврата</div>
     </div>
     <div class="mb-3">
       <label>Примечания <?= ($reason === 'Другое' ? '<span class="text-danger">*</span>' : '') ?></label>
       <textarea id="sr-notes" class="form-control <?= ($reason === 'Другое' ? 'required' : '') ?>" rows="2"><?= htmlspecialchars($notes) ?></textarea>
-      <div class="invalid-feedback">При выборе причины "Другое" необходимо заполнить примечания</div>
     </div>
     <div class="mb-3">
       <label>Статус</label>

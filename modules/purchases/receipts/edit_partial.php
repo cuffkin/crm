@@ -151,7 +151,6 @@ $uniquePrefix = 'rc_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
       <?php if ($purchase_order_id > 0 && $based_on === 'purchase_order'): ?>
       <input type="hidden" id="rc-order-hidden" value="<?= $purchase_order_id ?>">
       <?php endif; ?>
-      <div class="invalid-feedback">Выберите заказ поставщику</div>
     </div>
     <div class="mb-3">
       <label>Склад <span class="text-danger">*</span></label>
@@ -163,7 +162,6 @@ $uniquePrefix = 'rc_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </option>
         <?php endforeach; ?>
       </select>
-      <div class="invalid-feedback">Выберите склад</div>
     </div>
     <div class="mb-3">
       <label>Грузчик</label>

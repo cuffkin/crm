@@ -144,14 +144,13 @@ $uniquePrefix = 'sh_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         <option value="">(не выбран)</option>
         <?php foreach ($allOrders as $o): ?>
         <option value="<?= $o['id'] ?>" <?= ($o['id'] == $order_id ? 'selected' : '') ?>>
-          #<?= $o['id'] ?> (<?= htmlspecialchars($o['order_number']) ?>)
+          № <?= $o['number'] ?> от <?= date('d.m.Y', strtotime($o['doc_date'])) ?> (<?= htmlspecialchars($o['customer_name']) ?>)
         </option>
         <?php endforeach; ?>
       </select>
       <?php if ($order_id > 0 && $based_on === 'order'): ?>
       <input type="hidden" id="sh-order-hidden" value="<?= $order_id ?>">
       <?php endif; ?>
-      <div class="invalid-feedback">Выберите заказ</div>
     </div>
     <div class="mb-3">
       <label>Склад <span class="text-danger">*</span></label>
@@ -163,7 +162,6 @@ $uniquePrefix = 'sh_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </option>
         <?php endforeach; ?>
       </select>
-      <div class="invalid-feedback">Выберите склад</div>
     </div>
     <div class="mb-3">
       <label>Грузчик</label>

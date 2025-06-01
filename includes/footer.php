@@ -184,7 +184,7 @@
 
 <!-- Модальное окно предупреждения о несохраненных изменениях -->
 <div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel" role="dialog" aria-modal="true" data-persistent="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="unsavedChangesModalLabel">
@@ -192,12 +192,25 @@
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
-      <div class="modal-body">
-        <p>В форме есть несохраненные изменения. Вы уверены, что хотите закрыть её без сохранения?</p>
+      <div class="modal-body text-center py-4">
+        <div class="mb-3">
+          <i class="fas fa-exclamation-circle text-warning" style="font-size: 3rem;"></i>
+        </div>
+        <p class="fs-5 mb-3">В форме есть несохраненные изменения. Вы уверены, что хотите закрыть её без сохранения?</p>
+        <p class="text-muted">Все несохраненные данные будут потеряны.</p>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-        <button type="button" class="btn btn-danger" id="closeTabConfirm">Закрыть без сохранения</button>
+      <div class="modal-footer justify-content-center">
+        <div class="d-flex gap-3">
+          <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+            <i class="fas fa-times me-2"></i>Отмена
+          </button>
+          <button type="button" class="btn btn-success px-4" id="saveAndCloseConfirm">
+            <i class="fas fa-save me-2"></i>Сохранить и закрыть
+          </button>
+          <button type="button" class="btn btn-danger px-4" id="closeTabConfirm">
+            <i class="fas fa-trash me-2"></i>Закрыть без сохранения
+          </button>
+        </div>
       </div>
     </div>
   </div>

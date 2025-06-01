@@ -263,105 +263,74 @@ window.replaceConductCheckboxWithSlider = function(checkboxSelector, options = {
  * @param {HTMLElement} slider - Элемент слайдера
  */
 function initConductSliderEvents(slider) {
-  if (!slider || slider.dataset.eventsInitialized) return;
-
-  // Обработчик клика
-  slider.addEventListener('click', function(e) {
-    e.preventDefault();
-    if (slider.classList.contains('disabled')) return;
-    
-    toggleConductSlider(slider);
-  });
-
-  // Обработчик клика на лейбл
-  const wrapper = slider.closest('.conduct-slider-wrapper');
-  const label = wrapper?.querySelector('.conduct-slider-label');
-  if (label) {
-    label.addEventListener('click', function(e) {
-      e.preventDefault();
-      if (slider.classList.contains('disabled')) return;
-      
-      toggleConductSlider(slider);
-    });
+  if (!slider || slider.dataset.eventsInitialized === 'true') {
+    return;
   }
 
-  // Обработчик клавиатуры
-  slider.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      if (slider.classList.contains('disabled')) return;
-      
-      toggleConductSlider(slider);
-    }
-  });
-
+  slider.addEventListener('click', handleSliderClick);
+  slider.addEventListener('keydown', handleSliderKeydown);
   slider.dataset.eventsInitialized = 'true';
 }
 
 /**
- * Переключает состояние слайдера
- * @param {HTMLElement} slider - Элемент слайдера
- * @param {boolean} silent - Не вызывать callback (по умолчанию false)
+ * Обработчик клика по слайдеру
  */
-window.toggleConductSlider = function(slider, silent = false) {
-  if (!slider || slider.classList.contains('disabled')) return;
-
-  const wrapper = slider.closest('.conduct-slider-wrapper');
-  const currentState = slider.dataset.checked === 'true';
-  const newState = !currentState;
-
-  // Добавляем анимацию изменения
-  slider.classList.add('changing');
-  setTimeout(() => slider.classList.remove('changing'), 600);
-
-  // Обновляем состояние
-  setConductSliderState(slider, newState, silent);
-};
+function handleSliderClick(event) {
+  const slider = event.currentTarget;
+  if (slider.classList.contains('disabled')) {
+    return;
+  }
+  toggleSliderState(slider);
+}
 
 /**
- * Устанавливает состояние слайдера
- * @param {HTMLElement} slider - Элемент слайдера
- * @param {boolean} checked - Новое состояние
- * @param {boolean} silent - Не вызывать callback (по умолчанию false)
+ * Обработчик нажатия клавиш на слайдере (для доступности)
+ * @param {KeyboardEvent} event 
  */
-window.setConductSliderState = function(slider, checked, silent = false) {
-  if (!slider) return;
+function handleSliderKeydown(event) {
+  const slider = event.currentTarget;
+  if (slider.classList.contains('disabled')) {
+    return;
+  }
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    toggleSliderState(slider);
+  }
+}
+
+/**
+ * Переключает состояние слайдера и связанного чекбокса
+ * @param {HTMLElement} slider 
+ */
+function toggleSliderState(slider) {
+  const isActive = slider.classList.toggle('active');
+  slider.setAttribute('aria-checked', isActive);
+  slider.dataset.checked = isActive;
 
   const wrapper = slider.closest('.conduct-slider-wrapper');
-  
-  // Обновляем классы и атрибуты
-  slider.dataset.checked = checked.toString();
-  slider.setAttribute('aria-checked', checked);
-  
-  if (checked) {
-    slider.classList.add('active');
-    wrapper?.classList.add('active');
-  } else {
-    slider.classList.remove('active');
-    wrapper?.classList.remove('active');
+  if (wrapper) {
+    wrapper.classList.toggle('active', isActive);
   }
 
-  // Синхронизируем с оригинальным чекбоксом, если он есть
   const originalCheckboxId = slider.dataset.originalCheckbox;
   if (originalCheckboxId) {
-    const originalCheckbox = document.getElementById(originalCheckboxId) || 
-                           document.querySelector(`[data-replaced-by-slider="${slider.id}"]`);
+    const originalCheckbox = document.getElementById(originalCheckboxId) || document.querySelector(`[name="${originalCheckboxId}"]`);
     if (originalCheckbox) {
-      originalCheckbox.checked = checked;
-      // Вызываем событие change на оригинальном чекбоксе для совместимости
-      if (!silent) {
-        originalCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
-      }
+      originalCheckbox.checked = isActive;
+      // Триггерим событие change на оригинальном чекбоксе для совместимости
+      const event = new Event('change', { bubbles: true });
+      originalCheckbox.dispatchEvent(event);
     }
   }
 
-  // Вызываем callback, если он есть
-  if (!silent && window.conductSliderCallbacks && window.conductSliderCallbacks[slider.id]) {
-    window.conductSliderCallbacks[slider.id](checked, slider);
+  // Вызываем callback, если он был зарегистрирован
+  const sliderId = slider.id;
+  if (window.conductSliderCallbacks && window.conductSliderCallbacks[sliderId]) {
+    window.conductSliderCallbacks[sliderId](isActive);
   }
-
-  console.log(`Слайдер ${slider.id} установлен в состояние: ${checked}`);
-};
+  
+  console.log('Slider', sliderId, 'state changed to', isActive);
+}
 
 /**
  * Получает состояние слайдера
@@ -409,21 +378,68 @@ window.setConductSliderDisabled = function(sliderSelector, disabled = true) {
  * Инициализирует все слайдеры на странице
  */
 window.initAllConductSliders = function() {
-  document.querySelectorAll('.conduct-slider').forEach(slider => {
-    if (!slider.dataset.eventsInitialized) {
-      initConductSliderEvents(slider);
-    }
+  const sliders = document.querySelectorAll('.conduct-slider:not([data-events-initialized="true"])');
+  sliders.forEach(slider => {
+    initConductSliderEvents(slider);
   });
-  
-  console.log('Инициализированы все слайдеры проведения на странице');
+  console.log(`Инициализированы все слайдеры проведения на странице (${sliders.length} шт.)`);
+
+  // Дополнительно: заменяем все чекбоксы с классом 'conduct-checkbox-to-replace'
+  const checkboxesToReplace = document.querySelectorAll('input[type="checkbox"].conduct-checkbox-to-replace:not([data-replaced-by-slider])');
+  checkboxesToReplace.forEach(checkbox => {
+    // Для каждого чекбокса можно передать свои опции, если они есть в data-атрибутах
+    const options = {
+      id: checkbox.dataset.sliderId,
+      size: checkbox.dataset.sliderSize,
+      label: checkbox.dataset.sliderLabel
+      // onChange callback можно задать через JS до вызова этой функции,
+      // если привязать его к window.conductSliderCallbacks[checkbox.dataset.sliderId]
+    };
+    window.replaceConductCheckboxWithSlider(checkbox, options);
+  });
+  if (checkboxesToReplace.length > 0) {
+    console.log(`Заменено чекбоксов на слайдеры: ${checkboxesToReplace.length} шт.`);
+  }
 };
 
-// Автоматическая инициализация при загрузке DOM
+// Вызываем инициализацию слайдеров при загрузке документа
 document.addEventListener('DOMContentLoaded', function() {
-  window.initAllConductSliders();
+  // Даем небольшую задержку, чтобы другие скрипты успели добавить свои элементы
+  setTimeout(window.initAllConductSliders, 100); 
 });
 
-// Инициализация при динамическом добавлении контента
-document.addEventListener('tabContentLoaded', function() {
-  window.initAllConductSliders();
-}); 
+// Код для управления Bootstrap модальными окнами и предотвращения "прыжков" контента
+// ... (этот код у вас уже есть, оставляем его)
+
+// НОВЫЙ КОД ДЛЯ УПРАВЛЕНИЯ INVALID-FEEDBACK
+$(document).ready(function() {
+    // Универсальный обработчик для скрытия invalid-feedback при заполнении обязательных полей
+    function handleRequiredFieldFeedback() {
+        const $field = $(this);
+        // Ищем .invalid-feedback как следующий элемент или внутри родителя .mb-3/.form-group/.input-group
+        let $feedbackElement = $field.nextAll('.invalid-feedback').first(); // Изменено на nextAll().first()
+        if (!$feedbackElement.length) {
+            $feedbackElement = $field.siblings('.invalid-feedback').first(); // Ищем среди соседей
+        }
+        if (!$feedbackElement.length) {
+            $feedbackElement = $field.parent().find('.invalid-feedback').first(); // Ищем в непосредственном родителе
+        }
+        if (!$feedbackElement.length) {
+            $feedbackElement = $field.closest('.mb-3, .form-group, .input-group, .form-floating').find('.invalid-feedback').first();
+        }
+
+        if ($field.val() && String($field.val()).trim() !== '') {
+            $field.removeClass('is-invalid');
+            if ($feedbackElement.length) {
+                $feedbackElement.hide(); // Явно скрываем
+            }
+        }
+        // Если поле снова пустое, Bootstrap сам обработает показ is-invalid при валидации формы.
+        // Нет необходимости добавлять $field.addClass('is-invalid'); здесь.
+    }
+
+    // Используем делегирование событий для охвата динамически добавляемых элементов
+    // Добавляем keyup для более быстрой реакции на ввод текста
+    $(document).on('input change keyup', 'input.required, textarea.required, select.required', handleRequiredFieldFeedback);
+});
+// КОНЕЦ НОВОГО КОДА 

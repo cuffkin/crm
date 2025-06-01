@@ -103,7 +103,6 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </option>
         <?php endforeach; ?>
       </select>
-      <div class="invalid-feedback">Выберите организацию</div>
     </div>
     <div class="mb-3">
       <label>Номер</label>
@@ -129,7 +128,6 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </select>
         <button class="btn btn-outline-secondary" type="button" onclick="openNewTab('counterparty/edit_partial')">Создать нового</button>
       </div>
-      <div class="invalid-feedback">Выберите контрагента</div>
     </div>
     <div class="mb-3">
       <label>Склад <span class="text-danger">*</span></label>
@@ -141,7 +139,6 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </option>
         <?php endforeach; ?>
       </select>
-      <div class="invalid-feedback">Выберите склад</div>
     </div>
     <div class="mb-3">
       <label>Тип доставки</label>
@@ -155,8 +152,8 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
     
     <!-- Блок с водителем (показывается только при выборе доставки) -->
     <div class="mb-3" id="driver-container" <?= $isDelivery ? '' : 'style="display:none;"' ?>>
-      <label>Водитель</label>
-      <select id="o-driver" class="form-select">
+      <label>Водитель <span class="text-danger driver-required-indicator" id="driver-required-indicator" <?= $isDelivery ? '' : 'style="display:none;"' ?>>*</span></label>
+      <select id="o-driver" class="form-select <?= $isDelivery ? 'required' : '' ?>"" <?= $isDelivery ? 'required' : '' ?>>
         <option value="">(не выбран)</option>
         <?php foreach ($allDrivers as $dr): ?>
         <option value="<?= $dr['id'] ?>" <?= ($dr['id'] == $driver_id ? 'selected' : '') ?>>
@@ -169,16 +166,14 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
     <div class="mb-3">
       <label>Контакты <span class="text-danger contacts-required-indicator" id="contacts-required-indicator" <?= $isDelivery ? '' : 'style="display:none;"' ?>>*</span></label>
       <input type="text" id="o-contacts" class="form-control <?= $isDelivery ? 'required' : '' ?>" value="<?= htmlspecialchars($contacts) ?>" <?= $isDelivery ? 'required' : '' ?>>
-      <div class="invalid-feedback">Введите контактную информацию</div>
     </div>
     
     <!-- Блок с адресом доставки (показывается только при выборе доставки) -->
     <div class="mb-3" id="delivery-address-container" <?= $isDelivery ? '' : 'style="display:none;"' ?>>
-      <label>Адрес доставки <span class="text-danger">*</span></label>
+      <label>Адрес доставки <span class="text-danger address-required-indicator" id="address-required-indicator" <?= $isDelivery ? '' : 'style="display:none;"' ?>>*</span></label>
       <input type="text" id="o-delivery" class="form-control <?= $isDelivery ? 'required' : '' ?>" 
              value="<?= htmlspecialchars($delivery_address) ?>"
              <?= $isDelivery ? 'required' : '' ?>>
-      <div class="invalid-feedback">Адрес доставки обязателен для заполнения при выборе типа "Доставка"</div>
     </div>
     
     <div class="mb-3">
@@ -272,21 +267,6 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
           <li><a class="dropdown-item" href="#" onclick="window['<?= $uniquePrefix ?>_createReturnFromOrder'](<?= $id ?>)">Создать возврат</a></li>
         </ul>
       </div>
-      
-      <!-- Кнопка с дополнительными действиями для заказа -->
-      <div class="btn-group">
-        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-          <i class="fas fa-bars"></i> Действия
-        </button>
-        <ul class="dropdown-menu position-static">
-          <li><a class="dropdown-item" href="#" onclick="saveCreateShipmentAndPrint(<?= $id ?>)">
-            <i class="fas fa-print"></i> Сохранить, создать отгрузку на печать
-          </a></li>
-          <li><a class="dropdown-item" href="#" onclick="saveCreateShipmentAndPKO(<?= $id ?>)">
-            <i class="fas fa-money-bill"></i> Сохранить, создать отгрузку и ПКО на печать
-          </a></li>
-        </ul>
-      </div>
       <?php endif; ?>
     </div>
     
@@ -332,9 +312,9 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
 
 <script>
 // Переменная с уникальным префиксом для этого модуля
-const uniquePrefix = '<?= $uniquePrefix ?>';
+// const uniquePrefix = '<?= $uniquePrefix ?>';
 
-(function() {
+(function(uniquePrefix) {
     // Создаем локальные переменные, недоступные извне этой функции
     const ALL_PRODUCTS = <?= json_encode($allProducts, JSON_UNESCAPED_UNICODE) ?>;
     
@@ -363,20 +343,19 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
           <td><input type="number" step="0.01" class="form-control oi-price" value="0"></td>
           <td><input type="number" step="0.01" class="form-control oi-discount" value="0"></td>
           <td class="oi-sum"></td>
-          <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();window['<?= $uniquePrefix ?>_calcTotal']();">×</button></td>
+          <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();window[uniquePrefix + '_calcTotal']();">×</button></td>
         </tr>
       `;
       $('#oi-table tbody').append(newRow);
-      initializeRowHandlers();
-      window['<?= $uniquePrefix ?>_calcTotal']();
+      window[`${uniquePrefix}_calcTotal`]();
     };
-    window['<?= $uniquePrefix ?>_calcTotal'] = calcTotal;
-    window['<?= $uniquePrefix ?>_saveOrderAndClose'] = saveOrderAndClose;
-    window['<?= $uniquePrefix ?>_saveOrder'] = saveOrder;
-    window['<?= $uniquePrefix ?>_cancelChanges'] = cancelChanges;
-    window['<?= $uniquePrefix ?>_createShipmentFromOrder'] = createShipmentFromOrder;
-    window['<?= $uniquePrefix ?>_createFinanceFromOrder'] = createFinanceFromOrder;
-    window['<?= $uniquePrefix ?>_createReturnFromOrder'] = createReturnFromOrder;
+    window[`${uniquePrefix}_calcTotal`] = calcTotal;
+    window[`${uniquePrefix}_saveOrderAndClose`] = saveOrderAndClose;
+    window[`${uniquePrefix}_saveOrder`] = saveOrder;
+    window[`${uniquePrefix}_cancelChanges`] = cancelChanges;
+    window[`${uniquePrefix}_createShipmentFromOrder`] = createShipmentFromOrder;
+    window[`${uniquePrefix}_createFinanceFromOrder`] = createFinanceFromOrder;
+    window[`${uniquePrefix}_createReturnFromOrder`] = createReturnFromOrder;
 
     // Функция проверки наличия товаров в таблице
     $.fn.some = function(callback) {
@@ -407,7 +386,7 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
       
       // Если это новый заказ, добавляем строку товара автоматически
       if (<?= $id ?> === 0 && $('#oi-table tbody tr').length === 0) {
-        window['<?= $uniquePrefix ?>_addRow']();
+        window[`${uniquePrefix}_addRow`]();
       }
       
       // Если это новый заказ, генерируем номер автоматически
@@ -440,7 +419,11 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
       
       // Обработчик выбора контрагента - автозаполнение адреса и контактов
       $('#o-cust').change(function() {
+        console.log('[DEBUG_CUST_CHANGE] Сработал обработчик смены контрагента.');
         const selectedOption = $(this).find('option:selected');
+        console.log('[DEBUG_CUST_CHANGE] Выбран контрагент:', selectedOption.text());
+        console.log('[DEBUG_CUST_CHANGE] Data-address:', selectedOption.data('address'));
+        console.log('[DEBUG_CUST_CHANGE] Data-contacts:', selectedOption.data('contacts'));
         
         try {
           // Всегда перезаполняем адрес доставки и контакты при смене контрагента
@@ -488,7 +471,9 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
       
       // Обработчик переключателя типа доставки
       $('#o-delivery-type').change(function() {
+        console.log('[DEBUG_DELIVERY_TYPE_CHANGE] Сработал обработчик смены типа доставки.');
         const isDelivery = $(this).is(':checked');
+        console.log('[DEBUG_DELIVERY_TYPE_CHANGE] Тип доставки - Доставка:', isDelivery);
         
         // Обновляем текст
         $('#delivery-type-text').text(isDelivery ? 'Доставка' : 'Самовывоз');
@@ -506,19 +491,36 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
         }
         
         // Обновляем валидацию адреса доставки
+        const $oDelivery = $('#o-delivery');
+        const $addressRequiredIndicator = $('#address-required-indicator');
         if (isDelivery) {
-          $('#o-delivery').addClass('required').attr('required', 'required');
+          $oDelivery.addClass('required').attr('required', 'required');
+          $addressRequiredIndicator.show();
         } else {
-          $('#o-delivery').removeClass('required').removeAttr('required').removeClass('is-invalid');
+          $oDelivery.removeClass('required is-invalid').removeAttr('required');
+          $addressRequiredIndicator.hide();
         }
         
         // Обновляем валидацию контактов
+        const $oContacts = $('#o-contacts');
+        const $contactsRequiredIndicator = $('#contacts-required-indicator');
         if (isDelivery) {
-          $('#o-contacts').addClass('required').attr('required', 'required');
-          $('#contacts-required-indicator').show();
+          $oContacts.addClass('required').attr('required', 'required');
+          $contactsRequiredIndicator.show();
         } else {
-          $('#o-contacts').removeClass('required').removeAttr('required').removeClass('is-invalid');
-          $('#contacts-required-indicator').hide();
+          $oContacts.removeClass('required is-invalid').removeAttr('required');
+          $contactsRequiredIndicator.hide();
+        }
+
+        // Обновляем валидацию водителя
+        const $oDriver = $('#o-driver');
+        const $driverRequiredIndicator = $('#driver-required-indicator');
+        if (isDelivery) {
+          $oDriver.addClass('required').attr('required', 'required');
+          $driverRequiredIndicator.show();
+        } else {
+          $oDriver.removeClass('required is-invalid').removeAttr('required');
+          $driverRequiredIndicator.hide();
         }
       });
       
@@ -533,7 +535,7 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
             priceInput.val(autoPrice.toFixed(2));
           }
         }
-        calcTotal();
+        window[`${uniquePrefix}_calcTotal`]();
       });
       
       // Инициализация состояния валидации в зависимости от типа доставки
@@ -549,16 +551,29 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
       }
       
       // Инициализация состояния адреса доставки
+      const $oDeliveryInit = $('#o-delivery');
+      const $addressRequiredIndicatorInit = $('#address-required-indicator');
       if (isDeliveryInit) {
-        $('#o-delivery').addClass('required').attr('required', 'required');
+        $oDeliveryInit.addClass('required').attr('required', 'required');
         $('#delivery-address-container').show();
+        $addressRequiredIndicatorInit.show();
       } else {
-        $('#o-delivery').removeClass('required').removeAttr('required');
+        $oDeliveryInit.removeClass('required').removeAttr('required');
         $('#delivery-address-container').hide();
+        $addressRequiredIndicatorInit.hide();
       }
       
       // Инициализация состояния водителя
+      const $oDriverInit = $('#o-driver');
+      const $driverRequiredIndicatorInit = $('#driver-required-indicator');
       $('#driver-container').toggle(isDeliveryInit);
+      if (isDeliveryInit) {
+        $oDriverInit.addClass('required').attr('required', 'required');
+        $driverRequiredIndicatorInit.show();
+      } else {
+        $oDriverInit.removeClass('required').removeAttr('required');
+        $driverRequiredIndicatorInit.hide();
+      }
       
       // Инициализация слайдера проведения
       if (typeof window.initAllConductSliders === 'function') {
@@ -660,6 +675,18 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
         $('#o-delivery').removeClass('is-invalid');
       }
       
+      // Проверка водителя при доставке
+      if (isDelivery && !$('#o-driver').val()) {
+        $('#o-driver').addClass('is-invalid');
+        alert('При выборе типа "Доставка" необходимо указать водителя');
+         if (typeof errorCallback === 'function') {
+          errorCallback();
+        }
+        return;
+      } else {
+          $('#o-driver').removeClass('is-invalid');
+      }
+      
       calcTotal();
       let data = {
         id: oid,
@@ -690,6 +717,11 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
 
       $.post('/crm/modules/sales/orders/save.php', data, function(resp){
         if (resp === 'OK') {
+          // Сбрасываем флаги изменений после успешного сохранения
+          if (typeof window.resetFormChangeFlags === 'function') {
+            window.resetFormChangeFlags(currentTabContentId);
+          }
+          
           // Обновляем все списки заказов в других вкладках
           updateOrderLists();
           
@@ -786,9 +818,13 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
     }
 
     // Модифицируем функцию createShipmentFromOrder для поддержки колбэков
-    window['<?= $uniquePrefix ?>_createShipmentFromOrder'] = function(orderId, callback) {
+    window[`${uniquePrefix}_createShipmentFromOrder`] = function(orderId, callback) {
       // Если это вызов для просто печати, создаем отгрузку через API
       if (typeof callback === 'function') {
+        console.log('🔗 [CREATE_SHIPMENT] Отправляем AJAX запрос к API...');
+        console.log('🔗 [CREATE_SHIPMENT] URL:', '/crm/modules/shipments/api_handler.php');
+        console.log('🔗 [CREATE_SHIPMENT] Данные:', { action: 'create_from_order', order_id: orderId });
+        
         $.ajax({
           url: '/crm/modules/shipments/api_handler.php',
           type: 'POST',
@@ -796,22 +832,37 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
             action: 'create_from_order',
             order_id: orderId
           },
+          beforeSend: function(xhr) {
+            console.log('📤 [CREATE_SHIPMENT] Запрос отправляется...');
+          },
           success: function(response) {
+            console.log('📥 [CREATE_SHIPMENT] Получен ответ от сервера:', response);
+            console.log('📥 [CREATE_SHIPMENT] Тип ответа:', typeof response);
+            
             try {
               const result = typeof response === 'string' ? JSON.parse(response) : response;
+              console.log('✅ [CREATE_SHIPMENT] Парсинг JSON успешен:', result);
+              
               if (result.status === 'ok') {
+                console.log('🎯 [CREATE_SHIPMENT] Статус OK, shipment_id:', result.shipment_id);
                 callback(result.shipment_id);
               } else {
+                console.error('❌ [CREATE_SHIPMENT] Статус ERROR, сообщение:', result.message);
                 alert(result.message || 'Ошибка при создании отгрузки');
                 callback(null);
               }
             } catch (e) {
-              alert('Неверный формат ответа');
+              console.error('❌ [CREATE_SHIPMENT] Ошибка парсинга JSON:', e);
+              console.error('❌ [CREATE_SHIPMENT] Сырой ответ:', response);
+              alert('Неверный формат ответа от сервера: ' + response.substring(0, 200));
               callback(null);
             }
           },
-          error: function(xhr) {
-            alert('Ошибка сервера: ' + xhr.statusText);
+          error: function(xhr, status, error) {
+            console.error('❌ [CREATE_SHIPMENT] AJAX ошибка:', status, error);
+            console.error('❌ [CREATE_SHIPMENT] Status code:', xhr.status);
+            console.error('❌ [CREATE_SHIPMENT] Response text:', xhr.responseText);
+            alert('Ошибка сервера (' + xhr.status + '): ' + xhr.statusText + '\n' + xhr.responseText.substring(0, 200));
             callback(null);
           }
         });
@@ -883,19 +934,28 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
     };
 
     // Модифицируем функцию createFinanceFromOrder для поддержки колбэков
-    window['<?= $uniquePrefix ?>_createFinanceFromOrder'] = function(orderId, callback) {
+    window[`${uniquePrefix}_createFinanceFromOrder`] = function(orderId, callback) {
+      console.log('💰 [CREATE_FINANCE] Начало создания ПКО для заказа ID:', orderId);
+      
       // Получаем информацию о заказе
       $.getJSON('/crm/modules/sales/orders/order_api.php', { action: 'get_order_info', id: orderId }, function(orderData) {
+        console.log('📋 [CREATE_FINANCE] Получены данные заказа:', orderData);
+        
         // Если это вызов для просто печати, создаем ПКО через API
         if (typeof callback === 'function') {
+          console.log('🖨️ [CREATE_FINANCE] Режим API - создаем ПКО для печати');
+          
           $.ajax({
             url: '/crm/modules/finances/get_last_transaction_id.php',
             type: 'GET',
             success: function(lastIdResponse) {
+              console.log('🔢 [CREATE_FINANCE] Последний ID транзакции:', lastIdResponse);
               const lastId = parseInt(lastIdResponse) || 0;
               const newNumber = 'ПКО-' + String(lastId + 1).padStart(6, '0');
+              console.log('📄 [CREATE_FINANCE] Новый номер ПКО:', newNumber);
               
               // Создаем ПКО
+              console.log('💾 [CREATE_FINANCE] Отправляем запрос на создание ПКО...');
               $.ajax({
                 url: '/crm/modules/finances/save.php',
                 type: 'POST',
@@ -903,7 +963,7 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
                   transaction_type: 'income',
                   transaction_number: newNumber,
                   transaction_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
-                  amount: orderData.data.total_amount,
+                  amount: orderData.data.order_sum,
                   counterparty_id: orderData.data.customer,
                   cash_register_id: 1, // Предполагаем, что касса с ID=1 существует
                   payment_method: 'cash',
@@ -913,31 +973,39 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
                   order_id: orderId
                 },
                 success: function(pkoResponse) {
+                  console.log('✅ [CREATE_FINANCE] Ответ от save.php:', pkoResponse);
                   if (pkoResponse === 'OK') {
+                    console.log('🔍 [CREATE_FINANCE] ПКО создан успешно, получаем ID...');
                     // Получаем ID созданного ПКО
                     $.ajax({
                       url: '/crm/modules/finances/get_last_transaction_id.php',
                       type: 'GET',
                       success: function(newPkoId) {
+                        console.log('🎯 [CREATE_FINANCE] ID созданного ПКО:', newPkoId);
                         callback(parseInt(newPkoId));
                       },
-                      error: function() {
+                      error: function(xhr, status, error) {
+                        console.error('❌ [CREATE_FINANCE] Ошибка при получении ID ПКО:', error);
                         alert('Ошибка при получении ID ПКО');
                         callback(null);
                       }
                     });
                   } else {
-                    alert('Ошибка при создании ПКО');
+                    console.error('❌ [CREATE_FINANCE] Ошибка создания ПКО:', pkoResponse);
+                    alert('Ошибка при создании ПКО: ' + pkoResponse);
                     callback(null);
                   }
                 },
-                error: function() {
-                  alert('Ошибка сервера при создании ПКО');
+                error: function(xhr, status, error) {
+                  console.error('❌ [CREATE_FINANCE] Ошибка сервера при создании ПКО:', error);
+                  console.error('❌ [CREATE_FINANCE] Response Text:', xhr.responseText);
+                  alert('Ошибка сервера при создании ПКО: ' + error);
                   callback(null);
                 }
               });
             },
-            error: function() {
+            error: function(xhr, status, error) {
+              console.error('❌ [CREATE_FINANCE] Ошибка при получении последнего ID транзакции:', error);
               alert('Ошибка при получении последнего ID транзакции');
               callback(null);
             }
@@ -985,7 +1053,7 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
             id: 0,
             type: 'income',
             order_id: orderId,
-            amount: orderData.data.total_amount,
+            amount: orderData.data.order_sum,
             counterparty_id: orderData.data.customer,
             tab: 1,
             tab_id: tabId,
@@ -1081,68 +1149,101 @@ const uniquePrefix = '<?= $uniquePrefix ?>';
 
     // Для обратной совместимости
     function addRow() {
-      window['<?= $uniquePrefix ?>_addRow']();
+      window[`${uniquePrefix}_addRow`]();
     }
 
     // Функция для сохранения заказа, создания отгрузки и вывода на печать
     function saveCreateShipmentAndPrint(id) {
+      console.log('🚀 [SAVE_CREATE_SHIPMENT_PRINT] Начало выполнения для заказа ID:', id);
+      
       // Сначала сохраняем заказ с проведением
       let currentConducted = $('#o-conducted').is(':checked');
+      console.log('📋 [SAVE_CREATE_SHIPMENT_PRINT] Текущее состояние проведения:', currentConducted);
       $('#o-conducted').prop('checked', true);
+      
+      console.log('💾 [SAVE_CREATE_SHIPMENT_PRINT] Начинаем сохранение заказа...');
       
       // Выполняем сохранение
       saveOrder(id, false, function(savedId) {
         // После сохранения создаем отгрузку
         const actualId = savedId || id;
+        console.log('✅ [SAVE_CREATE_SHIPMENT_PRINT] Заказ сохранен, ID:', actualId);
+        console.log('🚚 [SAVE_CREATE_SHIPMENT_PRINT] Начинаем создание отгрузки...');
         
         // Используем существующую функцию создания отгрузки
-        window['<?= $uniquePrefix ?>_createShipmentFromOrder'](actualId, function(shipmentId) {
+        window[`${uniquePrefix}_createShipmentFromOrder`](actualId, function(shipmentId) {
+          console.log('📦 [SAVE_CREATE_SHIPMENT_PRINT] Результат создания отгрузки:', shipmentId);
           if (shipmentId) {
+            console.log('🖨️ [SAVE_CREATE_SHIPMENT_PRINT] Открываем печатные формы...');
             // Открываем печатные формы в новых вкладках
             window.open(`/crm/modules/sales/orders/print.php?id=${actualId}`, '_blank');
             window.open(`/crm/modules/shipments/print.php?id=${shipmentId}`, '_blank');
+            console.log('✅ [SAVE_CREATE_SHIPMENT_PRINT] Операция завершена успешно');
+          } else {
+            console.error('❌ [SAVE_CREATE_SHIPMENT_PRINT] Ошибка создания отгрузки');
+            alert('Ошибка при создании отгрузки');
           }
         });
       }, function() {
         // В случае ошибки восстанавливаем состояние проведения
+        console.error('❌ [SAVE_CREATE_SHIPMENT_PRINT] Ошибка сохранения заказа');
         $('#o-conducted').prop('checked', currentConducted);
       });
     }
 
     // Функция для сохранения заказа, создания отгрузки и ПКО
     function saveCreateShipmentAndPKO(id) {
+      console.log('🚀 [SAVE_CREATE_SHIPMENT_PKO] Начало выполнения для заказа ID:', id);
+      
       // Сначала сохраняем заказ с проведением
       let currentConducted = $('#o-conducted').is(':checked');
+      console.log('📋 [SAVE_CREATE_SHIPMENT_PKO] Текущее состояние проведения:', currentConducted);
       $('#o-conducted').prop('checked', true);
+      
+      console.log('💾 [SAVE_CREATE_SHIPMENT_PKO] Начинаем сохранение заказа...');
       
       // Выполняем сохранение
       saveOrder(id, false, function(savedId) {
         const actualId = savedId || id;
+        console.log('✅ [SAVE_CREATE_SHIPMENT_PKO] Заказ сохранен, ID:', actualId);
+        console.log('🚚 [SAVE_CREATE_SHIPMENT_PKO] Начинаем создание отгрузки...');
         
         // Используем существующую функцию создания отгрузки
-        window['<?= $uniquePrefix ?>_createShipmentFromOrder'](actualId, function(shipmentId) {
+        window[`${uniquePrefix}_createShipmentFromOrder`](actualId, function(shipmentId) {
+          console.log('📦 [SAVE_CREATE_SHIPMENT_PKO] Результат создания отгрузки:', shipmentId);
           if (shipmentId) {
+            console.log('💰 [SAVE_CREATE_SHIPMENT_PKO] Начинаем создание ПКО...');
             // Затем создаем ПКО
-            window['<?= $uniquePrefix ?>_createFinanceFromOrder'](actualId, function(financeId) {
+            window[`${uniquePrefix}_createFinanceFromOrder`](actualId, function(financeId) {
+              console.log('💳 [SAVE_CREATE_SHIPMENT_PKO] Результат создания ПКО:', financeId);
               if (financeId) {
+                console.log('🖨️ [SAVE_CREATE_SHIPMENT_PKO] Открываем печатные формы...');
                 // Открываем печатные формы в новых вкладках
                 window.open(`/crm/modules/sales/orders/print.php?id=${actualId}`, '_blank');
                 window.open(`/crm/modules/shipments/print.php?id=${shipmentId}`, '_blank');
                 window.open(`/crm/modules/finances/print.php?id=${financeId}`, '_blank');
+                console.log('✅ [SAVE_CREATE_SHIPMENT_PKO] Операция завершена успешно');
+              } else {
+                console.error('❌ [SAVE_CREATE_SHIPMENT_PKO] Ошибка создания ПКО');
+                alert('Ошибка при создании ПКО');
               }
             });
+          } else {
+            console.error('❌ [SAVE_CREATE_SHIPMENT_PKO] Ошибка создания отгрузки');
+            alert('Ошибка при создании отгрузки');
           }
         });
       }, function() {
         // В случае ошибки восстанавливаем состояние проведения
+        console.error('❌ [SAVE_CREATE_SHIPMENT_PKO] Ошибка сохранения заказа');
         $('#o-conducted').prop('checked', currentConducted);
       });
     }
 
-    // Глобальные функции для кнопок в меню "Действия"
-    window.saveCreateShipmentAndPrint = saveCreateShipmentAndPrint;
-    window.saveCreateShipmentAndPKO = saveCreateShipmentAndPKO;
-})();
+    // Глобальные функции для кнопок в меню "Действия" (не нужны - используем префиксные)
+    // window.saveCreateShipmentAndPrint = saveCreateShipmentAndPrint;
+    // window.saveCreateShipmentAndPKO = saveCreateShipmentAndPKO;
+})( '<?= $uniquePrefix ?>' );
 
 // Функция инициализации выпадающих меню (глобальная)
 function initDropdowns() {
@@ -1231,6 +1332,6 @@ $(document).ready(function() {
     dropdownButtons.each(function(i) {
       console.log(`   ${i+1}. "${$(this).text().trim()}" (${$(this).prop('tagName')})`);
     });
-  }, 100);
+  }, 50); // Добавим небольшую задержку для setTimeout, например 50ms, и закроем его
 });
 </script>

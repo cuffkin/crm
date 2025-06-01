@@ -492,6 +492,23 @@ function closeModuleTab(tabId, tabContentId) {
     }
     console.log('[Close Tab Warning] Обнаружены несохраненные изменения!');
     
+    // Пытаемся найти функцию сохранения
+    const saveFunction = findSaveFunction(tabContentId);
+    const documentId = extractDocumentId(tabContentId);
+    
+    // Функция сохранения и закрытия для модального окна
+    const saveAndCloseCallback = saveFunction ? function() {
+      console.log('[SAVE_AND_CLOSE] Вызов функции сохранения и закрытия');
+      try {
+        // Вызываем найденную функцию сохранения с параметром закрытия
+        saveFunction(documentId, true); // true = закрыть после сохранения
+      } catch (e) {
+        console.error('[SAVE_AND_CLOSE] Ошибка при вызове функции сохранения:', e);
+        // Если ошибка, просто закрываем вкладку
+        forceCloseModuleTab(tabId, tabContentId);
+      }
+    } : null;
+    
     // Используем улучшенную функцию работы с модальным окном из modal.js
     window.showUnsavedChangesConfirm(
       '<i class="fas fa-exclamation-triangle text-warning me-2"></i>Несохраненные изменения',
@@ -505,7 +522,8 @@ function closeModuleTab(tabId, tabContentId) {
       function() {
         // Колбэк отмены - ничего не делаем
         console.log('Отмена закрытия вкладки с несохраненными изменениями');
-      }
+      },
+      saveAndCloseCallback // Передаем функцию сохранения и закрытия
     );
   } else {
     // Если нет несохраненных изменений, просто закрываем вкладку
@@ -1155,6 +1173,85 @@ function openReturnEditTab(returnId, options = {}) {
   });
   
   return { tabId, tabContentId };
+}
+
+// Функция для открытия вкладки редактирования заказа поставщику
+function openPurchaseOrderEditTab(orderId, orderNumber = null) {
+  console.log('Открытие вкладки редактирования заказа поставщику:', orderId);
+  
+  // Генерируем уникальный ID для вкладки и контента
+  let uniqueId = 'tab_purchase_order_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  let contentId = 'purchase-order-content-' + orderId + '-' + Date.now();
+  
+  // Определяем заголовок вкладки
+  let tabTitle = orderNumber ? `Заказ поставщику ${orderNumber}` : `Заказ поставщику #${orderId}`;
+  if (orderId === 0) {
+    tabTitle = 'Новый заказ поставщику';
+  }
+  
+  // Проверяем, не открыта ли уже вкладка с этим заказом
+  let existingTab = null;
+  $('#crm-tabs .nav-link').each(function() {
+    const href = $(this).attr('href');
+    if (href && href.includes('purchase-order-content-' + orderId)) {
+      existingTab = $(this);
+      return false;
+    }
+  });
+  
+  if (existingTab && orderId > 0) {
+    // Если вкладка уже открыта, просто переключаемся на неё
+    existingTab.tab('show');
+    return;
+  }
+  
+  // Создаем новую вкладку
+  let newTab = `
+    <li class="nav-item">
+      <a class="nav-link" id="${uniqueId}" data-bs-toggle="tab" href="#${contentId}" role="tab" aria-controls="${contentId}" aria-selected="false">
+        ${tabTitle} <button type="button" class="btn-close btn-close-white ms-2" aria-label="Close"></button>
+      </a>
+    </li>
+  `;
+  
+  // Создаем контент вкладки
+  let tabContent = `
+    <div class="tab-pane fade" id="${contentId}" role="tabpanel" aria-labelledby="${uniqueId}">
+      <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Загрузка...</span>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Добавляем в DOM
+  $('#crm-tabs').append(newTab);
+  $('#crm-tab-content').append(tabContent);
+  
+  // Добавляем обработчик закрытия вкладки
+  $(`#${uniqueId} .btn-close`).on('click', function(e) {
+    e.stopPropagation();
+    closeModuleTab(uniqueId, contentId);
+  });
+  
+  // Переключаемся на новую вкладку
+  $(`#${uniqueId}`).tab('show');
+  
+  // Загружаем содержимое через AJAX
+  const url = `/crm/modules/purchases/orders/edit_partial.php?id=${orderId}&tab=1&tab_id=${uniqueId}&content_id=${contentId}`;
+  
+  $(`#${contentId}`).load(url, function(response, status, xhr) {
+    if (status === "error") {
+      $(`#${contentId}`).html(`<div class="alert alert-danger">Ошибка загрузки: ${xhr.status} ${xhr.statusText}</div>`);
+    } else {
+      // Инициализируем отслеживание изменений формы
+      initFormTracking(contentId);
+      
+      // Сохраняем состояние вкладок
+      saveTabsState();
+    }
+  });
 }
 
 // Функция для обновления списка заказов во всех открытых вкладках
@@ -3817,5 +3914,167 @@ window.testModal = function() {
     return false;
   }
 };
+
+// Функция для поиска функции сохранения в активной вкладке
+function findSaveFunction(tabContentId) {
+  console.log(`[SAVE_FUNCTION] Поиск функции сохранения для вкладки: ${tabContentId}`);
+  
+  // Список возможных функций сохранения для разных модулей
+  const possibleSaveFunctions = [
+    // Заказы покупателя
+    'saveOrderAndClose',
+    // Заказы поставщику  
+    'saveOrderAndClose',
+    // Отгрузки
+    'saveShipmentAndClose',
+    // Приёмки
+    'saveReceiptAndClose',
+    // Возвраты от покупателей
+    'saveReturnWithRKO',
+    // Возвраты поставщику
+    'saveReturnWithPKO',
+    // Финансы
+    'saveTransactionAndClose'
+  ];
+  
+  // Ищем по уникальным префиксам в названиях функций
+  for (const fnName in window) {
+    if (typeof window[fnName] === 'function') {
+      // Проверяем функции с уникальными префиксами
+      if (fnName.includes('_saveOrderAndClose') || 
+          fnName.includes('_saveShipmentAndClose') ||
+          fnName.includes('_saveReceiptAndClose') ||
+          fnName.includes('_saveReturnWithRKO') ||
+          fnName.includes('_saveReturnWithPKO') ||
+          fnName.includes('_saveTransactionAndClose') ||
+          fnName.includes('_saveOrder') ||
+          fnName.includes('_saveShipment') ||
+          fnName.includes('_saveReceipt') ||
+          fnName.includes('_saveReturn') ||
+          fnName.includes('_saveTransaction')) {
+        console.log(`[SAVE_FUNCTION] Найдена функция сохранения: ${fnName}`);
+        return window[fnName];
+      }
+    }
+  }
+  
+  console.log(`[SAVE_FUNCTION] Функция сохранения не найдена для ${tabContentId}`);
+  return null;
+}
+
+// Функция для извлечения ID документа из контекста вкладки
+function extractDocumentId(tabContentId) {
+  // Пытаемся найти скрытое поле с ID документа
+  const contentElement = document.getElementById(tabContentId);
+  if (!contentElement) return 0;
+  
+  // Ищем различные варианты ID полей
+  const idSelectors = [
+    '#id', '#document-id', '#order-id', '#shipment-id', '#receipt-id', '#return-id', '#transaction-id',
+    'input[name="id"]', 'input[name="document_id"]', 'input[name="order_id"]'
+  ];
+  
+  for (const selector of idSelectors) {
+    const idElement = contentElement.querySelector(selector);
+    if (idElement && idElement.value) {
+      const id = parseInt(idElement.value);
+      if (!isNaN(id)) {
+        console.log(`[EXTRACT_ID] Найден ID документа: ${id} (селектор: ${selector})`);
+        return id;
+      }
+    }
+  }
+  
+  // Если не нашли в полях, пытаемся извлечь из URL или атрибутов
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlId = urlParams.get('id');
+  if (urlId) {
+    const id = parseInt(urlId);
+    if (!isNaN(id)) {
+      console.log(`[EXTRACT_ID] Найден ID в URL: ${id}`);
+      return id;
+    }
+  }
+  
+  console.log(`[EXTRACT_ID] ID документа не найден, считаем новым документом (ID=0)`);
+  return 0;
+}
+
+// Функция для сброса флагов изменений после успешного сохранения
+function resetFormChangeFlags(tabContentId) {
+  console.log(`[RESET_FLAGS] Сброс флагов изменений для вкладки: ${tabContentId}`);
+  
+  const contentElement = document.getElementById(tabContentId);
+  if (!contentElement) {
+    console.warn(`[RESET_FLAGS] Элемент #${tabContentId} не найден`);
+    return;
+  }
+  
+  // Убираем флаги с элемента
+  contentElement.removeAttribute('data-has-unsaved-changes');
+  contentElement.removeAttribute('data-has-modified-fields');
+  contentElement.removeAttribute('data-has-dynamic-changes');
+  
+  // Убираем флаги со всех полей ввода
+  const inputs = contentElement.querySelectorAll('input, select, textarea');
+  inputs.forEach(input => {
+    input.removeAttribute('data-user-modified');
+    // Обновляем начальные значения
+    if (input.type === 'checkbox' || input.type === 'radio') {
+      input.setAttribute('data-initial-checked', input.checked.toString());
+    } else {
+      input.setAttribute('data-initial-value', input.value);
+    }
+  });
+  
+  // Очищаем globalFormsData
+  if (globalFormsData.forms[tabContentId]) {
+    globalFormsData.forms[tabContentId].userModified = false;
+  }
+  
+  console.log(`[RESET_FLAGS] Флаги изменений сброшены для ${tabContentId}`);
+}
+
+// Экспортируем функцию для использования в модулях
+window.resetFormChangeFlags = resetFormChangeFlags;
+
+// Функция для обновления списка заказов поставщику во всех открытых вкладках
+function updatePurchaseOrderLists() {
+  // Находим все вкладки со списком заказов поставщику
+  $('div[id^="content-purchases-orders-list"]').each(function() {
+    let tabContent = $(this);
+    
+    $.ajax({
+      url: '/crm/modules/purchases/orders/list_partial.php',
+      success: function(html) {
+        // Заменяем только таблицу и кнопку, а не весь контент
+        let tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        let newTable = $(tempDiv).find('table.table');
+        let newButton = $(tempDiv).find('button.btn-primary.btn-sm.mb-2');
+        
+        tabContent.find('table.table').replaceWith(newTable);
+        tabContent.find('button.btn-primary.btn-sm.mb-2').replaceWith(newButton);
+      }
+    });
+  });
+}
+
+// Функция для обновления списка отгрузок во всех открытых вкладках
+function updateShipmentList() {
+  // Находим все вкладки со списком отгрузок
+  $('div[id^="content-shipments-list"]').each(function() {
+    let tabContent = $(this);
+    
+    $.ajax({
+      url: '/crm/modules/shipments/list_partial.php',
+      success: function(html) {
+        // Заменяем содержимое вкладки
+        tabContent.html(html);
+      }
+    });
+  });
+}
 
  

@@ -626,12 +626,17 @@ CREATE TABLE `PCRM_Product_Measurement` (
 
 CREATE TABLE `PCRM_PurchaseOrder` (
   `id` int NOT NULL,
+  `organization` int DEFAULT NULL,
   `order_num` varchar(50) DEFAULT NULL,
   `supplier_id` int NOT NULL,
+  `warehouse_id` int DEFAULT NULL,
   `date` datetime DEFAULT NULL,
+  `delivery_address` varchar(255) DEFAULT NULL,
+  `comment` text DEFAULT NULL,
   `status` varchar(50) DEFAULT 'draft',
   `total_amount` decimal(10,2) DEFAULT '0.00',
   `purchase_order_number` varchar(50) DEFAULT NULL,
+  `created_by` int DEFAULT NULL,
   `deleted` tinyint DEFAULT '0',
   `conducted` tinyint DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

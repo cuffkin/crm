@@ -92,7 +92,6 @@ $uniquePrefix = 'po_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </option>
         <?php endforeach; ?>
       </select>
-      <div class="invalid-feedback">Выберите организацию</div>
     </div>
     <div class="mb-3">
       <label>Номер</label>
@@ -115,7 +114,6 @@ $uniquePrefix = 'po_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </select>
         <button class="btn btn-outline-secondary" type="button" onclick="openNewTab('counterparty/edit_partial')">Создать нового</button>
       </div>
-      <div class="invalid-feedback">Выберите поставщика</div>
     </div>
     <div class="mb-3">
       <label>Склад <span class="text-danger">*</span></label>
@@ -127,7 +125,6 @@ $uniquePrefix = 'po_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         </option>
         <?php endforeach; ?>
       </select>
-      <div class="invalid-feedback">Выберите склад</div>
     </div>
     <div class="mb-3">
       <label>Адрес доставки</label>
@@ -354,6 +351,19 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
         });
       });
       
+      // Обработчики для очистки валидации при изменении полей
+      $('#po-org').on('change', function() {
+        $(this).removeClass('is-invalid');
+      });
+      
+      $('#po-supplier').on('change', function() {
+        $(this).removeClass('is-invalid');
+      });
+      
+      $('#po-wh').on('change', function() {
+        $(this).removeClass('is-invalid');
+      });
+      
       // Обработчик изменения товаров в таблице
       $('#poi-table').on('change', '.poi-product, .poi-qty, .poi-price, .poi-discount', function(){
         if ($(this).hasClass('poi-product')) {
@@ -418,139 +428,233 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
     }
 
     function saveOrderAndClose(oid) {
-      // Сохранить и закрыть вкладку
-      saveOrder(oid, true);
+      console.log('🟢 [PURCHASE_ORDER] saveOrderAndClose вызвана, oid =', oid);
+      try {
+        // Сохранить и закрыть вкладку
+        saveOrder(oid, true);
+      } catch (e) {
+        console.error('❌ [PURCHASE_ORDER] Ошибка в saveOrderAndClose:', e);
+        alert('Ошибка при сохранении заказа: ' + e.message);
+      }
     }
 
     function saveOrder(oid, closeAfterSave = false) {
-      // Проверка обязательных полей
-      let valid = true;
+      console.log('🟢 [PURCHASE_ORDER] saveOrder вызвана, oid =', oid, 'closeAfterSave =', closeAfterSave);
       
-      // Проверка организации
-      if (!$('#po-org').val()) {
-        $('#po-org').addClass('is-invalid');
-        valid = false;
-      } else {
-        $('#po-org').removeClass('is-invalid');
-      }
-      
-      // Проверка поставщика
-      if (!$('#po-supplier').val()) {
-        $('#po-supplier').addClass('is-invalid');
-        valid = false;
-      } else {
-        $('#po-supplier').removeClass('is-invalid');
-      }
-      
-      // Проверка склада
-      if (!$('#po-wh').val()) {
-        $('#po-wh').addClass('is-invalid');
-        valid = false;
-      } else {
-        $('#po-wh').removeClass('is-invalid');
-      }
-      
-      // Проверка наличия товаров
-      const hasProducts = $('#poi-table tbody tr').length > 0 && 
-                          $('#poi-table tbody tr').some(function() {
-                            return $(this).find('.poi-product').val() !== '';
-                          });
-      
-      if (!hasProducts) {
-        alert('Добавьте хотя бы один товар в заказ');
-        valid = false;
-      }
-      
-      if (!valid) {
-        return;
-      }
-      
-      calcTotal();
-      let data = {
-        id: oid,
-        organization:     $('#po-org').val(),
-        purchase_order_number: $('#po-num').val(),
-        date:             $('#po-date').val(),
-        supplier_id:      $('#po-supplier').val(),
-        warehouse_id:     $('#po-wh').val(),
-        delivery_address: $('#po-delivery').val(),
-        comment:          $('#po-comment').val(),
-        status:           $('#po-status').val(),
-        total_amount:     $('#po-total').val(),
-        conducted:        ($('#po-conducted').is(':checked') ? 1 : 0)
-      };
-
-      let items = [];
-      $('#poi-table tbody tr').each(function(){
-        let pid = $(this).find('.poi-product').val();
-        if (!pid) return;
-        let qty = parseFloat($(this).find('.poi-qty').val()) || 0;
-        let prc = parseFloat($(this).find('.poi-price').val()) || 0;
-        let dsc = parseFloat($(this).find('.poi-discount').val()) || 0;
-        items.push({product_id: pid, quantity: qty, price: prc, discount: dsc});
-      });
-      data.items = JSON.stringify(items);
-
-      $.post('/crm/modules/purchases/orders/save.php', data, function(resp){
-        if (resp === 'OK') {
-          // Обновляем все списки заказов в других вкладках
-          updatePurchaseOrderLists();
-          
-          // Показываем уведомление
-          showNotification('Заказ поставщику успешно сохранен', 'success');
-          
-          // Если это новый заказ или нужно закрыть вкладку после сохранения
-          if (closeAfterSave) {
-            // Закрываем текущую вкладку
-            cancelChanges();
-          } else if (oid === 0) {
-            // Получаем ID созданного заказа
-            $.get('/crm/modules/purchases/orders/order_api.php', { action: 'get_last_id' }, function(newId) {
-              if (newId > 0) {
-                // Получаем номер заказа
-                const orderNumber = $('#po-num').val();
-                
-                // Закрываем текущую вкладку
-                cancelChanges();
-                
-                // Открываем новую вкладку с созданным заказом
-                openPurchaseOrderEditTab(newId, orderNumber);
-              }
-            });
-          } else {
-            // Обновляем заголовок вкладки для существующего заказа
-            const orderNumber = $('#po-num').val();
-            if (currentTabId) {
-              $(`#${currentTabId}`).html(`Заказ поставщику ${orderNumber} <button type="button" class="btn-close btn-close-white ms-2" aria-label="Close"></button>`);
-              
-              // Восстанавливаем обработчик закрытия
-              $(`#${currentTabId} .btn-close`).on('click', function(e) {
-                e.stopPropagation();
-                closeModuleTab(currentTabId, currentTabContentId);
-              });
-            }
-          }
+      try {
+        // Проверка обязательных полей
+        let valid = true;
+        
+        console.log('🔍 [PURCHASE_ORDER] Проверка валидации полей...');
+        
+        // Проверка организации
+        if (!$('#po-org').val()) {
+          console.log('❌ [PURCHASE_ORDER] Организация не выбрана');
+          $('#po-org').addClass('is-invalid');
+          valid = false;
         } else {
-          alert(resp);
+          $('#po-org').removeClass('is-invalid');
         }
-      });
+        
+        // Проверка поставщика
+        if (!$('#po-supplier').val()) {
+          console.log('❌ [PURCHASE_ORDER] Поставщик не выбран');
+          $('#po-supplier').addClass('is-invalid');
+          valid = false;
+        } else {
+          $('#po-supplier').removeClass('is-invalid');
+        }
+        
+        // Проверка склада
+        if (!$('#po-wh').val()) {
+          console.log('❌ [PURCHASE_ORDER] Склад не выбран');
+          $('#po-wh').addClass('is-invalid');
+          valid = false;
+        } else {
+          $('#po-wh').removeClass('is-invalid');
+        }
+        
+        // Проверка наличия товаров
+        const hasProducts = $('#poi-table tbody tr').length > 0 && 
+                            $('#poi-table tbody tr').some(function() {
+                              return $(this).find('.poi-product').val() !== '';
+                            });
+        
+        if (!hasProducts) {
+          console.log('❌ [PURCHASE_ORDER] Нет товаров в заказе');
+          alert('Добавьте хотя бы один товар в заказ');
+          valid = false;
+        }
+        
+        if (!valid) {
+          console.log('❌ [PURCHASE_ORDER] Валидация не пройдена, прерываем сохранение');
+          return;
+        }
+        
+        console.log('✅ [PURCHASE_ORDER] Валидация пройдена, собираем данные...');
+        
+        calcTotal();
+        let data = {
+          id: oid,
+          organization:     $('#po-org').val(),
+          purchase_order_number: $('#po-num').val(),
+          date:             $('#po-date').val(),
+          supplier_id:      $('#po-supplier').val(),
+          warehouse_id:     $('#po-wh').val(),
+          delivery_address: $('#po-delivery').val(),
+          comment:          $('#po-comment').val(),
+          status:           $('#po-status').val(),
+          total_amount:     $('#po-total').val(),
+          conducted:        ($('#po-conducted').is(':checked') ? 1 : 0)
+        };
+
+        let items = [];
+        $('#poi-table tbody tr').each(function(){
+          let pid = $(this).find('.poi-product').val();
+          if (!pid) return;
+          let qty = parseFloat($(this).find('.poi-qty').val()) || 0;
+          let prc = parseFloat($(this).find('.poi-price').val()) || 0;
+          let dsc = parseFloat($(this).find('.poi-discount').val()) || 0;
+          items.push({product_id: pid, quantity: qty, price: prc, discount: dsc});
+        });
+        data.items = JSON.stringify(items);
+
+        console.log('📋 [PURCHASE_ORDER] Отправляем данные на сервер:', data);
+
+        $.post('/crm/modules/purchases/orders/save.php', data, function(resp){
+          console.log('📥 [PURCHASE_ORDER] Ответ сервера:', resp);
+          
+          if (resp === 'OK') {
+            console.log('✅ [PURCHASE_ORDER] Заказ успешно сохранен');
+            
+            // Сбрасываем флаги изменений после успешного сохранения
+            if (typeof window.resetFormChangeFlags === 'function') {
+              console.log('🔄 [PURCHASE_ORDER] Сбрасываем флаги изменений...');
+              window.resetFormChangeFlags(currentTabContentId);
+            } else {
+              console.warn('⚠️ [PURCHASE_ORDER] Функция resetFormChangeFlags не найдена');
+            }
+            
+            // Обновляем все списки заказов в других вкладках
+            if (typeof updatePurchaseOrderLists === 'function') {
+              console.log('🔄 [PURCHASE_ORDER] Обновляем списки заказов...');
+              updatePurchaseOrderLists();
+            } else {
+              console.warn('⚠️ [PURCHASE_ORDER] Функция updatePurchaseOrderLists не найдена');
+            }
+            
+            // Показываем уведомление
+            if (typeof showNotification === 'function') {
+              showNotification('Заказ поставщику успешно сохранен', 'success');
+            } else {
+              console.warn('⚠️ [PURCHASE_ORDER] Функция showNotification не найдена');
+            }
+            
+            // Если это новый заказ или нужно закрыть вкладку после сохранения
+            if (closeAfterSave) {
+              console.log('🚪 [PURCHASE_ORDER] Закрываем вкладку после сохранения...');
+              // Закрываем текущую вкладку
+              cancelChanges();
+            } else if (oid === 0) {
+              console.log('🆕 [PURCHASE_ORDER] Новый заказ создан, обновляем вкладку...');
+              // Получаем ID созданного заказа
+              $.get('/crm/modules/purchases/orders/order_api.php', { action: 'get_last_id' }, function(newId) {
+                console.log('📋 [PURCHASE_ORDER] Получен ID нового заказа:', newId);
+                if (newId > 0) {
+                  // Получаем номер заказа
+                  const orderNumber = $('#po-num').val();
+                  
+                  // Закрываем текущую вкладку
+                  cancelChanges();
+                  
+                  // Открываем новую вкладку с созданным заказом
+                  if (typeof openPurchaseOrderEditTab === 'function') {
+                    openPurchaseOrderEditTab(newId, orderNumber);
+                  } else {
+                    console.error('❌ [PURCHASE_ORDER] Функция openPurchaseOrderEditTab не найдена');
+                  }
+                }
+              }).fail(function(jqXHR, textStatus, errorThrown) {
+                console.error('❌ [PURCHASE_ORDER] Ошибка при получении ID нового заказа:', textStatus, errorThrown);
+              });
+            } else {
+              console.log('🔄 [PURCHASE_ORDER] Обновляем заголовок существующего заказа...');
+              // Обновляем заголовок вкладки для существующего заказа
+              const orderNumber = $('#po-num').val();
+              if (currentTabId) {
+                $(`#${currentTabId}`).html(`Заказ поставщику ${orderNumber} <button type="button" class="btn-close btn-close-white ms-2" aria-label="Close"></button>`);
+                
+                // Восстанавливаем обработчик закрытия
+                $(`#${currentTabId} .btn-close`).on('click', function(e) {
+                  e.stopPropagation();
+                  if (typeof closeModuleTab === 'function') {
+                    closeModuleTab(currentTabId, currentTabContentId);
+                  } else {
+                    console.error('❌ [PURCHASE_ORDER] Функция closeModuleTab не найдена');
+                  }
+                });
+              }
+            }
+          } else {
+            console.error('❌ [PURCHASE_ORDER] Ошибка сервера:', resp);
+            alert(resp);
+          }
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+          console.error('❌ [PURCHASE_ORDER] Ошибка AJAX запроса:', textStatus, errorThrown);
+          console.error('❌ [PURCHASE_ORDER] Детали ошибки:', jqXHR.responseText);
+          alert('Ошибка при сохранении заказа: ' + textStatus);
+        });
+        
+      } catch (e) {
+        console.error('❌ [PURCHASE_ORDER] Критическая ошибка в saveOrder:', e);
+        alert('Критическая ошибка при сохранении заказа: ' + e.message);
+      }
     }
 
     function cancelChanges() {
-      // Получаем информацию о текущей вкладке из хранимых переменных
-      if (currentTabId && currentTabContentId) {
-        // Используем глобальную функцию closeModuleTab
-        closeModuleTab(currentTabId, currentTabContentId);
-      } else {
-        // Запасной вариант - ищем ближайшую родительскую вкладку
-        const tabContent = $('.tab-pane.active');
-        if (tabContent.length) {
-          const contentId = tabContent.attr('id');
-          const tabId = $('a[href="#' + contentId + '"]').attr('id');
-          if (contentId && tabId) {
-            closeModuleTab(tabId, contentId);
+      console.log('🚪 [PURCHASE_ORDER] cancelChanges вызвана');
+      console.log('🔍 [PURCHASE_ORDER] currentTabId =', currentTabId);
+      console.log('🔍 [PURCHASE_ORDER] currentTabContentId =', currentTabContentId);
+      
+      try {
+        // Получаем информацию о текущей вкладке из хранимых переменных
+        if (currentTabId && currentTabContentId) {
+          console.log('✅ [PURCHASE_ORDER] Есть ID вкладок, используем closeModuleTab');
+          // Используем глобальную функцию closeModuleTab
+          if (typeof closeModuleTab === 'function') {
+            console.log('🚪 [PURCHASE_ORDER] Вызываем closeModuleTab');
+            closeModuleTab(currentTabId, currentTabContentId);
+          } else if (typeof forceCloseModuleTab === 'function') {
+            console.log('🚪 [PURCHASE_ORDER] Вызываем forceCloseModuleTab');
+            forceCloseModuleTab(currentTabId, currentTabContentId);
+          } else {
+            console.error('❌ [PURCHASE_ORDER] Функции закрытия вкладок не найдены');
+          }
+        } else {
+          console.log('⚠️ [PURCHASE_ORDER] Нет ID вкладок, ищем активную вкладку');
+          // Запасной вариант - ищем ближайшую родительскую вкладку
+          const tabContent = $('.tab-pane.active');
+          if (tabContent.length) {
+            const contentId = tabContent.attr('id');
+            const tabId = $('a[href="#' + contentId + '"]').attr('id');
+            console.log('🔍 [PURCHASE_ORDER] Найдена активная вкладка:', contentId, tabId);
+            if (contentId && tabId) {
+              if (typeof closeModuleTab === 'function') {
+                console.log('🚪 [PURCHASE_ORDER] Вызываем closeModuleTab для найденной вкладки');
+                closeModuleTab(tabId, contentId);
+              } else if (typeof forceCloseModuleTab === 'function') {
+                console.log('🚪 [PURCHASE_ORDER] Вызываем forceCloseModuleTab для найденной вкладки');
+                forceCloseModuleTab(tabId, contentId);
+              } else {
+                console.error('❌ [PURCHASE_ORDER] Функции закрытия вкладок не найдены');
+              }
+            }
+          } else {
+            console.error('❌ [PURCHASE_ORDER] Активная вкладка не найдена');
           }
         }
+      } catch (e) {
+        console.error('❌ [PURCHASE_ORDER] Ошибка в cancelChanges:', e);
       }
     }
 

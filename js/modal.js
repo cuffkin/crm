@@ -992,7 +992,7 @@ window.patchBootstrapImmediately = patchBootstrapImmediately;
 window.patchBootstrapImmediately = patchBootstrapImmediately;
 
 // Функция для безопасной работы с модальным окном несохраненных изменений
-function showUnsavedChangesConfirm(title, message, confirmText, cancelText, confirmCallback, cancelCallback) {
+function showUnsavedChangesConfirm(title, message, confirmText, cancelText, confirmCallback, cancelCallback, saveAndCloseCallback = null) {
   try {
     console.log('Открываю модальное окно несохраненных изменений');
     
@@ -1024,11 +1024,21 @@ function showUnsavedChangesConfirm(title, message, confirmText, cancelText, conf
     const bodyEl = modalEl.querySelector('.modal-body p');
     const confirmBtn = modalEl.querySelector('#closeTabConfirm');
     const cancelBtn = modalEl.querySelector('[data-bs-dismiss="modal"]');
+    const saveAndCloseBtn = modalEl.querySelector('#saveAndCloseConfirm');
     
     if (titleEl) titleEl.innerHTML = title || '<i class="fas fa-exclamation-triangle text-warning me-2"></i>Внимание!';
     if (bodyEl) bodyEl.textContent = message || 'В форме есть несохраненные изменения. Вы уверены, что хотите закрыть её без сохранения?';
     if (confirmBtn) confirmBtn.textContent = confirmText || 'Закрыть без сохранения';
     if (cancelBtn) cancelBtn.textContent = cancelText || 'Отмена';
+    
+    // Показываем/скрываем кнопку "Сохранить и закрыть" в зависимости от наличия колбэка
+    if (saveAndCloseBtn) {
+      if (typeof saveAndCloseCallback === 'function') {
+        saveAndCloseBtn.style.display = 'inline-block';
+      } else {
+        saveAndCloseBtn.style.display = 'none';
+      }
+    }
     
     // Удаляем существующие обработчики с кнопки подтверждения
     if (confirmBtn) {
@@ -1057,6 +1067,38 @@ function showUnsavedChangesConfirm(title, message, confirmText, cancelText, conf
         setTimeout(function() {
           if (typeof confirmCallback === 'function') {
             confirmCallback();
+          }
+        }, 300);
+      });
+    }
+    
+    // Обработчик для кнопки "Сохранить и закрыть"
+    if (saveAndCloseBtn && typeof saveAndCloseCallback === 'function') {
+      // Очищаем все существующие обработчики
+      const saveAndCloseBtnNew = saveAndCloseBtn.cloneNode(true);
+      saveAndCloseBtn.parentNode.replaceChild(saveAndCloseBtnNew, saveAndCloseBtn);
+      
+      // Добавляем новый обработчик
+      saveAndCloseBtnNew.addEventListener('click', function() {
+        // Скрываем модальное окно через Bootstrap API
+        let bootstrapModal = null;
+        
+        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
+          try {
+            bootstrapModal = bootstrap.Modal.getInstance(modalEl);
+            
+            if (bootstrapModal) {
+              bootstrapModal.hide();
+            }
+          } catch (err) {
+            console.warn('Ошибка при закрытии модального окна через Bootstrap API', err);
+          }
+        }
+        
+        // Вызываем колбэк сохранения и закрытия с небольшой задержкой
+        setTimeout(function() {
+          if (typeof saveAndCloseCallback === 'function') {
+            saveAndCloseCallback();
           }
         }, 300);
       });

@@ -129,7 +129,7 @@ $headerClass = $transaction_type === 'income' ? 'bg-success text-white' : 'bg-da
       <input type="datetime-local" id="tr-date" class="form-control" value="<?= date('Y-m-d\TH:i', strtotime($transaction_date)) ?>">
     </div>
     <div class="mb-3">
-      <label>Контрагент <span class="text-danger">*</span></label>
+      <label>Контрагент</label>
       <div class="input-group">
         <select id="tr-counterparty" class="form-select required" required>
           <option value="">(не выбран)</option>
@@ -141,10 +141,9 @@ $headerClass = $transaction_type === 'income' ? 'bg-success text-white' : 'bg-da
         </select>
         <button class="btn btn-outline-secondary" type="button" onclick="openNewTab('counterparty/edit_partial')">Создать нового</button>
       </div>
-      <div class="invalid-feedback">Выберите контрагента</div>
     </div>
     <div class="mb-3">
-      <label>Касса <span class="text-danger">*</span></label>
+      <label>Касса</label>
       <select id="tr-cash-register" class="form-select required" required>
         <option value="">(не выбрана)</option>
         <?php foreach ($allCashRegisters as $cr): ?>
@@ -153,7 +152,6 @@ $headerClass = $transaction_type === 'income' ? 'bg-success text-white' : 'bg-da
         </option>
         <?php endforeach; ?>
       </select>
-      <div class="invalid-feedback">Выберите кассу</div>
     </div>
     <div class="mb-3">
       <label>Тип оплаты</label>
@@ -169,7 +167,7 @@ $headerClass = $transaction_type === 'income' ? 'bg-success text-white' : 'bg-da
     
     <!-- Статья расходов (только для расходных операций) -->
     <div id="expense-category-container" class="mb-3" <?= ($transaction_type === 'income' ? 'style="display:none;"' : '') ?>>
-      <label>Статья расходов <span class="text-danger">*</span></label>
+      <label>Статья расходов</label>
       <select id="tr-expense-category" class="form-select" onchange="checkExpenseCategoryOther()">
         <option value="" <?= ($expense_category === '' ? 'selected' : '') ?>>(не выбрана)</option>
         <option value="salary" <?= ($expense_category === 'salary' ? 'selected' : '') ?>>Зарплата</option>
@@ -181,15 +179,13 @@ $headerClass = $transaction_type === 'income' ? 'bg-success text-white' : 'bg-da
         <option value="collection" <?= ($expense_category === 'collection' ? 'selected' : '') ?>>Инкассация</option>
         <option value="other" <?= ($expense_category === 'other' ? 'selected' : '') ?>>Другое (указать в описании)</option>
       </select>
-      <div class="invalid-feedback">Выберите статью расходов</div>
     </div>
     
     <!-- Стандартное поле суммы (для не-гибридных методов) -->
     <div id="standard-amount-field" <?= ($payment_method === 'hybrid' ? 'style="display:none;"' : '') ?>>
       <div class="mb-3">
-        <label>Сумма <span class="text-danger">*</span></label>
+        <label>Сумма</label>
         <input type="number" step="0.01" id="tr-amount" class="form-control required" value="<?= $amount ?>" required>
-        <div class="invalid-feedback">Введите сумму</div>
       </div>
     </div>
     
@@ -250,9 +246,8 @@ $headerClass = $transaction_type === 'income' ? 'bg-success text-white' : 'bg-da
     </div>
     
     <div class="mb-3">
-      <label>Описание <span id="description-required" class="text-danger" style="display:none;">*</span></label>
+      <label>Описание</label>
       <textarea id="tr-description" class="form-control" rows="2"><?= htmlspecialchars($description) ?></textarea>
-      <div class="invalid-feedback">При выборе статьи расходов "Другое" необходимо заполнить описание</div>
     </div>
     
     <div class="mb-3">
@@ -551,14 +546,11 @@ window.cancelChanges = function() {
     if (type === 'expense') {
       let category = $('#tr-expense-category').val();
       if (category === 'other') {
-        $('#description-required').show();
         $('#tr-description').addClass('required');
       } else {
-        $('#description-required').hide();
         $('#tr-description').removeClass('required');
       }
     } else {
-      $('#description-required').hide();
       $('#tr-description').removeClass('required');
     }
   };
