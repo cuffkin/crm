@@ -4077,4 +4077,408 @@ function updateShipmentList() {
   });
 }
 
+// ==============================
+// FLOATING ACTION BUTTON (FAB)
+// ==============================
+
+let fabCurrentContext = null;
+let fabContainer = null;
+let fabMain = null;
+let fabMenu = null;
+
+// Инициализация FAB
+function initFAB() {
+    // Создаем контейнер FAB
+    fabContainer = document.createElement('div');
+    fabContainer.className = 'fab-container fade-in';
+    fabContainer.innerHTML = `
+        <div class="fab-menu" id="fab-menu">
+            <!-- Опции будут добавлены динамически -->
+        </div>
+        <button class="fab-main" id="fab-main">
+            <span class="fab-icon">+</span>
+        </button>
+    `;
+    
+    document.body.appendChild(fabContainer);
+    
+    fabMain = document.getElementById('fab-main');
+    fabMenu = document.getElementById('fab-menu');
+    
+    // Обработчик клика по основной кнопке
+    fabMain.addEventListener('click', toggleFABMenu);
+    
+    // Обновляем контекст при переключении вкладок
+    updateFABContext();
+    
+    // Отслеживаем изменения активной вкладки
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && 
+                mutation.attributeName === 'class' &&
+                mutation.target.classList.contains('nav-link')) {
+                setTimeout(updateFABContext, 100);
+            }
+        });
+    });
+    
+    // Наблюдаем за изменениями в контейнере вкладок
+    const tabsContainer = document.getElementById('crm-tabs');
+    if (tabsContainer) {
+        observer.observe(tabsContainer, {
+            attributes: true,
+            subtree: true,
+            attributeFilter: ['class']
+        });
+    }
+    
+    // Закрытие меню при клике вне его
+    document.addEventListener('click', function(e) {
+        if (!fabContainer.contains(e.target)) {
+            closeFABMenu();
+        }
+    });
+}
+
+// Определение текущего контекста модуля
+function getCurrentModuleContext() {
+    const activeTab = document.querySelector('#crm-tabs .nav-link.active');
+    if (!activeTab) return null;
+    
+    const href = activeTab.getAttribute('href');
+    if (!href) return null;
+    
+    // Анализируем активную вкладку для определения модуля
+    const tabContent = document.querySelector(href);
+    if (!tabContent) return null;
+    
+    // Ищем характерные элементы для определения типа модуля
+    const content = tabContent.innerHTML.toLowerCase();
+    
+    if (content.includes('заказы покупателей') || content.includes('openorderedittab')) {
+        return { type: 'sales_orders', name: 'Заказы покупателей' };
+    }
+    if (content.includes('заказ поставщику') || content.includes('openpurchaseorderedittab')) {
+        return { type: 'purchase_orders', name: 'Заказы поставщикам' };
+    }
+    if (content.includes('отгрузк') || content.includes('openshipmentedittab')) {
+        return { type: 'shipments', name: 'Отгрузки' };
+    }
+    if (content.includes('финансов') || content.includes('openfinanceedittab')) {
+        return { type: 'finances', name: 'Финансы' };
+    }
+    if (content.includes('возврат') && content.includes('покупател')) {
+        return { type: 'sales_returns', name: 'Возвраты от покупателей' };
+    }
+    if (content.includes('возврат') && content.includes('поставщик')) {
+        return { type: 'purchase_returns', name: 'Возвраты поставщикам' };
+    }
+    if (content.includes('приёмк') || content.includes('openreceiptedittab')) {
+        return { type: 'receipts', name: 'Приёмки' };
+    }
+    if (content.includes('склад') || content.includes('editwarehouse')) {
+        return { type: 'warehouses', name: 'Склады' };
+    }
+    if (content.includes('контрагент') || content.includes('editcounterparty')) {
+        return { type: 'counterparties', name: 'Контрагенты' };
+    }
+    if (content.includes('товар') || content.includes('editproduct')) {
+        return { type: 'products', name: 'Товары' };
+    }
+    if (content.includes('категор') || content.includes('editcategory')) {
+        return { type: 'categories', name: 'Категории' };
+    }
+    if (content.includes('остатк') || content.includes('editstock')) {
+        return { type: 'stock', name: 'Остатки' };
+    }
+    
+    return null;
+}
+
+// Обновление контекста и опций FAB
+function updateFABContext() {
+    const context = getCurrentModuleContext();
+    
+    if (!context || !fabMenu) {
+        hideFAB();
+        return;
+    }
+    
+    fabCurrentContext = context;
+    showFAB();
+    generateFABOptions(context);
+}
+
+// Генерация опций для конкретного модуля
+function generateFABOptions(context) {
+    if (!fabMenu) return;
+    
+    let options = [];
+    
+    switch (context.type) {
+        case 'finances':
+            options = [
+                {
+                    icon: '💰',
+                    iconClass: 'success',
+                    text: 'Приходная операция',
+                    action: () => openFinanceEditTab(0, 'income')
+                },
+                {
+                    icon: '💸',
+                    iconClass: 'danger', 
+                    text: 'Расходная операция',
+                    action: () => openFinanceEditTab(0, 'expense')
+                }
+            ];
+            break;
+            
+        case 'sales_orders':
+            options = [
+                {
+                    icon: '📝',
+                    iconClass: 'primary',
+                    text: 'Новый заказ',
+                    action: () => openOrderEditTab(0)
+                }
+            ];
+            break;
+            
+        case 'purchase_orders':
+            options = [
+                {
+                    icon: '🛒',
+                    iconClass: 'info',
+                    text: 'Заказ поставщику',
+                    action: () => openPurchaseOrderEditTab(0)
+                }
+            ];
+            break;
+            
+        case 'shipments':
+            options = [
+                {
+                    icon: '🚚',
+                    iconClass: 'warning',
+                    text: 'Новая отгрузка',
+                    action: () => openShipmentEditTab(0)
+                }
+            ];
+            break;
+            
+        case 'sales_returns':
+            options = [
+                {
+                    icon: '↩️',
+                    iconClass: 'danger',
+                    text: 'Возврат от покупателя',
+                    action: () => openReturnEditTab(0)
+                }
+            ];
+            break;
+            
+        case 'purchase_returns':
+            options = [
+                {
+                    icon: '↪️',
+                    iconClass: 'info',
+                    text: 'Возврат поставщику',
+                    action: () => openSupplierReturnEditTab(0)
+                }
+            ];
+            break;
+            
+        case 'receipts':
+            options = [
+                {
+                    icon: '📦',
+                    iconClass: 'success',
+                    text: 'Новая приёмка',
+                    action: () => openReceiptEditTab(0)
+                }
+            ];
+            break;
+            
+        case 'warehouses':
+            options = [
+                {
+                    icon: '🏢',
+                    iconClass: 'primary',
+                    text: 'Новый склад',
+                    action: () => editWarehouse(0)
+                }
+            ];
+            break;
+            
+        case 'counterparties':
+            options = [
+                {
+                    icon: '👥',
+                    iconClass: 'info',
+                    text: 'Новый контрагент',
+                    action: () => editCounterparty(0)
+                }
+            ];
+            break;
+            
+        case 'products':
+            options = [
+                {
+                    icon: '📦',
+                    iconClass: 'success',
+                    text: 'Новый товар',
+                    action: () => editProduct(0)
+                }
+            ];
+            break;
+            
+        case 'categories':
+            options = [
+                {
+                    icon: '📂',
+                    iconClass: 'warning',
+                    text: 'Новая категория',
+                    action: () => editCategory(0)
+                }
+            ];
+            break;
+            
+        case 'stock':
+            options = [
+                {
+                    icon: '📊',
+                    iconClass: 'primary',
+                    text: 'Добавить остаток',
+                    action: () => editStock(0)
+                }
+            ];
+            break;
+            
+        default:
+            options = [];
+    }
+    
+    // Рендерим опции
+    fabMenu.innerHTML = options.map(option => `
+        <button class="fab-option" onclick="(${option.action})(); closeFABMenu();">
+            <span class="fab-option-icon ${option.iconClass}">${option.icon}</span>
+            ${option.text}
+        </button>
+    `).join('');
+}
+
+// Показать/скрыть меню FAB
+function toggleFABMenu() {
+    if (!fabMenu || !fabMain) return;
+    
+    const isExpanded = fabMain.classList.contains('expanded');
+    
+    if (isExpanded) {
+        closeFABMenu();
+    } else {
+        openFABMenu();
+    }
+}
+
+function openFABMenu() {
+    if (!fabMain || !fabMenu) return;
+    
+    fabMain.classList.add('expanded');
+    fabMenu.classList.add('show');
+}
+
+function closeFABMenu() {
+    if (!fabMain || !fabMenu) return;
+    
+    fabMain.classList.remove('expanded');
+    fabMenu.classList.remove('show');
+}
+
+// Показать/скрыть FAB
+function showFAB() {
+    if (fabContainer) {
+        fabContainer.style.display = 'flex';
+    }
+}
+
+function hideFAB() {
+    if (fabContainer) {
+        fabContainer.style.display = 'none';
+    }
+    closeFABMenu();
+}
+
+// Инициализация при загрузке DOM
+document.addEventListener('DOMContentLoaded', function() {
+    // Ожидаем немного, чтобы все элементы загрузились
+    setTimeout(initFAB, 500);
+    
+    // Обновляем контекст при изменении hash
+    window.addEventListener('hashchange', function() {
+        setTimeout(updateFABContext, 100);
+    });
+});
+
+// Обновляем контекст при клике по вкладкам (дополнительно)
+document.addEventListener('click', function(e) {
+    if (e.target.matches('.nav-link') || e.target.closest('.nav-link')) {
+        setTimeout(updateFABContext, 200);
+    }
+});
+
+// ==============================
+// АДАПТИВНЫЕ ТАБЛИЦЫ
+// ==============================
+
+// Функция для переключения между обычным и карточным видом таблиц
+function initResponsiveTables() {
+    function toggleTableView() {
+        const tables = document.querySelectorAll('.table:not(.table-mobile-cards)');
+        const isMobile = window.innerWidth <= 768;
+        
+        tables.forEach(table => {
+            if (isMobile && !table.closest('.modal')) {
+                // Добавляем data-label атрибуты для карточного вида
+                const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                
+                table.querySelectorAll('tbody tr').forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    cells.forEach((cell, index) => {
+                        if (headers[index]) {
+                            cell.setAttribute('data-label', headers[index]);
+                        }
+                    });
+                });
+                
+                table.classList.add('table-mobile-cards');
+            } else {
+                table.classList.remove('table-mobile-cards');
+            }
+        });
+    }
+    
+    // Проверяем при загрузке
+    toggleTableView();
+    
+    // Проверяем при изменении размера окна
+    window.addEventListener('resize', toggleTableView);
+    
+    // Проверяем при появлении новых таблиц
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length > 0) {
+                setTimeout(toggleTableView, 100);
+            }
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+}
+
+// Инициализация адаптивных таблиц
+document.addEventListener('DOMContentLoaded', initResponsiveTables);
+
  
