@@ -180,17 +180,13 @@ function openSupplierReturnEditTab(returnId, options = {}) {
 }
 
 function deleteSupplierReturn(returnId) {
-  if (!confirm('Вы уверены, что хотите удалить этот возврат поставщику?')) return;
-  
-  $.get('/crm/modules/purchases/returns/delete.php', { id: returnId }, function(response) {
-    if (response === 'OK') {
-      // Обновляем список возвратов
-      updateSupplierReturnsList();
-      showNotification('Возврат поставщику успешно удален', 'success');
-    } else {
-      alert('Ошибка при удалении: ' + response);
-    }
-  });
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('supplier_return', returnId, 'Вы уверены, что хотите удалить этот возврат поставщику?', updateSupplierReturnsList);
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 
 function printSupplierReturn(returnId) {

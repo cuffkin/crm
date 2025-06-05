@@ -63,8 +63,9 @@ $allWh = $whRes->fetch_all(MYSQLI_ASSOC);
 $drvRes = $conn->query("SELECT id, name FROM PCRM_Drivers ORDER BY name");
 $allDrivers = $drvRes->fetch_all(MYSQLI_ASSOC);
 
-$prodRes = $conn->query("SELECT id, name, price FROM PCRM_Product WHERE status='active' ORDER BY name");
-$allProducts = $prodRes->fetch_all(MYSQLI_ASSOC);
+// Убираем получение товаров - теперь это делается через API
+// $prodRes = $conn->query("SELECT id, name, price FROM PCRM_Product WHERE status='active' ORDER BY name");
+// $allProducts = $prodRes->fetch_all(MYSQLI_ASSOC);
 
 $items = [];
 if ($id > 0) {
@@ -212,29 +213,19 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
     <table class="table table-sm table-bordered" id="oi-table">
       <thead>
         <tr>
-          <th>Товар</th>
-          <th>Кол-во</th>
-          <th>Цена</th>
-          <th>Скидка</th>
-          <th>Сумма</th>
-          <th></th>
+          <th width="40%">Товар</th>
+          <th width="12%">Кол-во</th>
+          <th width="15%">Цена</th>
+          <th width="15%">Скидка</th>
+          <th width="15%">Сумма</th>
+          <th width="3%"></th>
         </tr>
       </thead>
       <tbody>
         <?php foreach ($items as $itm): ?>
-        <tr>
+        <tr data-product-id="<?= $itm['product_id'] ?>">
           <td>
-            <div class="input-group">
-              <select class="form-select oi-product">
-                <option value="">(не выбран)</option>
-                <?php foreach ($allProducts as $p): ?>
-                <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>" <?= ($p['id'] == $itm['product_id'] ? 'selected' : '') ?>>
-                  <?= htmlspecialchars($p['name']) ?>
-                </option>
-                <?php endforeach; ?>
-              </select>
-              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
-            </div>
+            <div class="product-selector-container"></div>
           </td>
           <td><input type="number" step="0.001" class="form-control oi-qty" value="<?= $itm['quantity'] ?>"></td>
           <td><input type="number" step="0.01" class="form-control oi-price" value="<?= $itm['price'] ?>"></td>
@@ -305,6 +296,35 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
 .btn-group {
   margin-left: 5px;
 }
+
+/* Стили для нового селектора товаров в таблице */
+.product-selector-container {
+  min-height: 40px;
+}
+
+#oi-table .product-selector {
+  width: 100%;
+}
+
+#oi-table .product-selector-input .form-control {
+  padding-right: 40px;
+  font-size: 0.875rem;
+}
+
+#oi-table .product-selector-actions {
+  right: 4px;
+}
+
+#oi-table .product-selector-actions .btn {
+  width: 28px;
+  height: 28px;
+}
+
+#oi-table .selected-product-info {
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
 </style>
 
 <!-- Подключение общих JavaScript функций -->
@@ -316,39 +336,100 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
 
 (function(uniquePrefix) {
     // Создаем локальные переменные, недоступные извне этой функции
-    const ALL_PRODUCTS = <?= json_encode($allProducts, JSON_UNESCAPED_UNICODE) ?>;
     
     // ID текущей вкладки (для закрытия)
     let currentTabId = '';
     let currentTabContentId = '';
+    
+    // Массив селекторов товаров для управления
+    let productSelectors = [];
+
+    // Функция создания нового селектора товаров
+    function createProductSelector(container, initialProduct = null) {
+        const selector = window.createProductSelector(container, {
+            context: 'sale',
+            placeholder: 'Выберите товар...',
+            showRecent: true,
+            showModal: true,
+            onSelect: function(product) {
+                // Автозаполнение цены при выборе товара
+                const row = container.closest('tr');
+                if (row) {
+                    const priceInput = row.querySelector('.oi-price');
+                    if (priceInput && (!priceInput.value || priceInput.value == '0')) {
+                        priceInput.value = product.price || 0;
+                    }
+                    calcTotal();
+                }
+            },
+            onClear: function() {
+                calcTotal();
+            }
+        });
+        
+        // Сохраняем ссылку на селектор
+        productSelectors.push(selector);
+        
+        // Если есть начальный товар, устанавливаем его
+        if (initialProduct) {
+            selector.setProduct(initialProduct);
+        }
+        
+        return selector;
+    }
+
+    // Функция получения данных товара по ID
+    async function getProductById(productId) {
+        try {
+            const response = await fetch(`/crm/api/product_selector.php?action=details&id=${productId}&context=sale`);
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            return data.product;
+        } catch (error) {
+            console.error('Ошибка загрузки товара:', error);
+            return null;
+        }
+    }
 
     // Регистрируем функции в глобальной области видимости с уникальными именами
     window[`${uniquePrefix}_addRow`] = function() {
       const newRow = `
         <tr>
           <td>
-            <div class="input-group">
-              <select class="form-select oi-product">
-                <option value="">(не выбран)</option>
-                <?php foreach ($allProducts as $p): ?>
-                <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>">
-                  <?= htmlspecialchars($p['name']) ?>
-                </option>
-                <?php endforeach; ?>
-              </select>
-              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
-            </div>
+            <div class="product-selector-container"></div>
           </td>
           <td><input type="number" step="0.001" class="form-control oi-qty" value="1"></td>
           <td><input type="number" step="0.01" class="form-control oi-price" value="0"></td>
           <td><input type="number" step="0.01" class="form-control oi-discount" value="0"></td>
           <td class="oi-sum"></td>
-          <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();window[uniquePrefix + '_calcTotal']();">×</button></td>
+          <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();window['${uniquePrefix}_calcTotal']();window['${uniquePrefix}_removeSelector'](this);">×</button></td>
         </tr>
       `;
-      $('#oi-table tbody').append(newRow);
+      const $newRow = $(newRow);
+      $('#oi-table tbody').append($newRow);
+      
+      // Создаем селектор для новой строки
+      const container = $newRow.find('.product-selector-container')[0];
+      createProductSelector(container);
+      
       window[`${uniquePrefix}_calcTotal`]();
     };
+    
+    window[`${uniquePrefix}_removeSelector`] = function(button) {
+      const row = $(button).closest('tr');
+      const container = row.find('.product-selector-container')[0];
+      
+      // Находим и удаляем селектор из массива
+      const index = productSelectors.findIndex(selector => 
+        selector.container === container || selector.container.parentElement === container
+      );
+      if (index !== -1) {
+        productSelectors.splice(index, 1);
+      }
+    };
+    
     window[`${uniquePrefix}_calcTotal`] = calcTotal;
     window[`${uniquePrefix}_saveOrderAndClose`] = saveOrderAndClose;
     window[`${uniquePrefix}_saveOrder`] = saveOrder;
@@ -367,7 +448,7 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
       return false;
     };
 
-    $(document).ready(function(){
+    $(document).ready(async function(){
       calcTotal();
       
       // Более надежный способ получения ID текущей вкладки
@@ -381,6 +462,24 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         currentTabContentId = $('.tab-pane.active').attr('id');
         if (currentTabContentId) {
           currentTabId = $('a[href="#' + currentTabContentId + '"]').attr('id');
+        }
+      }
+      
+      // Инициализируем селекторы для существующих строк
+      const existingRows = document.querySelectorAll('#oi-table tbody tr');
+      for (let row of existingRows) {
+        const container = row.querySelector('.product-selector-container');
+        const productId = row.dataset.productId;
+        
+        if (container) {
+          let initialProduct = null;
+          
+          // Если есть ID товара, загружаем его данные
+          if (productId && productId !== '') {
+            initialProduct = await getProductById(productId);
+          }
+          
+          createProductSelector(container, initialProduct);
         }
       }
       
@@ -525,16 +624,7 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
       });
       
       // Обработчик изменения товаров в таблице
-      $('#oi-table').on('change', '.oi-product, .oi-qty, .oi-price, .oi-discount', function(){
-        if ($(this).hasClass('oi-product')) {
-          let priceInput = $(this).closest('tr').find('.oi-price');
-          let currentVal = parseFloat(priceInput.val()) || 0;
-          if (currentVal === 0) {
-            let sel = $(this).find(':selected');
-            let autoPrice = parseFloat(sel.attr('data-price')) || 0;
-            priceInput.val(autoPrice.toFixed(2));
-          }
-        }
+      $('#oi-table').on('change', '.oi-qty, .oi-price, .oi-discount', function(){
         window[`${uniquePrefix}_calcTotal`]();
       });
       
@@ -643,11 +733,20 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         $('#o-wh').removeClass('is-invalid');
       }
       
-      // Проверка наличия товаров
-      const hasProducts = $('#oi-table tbody tr').length > 0 && 
-                          $('#oi-table tbody tr').some(function() {
-                            return $(this).find('.oi-product').val() !== '';
-                          });
+      // Проверка наличия товаров - обновлено для нового селектора
+      let hasProducts = false;
+      $('#oi-table tbody tr').each(function() {
+        const container = $(this).find('.product-selector-container')[0];
+        if (container) {
+          const selector = productSelectors.find(s => 
+            s.container === container || s.container.parentElement === container
+          );
+          if (selector && selector.getSelectedProduct()) {
+            hasProducts = true;
+            return false; // break из each
+          }
+        }
+      });
       
       if (!hasProducts) {
         alert('Добавьте хотя бы один товар в заказ');
@@ -706,7 +805,21 @@ $uniquePrefix = 'ord_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
 
       let items = [];
       $('#oi-table tbody tr').each(function(){
-        let pid = $(this).find('.oi-product').val();
+        // Получаем товар из нового селектора
+        const container = $(this).find('.product-selector-container')[0];
+        let product = null;
+        let pid = null;
+        
+        if (container) {
+          const selector = productSelectors.find(s => 
+            s.container === container || s.container.parentElement === container
+          );
+          if (selector) {
+            product = selector.getSelectedProduct();
+            pid = product ? product.id : null;
+          }
+        }
+        
         if (!pid) return;
         let qty = parseFloat($(this).find('.oi-qty').val()) || 0;
         let prc = parseFloat($(this).find('.oi-price').val()) || 0;

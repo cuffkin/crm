@@ -537,14 +537,13 @@ function editCategory(catId) {
 }
 
 function deleteCategory(catId) {
-  if (!confirm('Точно пометить категорию как inactive?')) return;
-  $.get('/crm/modules/categories/delete.php', { id: catId }, function(resp) {
-    if (resp === 'OK') {
-      loadCategoriesList(); 
-    } else {
-      alert(resp);
-    }
-  });
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('category', catId, 'Вы уверены, что хотите удалить эту категорию?', loadCategoriesList);
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 
 $(function() {

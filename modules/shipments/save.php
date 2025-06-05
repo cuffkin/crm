@@ -82,7 +82,7 @@ try {
     }
 
     // Удаляем старые позиции отгрузки
-    $del = $conn->prepare("DELETE FROM PCRM_Shipments WHERE shipment_header_id=?");
+    $del = $conn->prepare("DELETE FROM PCRM_ShipmentItem WHERE shipment_header_id=?");
     $del->bind_param("i", $id);
     $del->execute();
     if ($del->error) {
@@ -91,7 +91,7 @@ try {
 
     // Вставляем новые позиции отгрузки
     $ins = $conn->prepare("
-        INSERT INTO PCRM_Shipments 
+        INSERT INTO PCRM_ShipmentItem 
         (shipment_header_id, product_id, quantity, price, discount, created_at, updated_at)
         VALUES (?,?,?,?,?,NOW(),NOW())
     ");

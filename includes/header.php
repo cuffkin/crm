@@ -28,6 +28,9 @@
   <!-- Уведомления -->
   <link rel="stylesheet" href="/crm/css/notification.css">
   
+  <!-- Новый селектор товаров -->
+  <link rel="stylesheet" href="/crm/css/product_selector.css">
+  
   <!-- jQuery - перемещено из footer для правильной инициализации -->
   <script src="/crm/assets/jquery-3.3.1/jquery.min.js"></script>
   <!-- Скрипт переключения тем -->

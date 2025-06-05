@@ -285,6 +285,10 @@ $headerClass = $transaction_type === 'income' ? 'bg-success text-white' : 'bg-da
 </div>
 
 <script>
+// Глобальные переменные для текущей вкладки
+let currentTabContentId = '';
+let currentTabId = '';
+
 // Глобальные функции для кнопок
 window.saveTransactionAndClose = function(tid, withConducted = false) {
   if (withConducted) {
@@ -417,11 +421,13 @@ window.saveTransaction = function(tid, closeAfterSave = false) {
   $.post('/crm/modules/finances/save.php', data, function(resp) {
     // Упрощаем обработку ответа: теперь ожидаем 'OK' вместо JSON
     if (resp === 'OK') {
+      // Сбрасываем флаги изменений после успешного сохранения
+      if (typeof window.resetFormChangeFlags === 'function') {
+        window.resetFormChangeFlags(currentTabContentId);
+      }
+      
       // Обновляем все списки финансовых операций
       updateFinanceList();
-      
-      // Вместо уведомления - показываем алерт
-      // alert('Финансовая операция успешно сохранена');
       
       // Если это новая операция или нужно закрыть вкладку после сохранения
       if (closeAfterSave) {
@@ -493,6 +499,10 @@ window.cancelChanges = function() {
         tabId = $('a[href="#' + tabContentId + '"]').attr('id');
       }
     }
+    
+    // Инициализируем глобальные переменные
+    currentTabContentId = tabContentId;
+    currentTabId = tabId;
     
     // Обработчик изменения типа операции (приход/расход)
     $('#tr-type').change(function() {

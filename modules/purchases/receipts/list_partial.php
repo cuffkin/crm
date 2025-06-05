@@ -173,17 +173,13 @@ function openReceiptEditTab(receiptId) {
 }
 
 function deleteReceipt(receiptId) {
-  if (!confirm('Вы уверены, что хотите удалить эту приёмку?')) return;
-  
-  $.get('/crm/modules/purchases/receipts/delete.php', { id: receiptId }, function(response) {
-    if (response === 'OK') {
-      // Обновляем список приёмок
-      updateReceiptList();
-      showNotification('Приёмка успешно удалена', 'success');
-    } else {
-      alert('Ошибка при удалении: ' + response);
-    }
-  });
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('receipt', receiptId, 'Вы уверены, что хотите удалить эту приёмку?', updateReceiptList);
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 
 function printReceipt(receiptId) {

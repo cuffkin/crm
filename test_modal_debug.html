@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Product Selector Modal</title>
+    <link href="assets/bootstrap-5.3.3-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/product_selector.css" rel="stylesheet">
+    <style>
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Product Selector Modal Debug</h2>
+        
+        <div class="debug-info">
+            <h5>Debug Info</h5>
+            <div class="log" id="debugLog"></div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Test Product Selector</h4>
+                <div id="productSelectorContainer"></div>
+            </div>
+            <div class="col-md-6">
+                <h4>Manual API Tests</h4>
+                <button class="btn btn-primary mb-2" onclick="testCategoriesAPI()">Test Categories API</button><br>
+                <button class="btn btn-secondary mb-2" onclick="testSearchAPI()">Test Search API</button><br>
+                <button class="btn btn-info mb-2" onclick="testRecentAPI()">Test Recent API</button>
+                
+                <div id="apiResults" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/product_selector.js"></script>
+    
+    <script>
+        // Debugging functions
+        function log(message) {
+            const debugLog = document.getElementById('debugLog');
+            const time = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `[${time}] ${message}\n`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(message);
+        }
+        
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            log('LOG: ' + args.join(' '));
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            log('ERROR: ' + args.join(' '));
+            originalError.apply(console, args);
+        };
+        
+        // Initialize product selector
+        let productSelector;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOM loaded, initializing product selector...');
+            
+            try {
+                productSelector = new ProductSelector('#productSelectorContainer', {
+                    context: 'sale',
+                    placeholder: 'Test product search...',
+                    onSelect: function(product) {
+                        log('Product selected: ' + product.name + ' (ID: ' + product.id + ')');
+                    }
+                });
+                log('Product selector initialized successfully');
+            } catch (error) {
+                log('ERROR initializing product selector: ' + error.message);
+            }
+        });
+        
+        // API test functions
+        async function testCategoriesAPI() {
+            log('Testing Categories API...');
+            try {
+                const response = await fetch('/crm/api/product_selector.php?action=categories');
+                const data = await response.json();
+                log('Categories API response: ' + JSON.stringify(data, null, 2));
+                document.getElementById('apiResults').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                log('ERROR testing categories API: ' + error.message);
+            }
+        }
+        
+        async function testSearchAPI() {
+            log('Testing Search API...');
+            try {
+                const response = await fetch('/crm/api/product_selector.php?action=search&q=песок&limit=5');
+                const data = await response.json();
+                log('Search API response: ' + JSON.stringify(data, null, 2));
+                document.getElementById('apiResults').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                log('ERROR testing search API: ' + error.message);
+            }
+        }
+        
+        async function testRecentAPI() {
+            log('Testing Recent API...');
+            try {
+                const response = await fetch('/crm/api/product_selector.php?action=recent&context=sale&limit=5');
+                const data = await response.json();
+                log('Recent API response: ' + JSON.stringify(data, null, 2));
+                document.getElementById('apiResults').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                log('ERROR testing recent API: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html> 

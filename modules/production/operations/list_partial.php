@@ -173,29 +173,26 @@ if(!$tables_exist) {
 
 <script>
 function deleteOperation(id) {
-    if (!confirm('Вы уверены, что хотите удалить эту операцию?')) return;
-    
-    $.ajax({
-        url: 'modules/production/operations/delete.php',
-        type: 'POST',
-        data: { id: id },
-        success: function(response) {
-            try {
-                var data = JSON.parse(response);
-                if (data.success) {
-                    showAlert('success', 'Операция успешно удалена');
-                    loadContent('modules/production/operations/list_partial.php');
-                } else {
-                    showAlert('danger', 'Ошибка: ' + data.error);
-                }
-            } catch (e) {
-                showAlert('danger', 'Ошибка при обработке ответа: ' + response);
-            }
-        },
-        error: function(xhr, status, error) {
-            showAlert('danger', 'Произошла ошибка при выполнении запроса: ' + error);
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('production_operation', id, 'Вы уверены, что хотите удалить эту операцию?', function() {
+      // Обновляем список операций
+      const activeTab = document.querySelector('.tab-pane.active');
+      if (activeTab) {
+        const moduleTab = document.querySelector('.nav-link.active[data-module*="production/operations"]');
+        if (moduleTab) {
+          const modulePath = moduleTab.getAttribute('data-module');
+          fetch(modulePath)
+            .then(response => response.text())
+            .then(html => activeTab.innerHTML = html)
+            .catch(error => console.error('Error reloading production operations:', error));
         }
+      }
     });
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 
 function conductOperation(id, action) {

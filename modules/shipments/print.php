@@ -30,7 +30,7 @@ $shipment = $res->fetch_assoc();
 $sqlItems = "
 SELECT s.*, p.name AS product_name,
        l.name AS loader_name
-FROM PCRM_Shipments s
+FROM PCRM_ShipmentItem s
 LEFT JOIN PCRM_Product p ON s.product_id = p.id
 LEFT JOIN PCRM_Loaders l ON s.unloaded_by = l.id
 WHERE s.shipment_header_id = ?

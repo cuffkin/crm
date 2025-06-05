@@ -192,34 +192,26 @@ function editOrder(orderId) {
 }
 
 function deleteOrder(orderId) {
-    if (!confirm('Вы уверены, что хотите удалить заказ на производство?')) return;
-    
-    $.ajax({
-        url: 'modules/production/orders/delete.php',
-        data: { id: orderId },
-        type: 'POST',
-        success: function(response) {
-            try {
-                var data = JSON.parse(response);
-                if (data.success) {
-                    showAlert('success', 'Заказ успешно удален');
-                    loadContent('modules/production/orders/list_partial.php');
-                } else {
-                    showAlert('danger', 'Ошибка: ' + data.error);
-                }
-            } catch (e) {
-                if (response === 'OK') {
-                    showAlert('success', 'Заказ успешно удален');
-                    loadContent('modules/production/orders/list_partial.php');
-                } else {
-                    showAlert('danger', 'Ошибка: ' + response);
+    // Вызываем глобальную функцию напрямую (она определена в app.js)
+    if (typeof moveToTrash === 'function') {
+        moveToTrash('production_order', orderId, 'Вы уверены, что хотите удалить заказ на производство?', function() {
+            // Обновляем список заказов на производство
+            const activeTab = document.querySelector('.tab-pane.active');
+            if (activeTab) {
+                const moduleTab = document.querySelector('.nav-link.active[data-module*="production/orders"]');
+                if (moduleTab) {
+                    const modulePath = moduleTab.getAttribute('data-module');
+                    fetch(modulePath)
+                        .then(response => response.text())
+                        .then(html => activeTab.innerHTML = html)
+                        .catch(error => console.error('Error reloading production orders:', error));
                 }
             }
-        },
-        error: function(xhr, status, error) {
-            showAlert('danger', 'Произошла ошибка при выполнении запроса: ' + error);
-        }
-    });
+        });
+    } else {
+        console.error('Глобальная функция moveToTrash не найдена');
+        alert('Ошибка: функция удаления не найдена');
+    }
 }
 
 function conductOrder(orderId) {

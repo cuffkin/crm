@@ -10,6 +10,9 @@
 <script src="/crm/js/app.js"></script>
 <script src="/crm/js/session-status.js"></script>
 
+<!-- Новый селектор товаров -->
+<script src="/crm/js/product_selector.js"></script>
+
 <!-- Дополнительная инициализация модальных окон -->
 <script>
   // Флаг инициализации Bootstrap

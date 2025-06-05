@@ -81,7 +81,7 @@ $items = [];
 if ($id > 0) {
     $sqlItems = "
         SELECT s.*, p.name AS product_name, p.price AS default_price
-        FROM PCRM_Shipments s
+        FROM PCRM_ShipmentItem s
         LEFT JOIN PCRM_Product p ON s.product_id = p.id
         WHERE s.shipment_header_id = ?
         ORDER BY s.id ASC
@@ -495,6 +495,11 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
                 const response = JSON.parse(resp);
                 
                 if (response.status === 'ok') {
+                    // Сбрасываем флаги изменений после успешного сохранения
+                    if (typeof window.resetFormChangeFlags === 'function') {
+                        window.resetFormChangeFlags(currentTabContentId);
+                    }
+                    
                     // Обновляем все списки отгрузок
                     updateShipmentList();
                     
@@ -532,6 +537,11 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
             } catch (e) {
                 // Для обратной совместимости с текстовым ответом "OK"
                 if (resp === 'OK') {
+                    // Сбрасываем флаги изменений после успешного сохранения
+                    if (typeof window.resetFormChangeFlags === 'function') {
+                        window.resetFormChangeFlags(currentTabContentId);
+                    }
+                    
                     // Обновляем все списки отгрузок
                     updateShipmentList();
                     
@@ -564,8 +574,6 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
                             }
                         });
                     }
-                } else {
-                    alert(resp);
                 }
             }
         });

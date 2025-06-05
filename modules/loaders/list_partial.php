@@ -66,15 +66,25 @@ function editLoader(lid) {
 }
 
 function deleteLoader(lid) {
-  if (!confirm('Точно удалить грузчика?')) return;
-  $.get('/crm/modules/loaders/delete.php', { id: lid }, function(resp){
-    if (resp === 'OK') {
-      $.get('/crm/modules/loaders/list_partial.php', function(h){
-        $('#crm-tab-content .tab-pane.active').html(h);
-      });
-    } else {
-      alert(resp);
-    }
-  });
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('loader', lid, 'Вы уверены, что хотите удалить этого грузчика?', function() {
+      // Обновляем список грузчиков
+      const activeTab = document.querySelector('.tab-pane.active');
+      if (activeTab) {
+        const moduleTab = document.querySelector('.nav-link.active[data-module*="loaders"]');
+        if (moduleTab) {
+          const modulePath = moduleTab.getAttribute('data-module');
+          fetch(modulePath)
+            .then(response => response.text())
+            .then(html => activeTab.innerHTML = html)
+            .catch(error => console.error('Error reloading loaders:', error));
+        }
+      }
+    });
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 </script>

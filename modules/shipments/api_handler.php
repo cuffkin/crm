@@ -67,7 +67,7 @@ else if ($requestFile === 'get_shipment_info.php') {
                w.name AS warehouse_name,
                l.name AS loader_name,
                (SELECT SUM((s.quantity * s.price) - s.discount) 
-                FROM PCRM_Shipments s 
+                FROM PCRM_ShipmentItem s 
                 WHERE s.shipment_header_id = sh.id) AS total_amount
         FROM PCRM_ShipmentHeader sh
         LEFT JOIN PCRM_Order o ON sh.order_id = o.id
@@ -213,7 +213,7 @@ else {
             
             // Добавляем товары в отгрузку
             $sqlItem = "
-                INSERT INTO PCRM_Shipments 
+                INSERT INTO PCRM_ShipmentItem 
                 (shipment_header_id, product_id, quantity, price, discount, conducted)
                 VALUES (?, ?, ?, ?, ?, 1)
             ";

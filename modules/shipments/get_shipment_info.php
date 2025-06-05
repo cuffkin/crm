@@ -20,7 +20,7 @@ $sql = "
            w.name AS warehouse_name,
            l.name AS loader_name,
            (SELECT SUM((s.quantity * s.price) - s.discount) 
-            FROM PCRM_Shipments s 
+            FROM PCRM_ShipmentItem s 
             WHERE s.shipment_header_id = sh.id) AS total_amount
     FROM PCRM_ShipmentHeader sh
     LEFT JOIN PCRM_Order o ON sh.order_id = o.id

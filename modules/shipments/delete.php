@@ -18,7 +18,7 @@ $conn->begin_transaction();
 
 try {
     // Сначала удаляем позиции отгрузки
-    $del1 = $conn->prepare("DELETE FROM PCRM_Shipments WHERE shipment_header_id=?");
+    $del1 = $conn->prepare("DELETE FROM PCRM_ShipmentItem WHERE shipment_header_id=?");
     $del1->bind_param("i", $id);
     $del1->execute();
     if ($del1->error) {

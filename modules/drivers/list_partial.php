@@ -69,15 +69,25 @@ function editDriver(did) {
 }
 
 function deleteDriver(did) {
-  if (!confirm('Точно удалить водителя?')) return;
-  $.get('/crm/modules/drivers/delete.php', { id: did }, function(resp){
-    if (resp === 'OK') {
-      $.get('/crm/modules/drivers/list_partial.php', function(h){
-        $('#crm-tab-content .tab-pane.active').html(h);
-      });
-    } else {
-      alert(resp);
-    }
-  });
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('driver', did, 'Вы уверены, что хотите удалить этого водителя?', function() {
+      // Обновляем список водителей
+      const activeTab = document.querySelector('.tab-pane.active');
+      if (activeTab) {
+        const moduleTab = document.querySelector('.nav-link.active[data-module*="drivers"]');
+        if (moduleTab) {
+          const modulePath = moduleTab.getAttribute('data-module');
+          fetch(modulePath)
+            .then(response => response.text())
+            .then(html => activeTab.innerHTML = html)
+            .catch(error => console.error('Error reloading drivers:', error));
+        }
+      }
+    });
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 </script>

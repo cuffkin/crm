@@ -1,0 +1,580 @@
+/**
+ * Стили для современного селектора товаров
+ * Версия: 2.0
+ */
+
+/* Основной контейнер селектора */
+.product-selector {
+    position: relative;
+    width: 100%;
+}
+
+.product-selector.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Поле ввода с кнопками */
+.product-selector-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.product-selector-input .form-control {
+    flex: 1;
+    padding-right: 80px; /* Место для кнопок */
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.product-selector-input .form-control:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Кнопки действий */
+.product-selector-actions {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 4px;
+    z-index: 5;
+}
+
+.product-selector-actions .btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+    opacity: 1 !important; /* ВСЕГДА ВИДИМАЯ */
+    visibility: visible !important; /* ВСЕГДА ВИДИМАЯ */
+}
+
+.product-selector-actions .btn.show-modal {
+    opacity: 1 !important; /* ПРИНУДИТЕЛЬНО ВИДИМАЯ */
+    visibility: visible !important;
+    display: flex !important;
+}
+
+.product-selector-actions .btn i {
+    font-size: 12px;
+}
+
+/* Выпадающий список - ИСПРАВЛЕННЫЙ */
+.product-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    background: white;
+    z-index: 1050;
+    padding: 0;
+    margin-top: 2px;
+    font-size: 0.875rem;
+}
+
+.product-dropdown .dropdown-content {
+    padding: 0;
+}
+
+.product-dropdown .dropdown-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6c757d;
+    padding: 0.5rem 0.75rem 0.25rem;
+    margin: 0;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.product-dropdown .dropdown-divider {
+    margin: 0;
+    border-top: 1px solid #e9ecef;
+}
+
+.product-dropdown .dropdown-footer {
+    border-top: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    padding: 0;
+}
+
+.product-dropdown .dropdown-footer .btn {
+    border: none;
+    background: none;
+    color: #0d6efd;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0;
+    width: 100%;
+    text-align: left;
+    transition: none !important;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.product-dropdown .dropdown-footer .btn:hover {
+    background-color: transparent !important;
+    color: #fd7e14 !important;
+    text-decoration: none;
+}
+
+.product-dropdown .dropdown-footer .btn:focus {
+    outline: none;
+    background-color: transparent !important;
+    color: #fd7e14 !important;
+}
+
+.product-dropdown .dropdown-footer .btn i {
+    font-size: 0.625rem;
+}
+
+/* Элементы товаров - ПОЛНОСТЬЮ ИСПРАВЛЕННЫЕ */
+.product-dropdown .product-item,
+.product-dropdown .dropdown-item.product-item {
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: none !important; /* Принудительно убираем фон */
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    width: 100%;
+    text-align: left;
+    font-size: 0.875rem;
+    color: inherit !important;
+}
+
+.product-dropdown .product-item:last-child {
+    border-bottom: none;
+}
+
+/* Убираем ВСЕ фоновые эффекты при наведении */
+.product-dropdown .product-item:hover,
+.product-dropdown .product-item:focus,
+.product-dropdown .dropdown-item.product-item:hover,
+.product-dropdown .dropdown-item.product-item:focus {
+    background-color: transparent !important; /* Принудительно убираем фон */
+    background: none !important;
+    text-decoration: none !important;
+    color: inherit !important;
+}
+
+/* Только текст названия подсвечивается оранжевым */
+.product-dropdown .product-item:hover .fw-bold,
+.product-dropdown .product-item:focus .fw-bold,
+.product-dropdown .dropdown-item.product-item:hover .fw-bold,
+.product-dropdown .dropdown-item.product-item:focus .fw-bold {
+    color: #fd7e14 !important; /* Оранжевое подсвечивание названия */
+    transition: color 0.15s ease-in-out;
+}
+
+.product-dropdown .product-item:active {
+    background-color: #e9ecef !important;
+}
+
+/* Стили для текста в выпадающем списке - УСИЛЕННЫЕ */
+.product-dropdown .product-item .fw-bold,
+.product-dropdown .dropdown-item.product-item .fw-bold {
+    color: #212529 !important;
+    margin-bottom: 1px;
+    font-size: 0.8125rem !important; /* Уменьшенный размер */
+    font-weight: 500 !important; /* Нежирный */
+    line-height: 1.3;
+}
+
+.product-dropdown .product-item .text-muted,
+.product-dropdown .dropdown-item.product-item .text-muted {
+    color: #6c757d !important;
+    font-size: 0.75rem !important;
+    line-height: 1.2;
+    font-weight: 400 !important; /* Нежирный */
+}
+
+/* Информация о выбранном товаре - ПОЛНОСТЬЮ УБРАНА */
+.selected-product-info,
+.selected-product-info.show {
+    display: none !important; /* ПОЛНОСТЬЮ СКРЫТО */
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.selected-product-info .bg-light,
+.selected-product-info.show .bg-light {
+    display: none !important; /* ПОЛНОСТЬЮ СКРЫТО */
+}
+
+/* Модальное окно */
+.product-selector-modal .modal-dialog {
+    max-width: 1440px; /* Увеличено на 20% от 1200px */
+    margin: 1.75rem auto; /* Центрирование */
+}
+
+/* Дерево категорий */
+.product-selector-modal .categories-tree {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+.product-selector-modal .categories-tree ul {
+    list-style: none;
+    padding-left: 18px;
+    margin: 0;
+}
+
+.product-selector-modal .categories-tree > ul:first-child {
+    padding-left: 0; /* Убираем отступ для корневого уровня */
+}
+
+.product-selector-modal .categories-tree li {
+    cursor: pointer;
+    padding: 4px 8px;
+    margin: 2px 0;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    position: relative;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.product-selector-modal .categories-tree li:hover {
+    background-color: #f8f9fa;
+}
+
+.product-selector-modal .categories-tree li.active {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 600;
+}
+
+.product-selector-modal .categories-tree li.inactive {
+    color: #bbb;
+}
+
+.product-selector-modal .categories-tree li.has-children {
+    position: relative;
+}
+
+/* Убираем стрелочки - комментируем эти стили */
+/*
+.product-selector-modal .categories-tree li.has-children::before {
+    content: "▶";
+    position: absolute;
+    left: -12px;
+    top: 4px;
+    font-size: 10px;
+    color: #6c757d;
+    transition: transform 0.2s ease;
+}
+
+.product-selector-modal .categories-tree li.has-children.expanded::before {
+    transform: rotate(90deg);
+}
+*/
+
+.product-selector-modal .categories-tree .category-count {
+    float: right;
+    font-size: 0.75rem;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+.product-selector-modal .categories-tree li.active .category-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Скрываем подкategории по умолчанию */
+.product-selector-modal .categories-tree li ul {
+    display: none;
+}
+
+.product-selector-modal .categories-tree li.expanded > ul {
+    display: block;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 200px;
+    }
+}
+
+/* Таблица товаров */
+.product-selector-modal .products-table-container {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+}
+
+.product-selector-modal .table {
+    margin-bottom: 0;
+}
+
+.product-selector-modal .table th {
+    background-color: var(--bs-light);
+    border-bottom: 2px solid var(--bs-border-color);
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.75rem 0.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.product-selector-modal .table td {
+    vertical-align: middle;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    padding: 0.75rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Названия товаров в модальном окне - ИСПРАВЛЕНО */
+.product-selector-modal .table td .fw-bold {
+    font-size: 0.8125rem; /* Уменьшенный размер */
+    font-weight: 600;
+    margin-left: 15px; /* Отступ слева */
+    color: #212529;
+}
+
+.product-selector-modal .table td .text-muted.small {
+    margin-left: 15px; /* Отступ слева для описания */
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.product-selector-modal .table tbody tr:hover {
+    background-color: var(--bs-light);
+}
+
+.product-selector-modal .form-control-sm {
+    max-width: 80px;
+}
+
+/* Поле количества в модальном окне */
+.product-selector-modal .quantity-input {
+    width: 80px;
+}
+
+.product-selector-modal .price-display {
+    font-weight: 600;
+    color: #28a745;
+}
+
+.product-selector-modal .stock-display {
+    color: #6c757d;
+}
+
+.product-selector-modal .stock-display.low {
+    color: #dc3545;
+}
+
+.product-selector-modal .stock-display.medium {
+    color: #ffc107;
+}
+
+.product-selector-modal .stock-display.high {
+    color: #28a745;
+}
+
+/* Анимации */
+.product-dropdown {
+    animation: fadeInDown 0.2s ease-in-out;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Убираем старый стиль анимации который конфликтует */
+/* .product-item {
+    animation: fadeIn 0.1s ease-in-out;
+} */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Состояния загрузки */
+.product-selector.loading .product-search {
+    background-image: url("data:image/svg+xml,%3csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3e%3cg fill='none' fill-rule='evenodd'%3e%3cg fill='%236c757d' fill-rule='nonzero'%3e%3cpath d='M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16zM8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z'/%3e%3cpath d='M8 4a4 4 0 0 1 4 4h-2a2 2 0 0 0-2-2V4z'%3e%3canimateTransform attributeName='transform' type='rotate' values='0 8 8;360 8 8' dur='1s' repeatCount='indefinite'/%3e%3c/path%3e%3c/g%3e%3c/g%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .product-dropdown {
+        position: fixed !important;
+        top: auto !important;
+        left: 1rem !important;
+        right: 1rem !important;
+        bottom: 1rem !important;
+        transform: none !important;
+        max-width: none;
+        max-height: 50vh;
+        border-radius: 0.5rem;
+    }
+    
+    .product-selector-modal .modal-dialog {
+        margin: 0.5rem;
+        max-width: none;
+    }
+    
+    .product-selector-modal .modal-body .row {
+        flex-direction: column;
+    }
+    
+    .product-selector-modal .col-md-3,
+    .product-selector-modal .col-md-9 {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .product-selector-modal .categories-tree {
+        max-height: 200px;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Темная тема (если потребуется) - ИСПРАВЛЕННАЯ */
+@media (prefers-color-scheme: dark) {
+    .product-dropdown {
+        background-color: #2b2b2b;
+        border-color: #404040;
+        color: #ffffff;
+    }
+    
+    .product-dropdown .dropdown-header {
+        background-color: #343434;
+        color: #cccccc;
+        border-color: #404040;
+    }
+    
+    .product-dropdown .dropdown-footer {
+        background-color: #343434;
+        border-color: #404040;
+    }
+    
+    /* УБИРАЕМ КОНФЛИКТУЮЩИЙ СТИЛЬ */
+    /* .product-item:hover {
+        background-color: #404040;
+        color: #ffffff;
+    } */
+    
+    /* Только для темной темы - оранжевое подсвечивание */
+    .product-dropdown .product-item:hover .fw-bold {
+        color: #fd7e14 !important;
+    }
+    
+    .selected-product-info .bg-light {
+        background-color: #343434 !important;
+        border-color: #404040;
+        color: #ffffff;
+    }
+}
+
+/* Скроллбар для выпадающего списка */
+.product-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.product-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.product-dropdown::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.product-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Фокус состояния для accessibility */
+.product-item:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: -2px;
+}
+
+.product-selector-actions .btn:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* ДОПОЛНИТЕЛЬНЫЕ ПЕРЕОПРЕДЕЛЕНИЯ BOOTSTRAP СТИЛЕЙ */
+/* Полное переопределение всех возможных Bootstrap hover эффектов */
+.product-dropdown .dropdown-item.product-item,
+.product-dropdown .dropdown-item.product-item:hover,
+.product-dropdown .dropdown-item.product-item:focus,
+.product-dropdown .dropdown-item.product-item:active {
+    background-color: transparent !important;
+    background-image: none !important;
+    color: inherit !important;
+}
+
+/* Специфическое переопределение для Bootstrap dropdown-item:hover */
+.dropdown-menu .dropdown-item.product-item:hover,
+.dropdown-menu .dropdown-item.product-item:focus {
+    background-color: transparent !important;
+    color: inherit !important;
+}
+
+/* Принудительное скрытие selected-product-info когда не нужен */
+.selected-product-info:not(.show) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+} 

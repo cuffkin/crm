@@ -243,6 +243,18 @@ function openOrderEditTab(orderId) {
 }
 
 function deleteOrder(orderId) {
+  // Используем функцию moveToTrash из app.js, которая интегрирована с системой корзины
+  if (typeof window.moveToTrash === 'function') {
+    window.moveToTrash('order', orderId, 'Вы уверены, что хотите удалить этот заказ?', function() {
+      updateOrderLists();
+    });
+  } else {
+    // Fallback на старую функцию, если глобальная не найдена
+    deleteOrderOld(orderId);
+  }
+}
+
+function deleteOrderOld(orderId) {
   if (!confirm('Вы уверены, что хотите удалить этот заказ?')) return;
   
   $.get('/crm/modules/sales/orders/delete.php', { id: orderId }, function(response) {

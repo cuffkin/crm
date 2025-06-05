@@ -197,17 +197,26 @@ function openFinanceEditTab(transactionId, transactionType) {
 }
 
 function deleteTransaction(transactionId) {
-  if (!confirm('Вы уверены, что хотите удалить эту финансовую операцию?')) return;
-  
-  $.get('/crm/modules/finances/delete.php', { id: transactionId }, function(response) {
-    if (response === 'OK') {
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('financial_transaction', transactionId, 'Вы уверены, что хотите удалить эту финансовую операцию?', function() {
       // Обновляем список операций
-      updateFinanceList();
-      showNotification('Финансовая операция успешно удалена', 'success');
-    } else {
-      alert('Ошибка при удалении: ' + response);
-    }
-  });
+      const activeTab = document.querySelector('.tab-pane.active');
+      if (activeTab) {
+        const moduleTab = document.querySelector('.nav-link.active[data-module*="finances"]');
+        if (moduleTab) {
+          const modulePath = moduleTab.getAttribute('data-module');
+          fetch(modulePath)
+            .then(response => response.text())
+            .then(html => activeTab.innerHTML = html)
+            .catch(error => console.error('Error reloading finances:', error));
+        }
+      }
+    });
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 
 function printTransaction(transactionId) {

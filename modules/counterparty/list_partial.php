@@ -74,15 +74,25 @@ function editCounterparty(cid) {
 }
 
 function deleteCounterparty(cid) {
-  if (!confirm('Точно удалить контрагента?')) return;
-  $.get('/crm/modules/counterparty/delete.php', { id: cid }, function(resp){
-    if (resp === 'OK') {
-      $.get('/crm/modules/counterparty/list_partial.php', function(h){
-        $('#crm-tab-content .tab-pane.active').html(h);
-      });
-    } else {
-      alert(resp);
-    }
-  });
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('counterparty', cid, 'Вы уверены, что хотите удалить этого контрагента?', function() {
+      // Обновляем список контрагентов
+      const activeTab = document.querySelector('.tab-pane.active');
+      if (activeTab) {
+        const moduleTab = document.querySelector('.nav-link.active[data-module*="counterparty"]');
+        if (moduleTab) {
+          const modulePath = moduleTab.getAttribute('data-module');
+          fetch(modulePath)
+            .then(response => response.text())
+            .then(html => activeTab.innerHTML = html)
+            .catch(error => console.error('Error reloading counterparties:', error));
+        }
+      }
+    });
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 </script>

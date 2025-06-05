@@ -160,16 +160,13 @@ function openPurchaseOrderEditTab(orderId) {
 }
 
 function deletePurchaseOrder(orderId) {
-  if (!confirm('Вы уверены, что хотите удалить этот заказ поставщику?')) return;
-  
-  $.get('/crm/modules/purchases/orders/delete.php', { id: orderId }, function(response) {
-    if (response === 'OK') {
-      updatePurchaseOrderLists();
-      showNotification('Заказ поставщику успешно удален', 'success');
-    } else {
-      alert('Ошибка при удалении: ' + response);
-    }
-  });
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('purchase_order', orderId, 'Вы уверены, что хотите удалить этот заказ поставщику?', updatePurchaseOrderLists);
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 
 function printPurchaseOrder(orderId) {

@@ -385,6 +385,12 @@ function openModuleTab(modulePath) {
     // Прямой доступ к страницам редактирования без добавления list_partial.php
     url = '/crm/modules/' + modulePath + '.php';
     console.log('Прямой URL для редактирования:', url);
+  } else if (modulePath === 'trash/index' || modulePath.includes('trash')) {
+    // Специальная обработка для модуля корзины
+    url = '/crm/modules/trash/index.php';
+  } else if (modulePath.startsWith('/crm/modules/')) {
+    // Если путь уже полный, используем его как есть
+    url = modulePath;
   } else {
     url = '/crm/modules/' + modulePath + '/list_partial.php';
   }
@@ -1419,6 +1425,7 @@ function getModuleTitle(path) {
     'users/list': 'Пользователи',
     'access/list': 'Управление доступом',
     'finances/list': 'Финансы',
+    'trash/index': 'Корзина',
     
     // Продажи
     'sales/orders/list': 'Заказы клиентов',
@@ -1455,6 +1462,11 @@ function getModuleTitle(path) {
   // Проверяем, есть ли путь в списке известных
   if (moduleTitles[path]) {
     return moduleTitles[path];
+  }
+  
+  // Обработка полного пути к корзине
+  if (path.includes('/modules/trash/') || path.includes('trash/index')) {
+    return 'Корзина';
   }
   
   // Если путь не найден напрямую, пробуем разобрать его
@@ -4628,5 +4640,446 @@ function initResponsiveTables() {
         subtree: true
     });
 }
+
+// ========================================
+// СИСТЕМА КОРЗИНЫ - УНИВЕРСАЛЬНЫЕ ФУНКЦИИ
+// ========================================
+
+/**
+ * Универсальная функция для перемещения элемента в корзину
+ * @param {string} documentType - Тип документа (order, purchase_order, etc.)
+ * @param {number} documentId - ID документа
+ * @param {string} confirmMessage - Сообщение для подтверждения
+ * @param {function} successCallback - Функция для выполнения после успешного удаления
+ * @param {string} reason - Причина удаления (опционально)
+ */
+function moveToTrash(documentType, documentId, confirmMessage, successCallback, reason = null) {
+    if (!confirm(confirmMessage || 'Вы уверены, что хотите удалить этот элемент?')) {
+        return;
+    }
+    
+    // Показываем индикатор загрузки
+    showTrashProgressIndicator(true);
+    
+    const formData = new FormData();
+    formData.append('document_type', documentType);
+    formData.append('document_id', documentId);
+    if (reason) {
+        formData.append('reason', reason);
+    }
+    
+    fetch('/crm/modules/trash/move_to_trash.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        showTrashProgressIndicator(false);
+        
+        if (data.success) {
+            // Показываем уведомление об успешном перемещении в корзину
+            showTrashNotification('success', 'Элемент перемещен в корзину', data.trash_id);
+            
+            // Выполняем callback для обновления списков
+            if (typeof successCallback === 'function') {
+                successCallback();
+            }
+        } else {
+            showTrashNotification('error', 'Ошибка при удалении: ' + data.error);
+        }
+    })
+    .catch(error => {
+        showTrashProgressIndicator(false);
+        showTrashNotification('error', 'Ошибка запроса: ' + error.message);
+        console.error('Trash error:', error);
+    });
+}
+
+/**
+ * Показать уведомление с возможностью отмены удаления
+ */
+function showTrashNotification(type, message, trashId = null) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? '✅' : '❌';
+    
+    let alertHTML = `
+        <div class="alert ${alertClass} alert-dismissible fade show trash-notification" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            ${icon} ${message}
+    `;
+    
+    // Если элемент успешно перемещен в корзину, добавляем кнопку отмены
+    if (type === 'success' && trashId) {
+        alertHTML += `
+            <button type="button" class="btn btn-sm btn-outline-warning ms-2" onclick="undoTrashMove(${trashId})">
+                ↩️ Отменить
+            </button>
+        `;
+    }
+    
+    alertHTML += `
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Удаляем предыдущие уведомления корзины
+    document.querySelectorAll('.trash-notification').forEach(el => el.remove());
+    
+    // Добавляем новое уведомление
+    document.body.insertAdjacentHTML('beforeend', alertHTML);
+    
+    // Автоматически скрываем через 10 секунд
+    setTimeout(() => {
+        const notification = document.querySelector('.trash-notification');
+        if (notification) {
+            notification.remove();
+        }
+    }, 10000);
+}
+
+/**
+ * Отмена перемещения в корзину (быстрое восстановление)
+ */
+function undoTrashMove(trashId) {
+    fetch('/crm/modules/trash/restore.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `id=${trashId}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showTrashNotification('success', 'Элемент восстановлен из корзины');
+            // Обновляем все списки
+            updateAllLists();
+        } else {
+            showTrashNotification('error', 'Ошибка восстановления: ' + data.error);
+        }
+    })
+    .catch(error => {
+        showTrashNotification('error', 'Ошибка запроса: ' + error.message);
+        console.error('Undo trash error:', error);
+    });
+}
+
+/**
+ * Показать/скрыть индикатор загрузки для операций с корзиной
+ */
+function showTrashProgressIndicator(show) {
+    let indicator = document.getElementById('trashProgressIndicator');
+    
+    if (show && !indicator) {
+        const indicatorHTML = `
+            <div id="trashProgressIndicator" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 8px;">
+                <div class="text-center">
+                    <div class="spinner-border text-light" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <div class="mt-2">Выполняется операция...</div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', indicatorHTML);
+    } else if (!show && indicator) {
+        indicator.remove();
+    }
+}
+
+/**
+ * Обновление всех списков после операций с корзиной
+ */
+function updateAllLists() {
+    // Обновляем все известные списки
+    if (typeof updateOrderLists === 'function') updateOrderLists();
+    if (typeof updatePurchaseOrderLists === 'function') updatePurchaseOrderLists();
+    if (typeof updateShipmentList === 'function') updateShipmentList();
+    if (typeof updateFinanceList === 'function') updateFinanceList();
+    if (typeof updateReturnsList === 'function') updateReturnsList();
+    
+    // Обновляем активную вкладку, если это список
+    const activeTab = document.querySelector('.tab-pane.active');
+    if (activeTab && activeTab.innerHTML.includes('table')) {
+        const moduleTab = document.querySelector('.nav-link.active[data-module]');
+        if (moduleTab) {
+            const modulePath = moduleTab.getAttribute('data-module');
+            if (modulePath) {
+                // Перезагружаем содержимое активной вкладки
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => {
+                        activeTab.innerHTML = html;
+                    })
+                    .catch(error => console.error('Error reloading tab:', error));
+            }
+        }
+    }
+}
+
+// ========================================
+// ОБНОВЛЕННЫЕ ФУНКЦИИ УДАЛЕНИЯ
+// ========================================
+
+// Обновляем существующие функции удаления для использования корзины
+
+function deleteOrder(orderId) {
+    moveToTrash('order', orderId, 'Вы уверены, что хотите удалить этот заказ?', updateOrderLists);
+}
+
+function deletePurchaseOrder(orderId) {
+    moveToTrash('purchase_order', orderId, 'Вы уверены, что хотите удалить этот заказ поставщику?', updatePurchaseOrderLists);
+}
+
+function deleteShipment(shipmentId) {
+    moveToTrash('shipment', shipmentId, 'Вы уверены, что хотите удалить эту отгрузку?', updateShipmentList);
+}
+
+function deleteTransaction(transactionId) {
+    moveToTrash('financial_transaction', transactionId, 'Вы уверены, что хотите удалить эту финансовую операцию?', updateFinanceList);
+}
+
+function deleteReturn(returnId) {
+    moveToTrash('return', returnId, 'Вы уверены, что хотите удалить этот возврат?', updateReturnsList);
+}
+
+function deleteSupplierReturn(returnId) {
+    moveToTrash('supplier_return', returnId, 'Вы уверены, что хотите удалить этот возврат поставщику?', function() {
+        // Обновляем список возвратов поставщикам
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="purchases/returns"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading supplier returns:', error));
+            }
+        }
+    });
+}
+
+function deleteReceipt(receiptId) {
+    moveToTrash('receipt', receiptId, 'Вы уверены, что хотите удалить эту приемку?', function() {
+        // Обновляем список приемок
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="purchases/receipts"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading receipts:', error));
+            }
+        }
+    });
+}
+
+function deleteProductionOrder(orderId) {
+    moveToTrash('production_order', orderId, 'Вы уверены, что хотите удалить этот производственный заказ?', function() {
+        // Обновляем список производственных заказов
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="production/orders"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading production orders:', error));
+            }
+        }
+    });
+}
+
+function deleteProductionOperation(operationId) {
+    moveToTrash('production_operation', operationId, 'Вы уверены, что хотите удалить эту производственную операцию?', function() {
+        // Обновляем список производственных операций
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="production/operations"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading production operations:', error));
+            }
+        }
+    });
+}
+
+// ========================================
+// ФУНКЦИИ ДЛЯ СПРАВОЧНИКОВ
+// ========================================
+
+function deleteCounterparty(counterpartyId) {
+    moveToTrash('counterparty', counterpartyId, 'Вы уверены, что хотите удалить этого контрагента?', function() {
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="counterparty"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading counterparties:', error));
+            }
+        }
+    });
+}
+
+function deleteProduct(productId) {
+    moveToTrash('product', productId, 'Вы уверены, что хотите удалить этот товар?', function() {
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="products"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading products:', error));
+            }
+        }
+    });
+}
+
+function deleteCategory(categoryId) {
+    moveToTrash('category', categoryId, 'Вы уверены, что хотите удалить эту категорию?', function() {
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="categories"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading categories:', error));
+            }
+        }
+    });
+}
+
+function deleteWarehouse(warehouseId) {
+    moveToTrash('warehouse', warehouseId, 'Вы уверены, что хотите удалить этот склад?', function() {
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="warehouse"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading warehouses:', error));
+            }
+        }
+    });
+}
+
+function deleteDriver(driverId) {
+    moveToTrash('driver', driverId, 'Вы уверены, что хотите удалить этого водителя?', function() {
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="drivers"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading drivers:', error));
+            }
+        }
+    });
+}
+
+function deleteLoader(loaderId) {
+    moveToTrash('loader', loaderId, 'Вы уверены, что хотите удалить этого грузчика?', function() {
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (activeTab) {
+            const moduleTab = document.querySelector('.nav-link.active[data-module*="loaders"]');
+            if (moduleTab) {
+                const modulePath = moduleTab.getAttribute('data-module');
+                fetch(modulePath)
+                    .then(response => response.text())
+                    .then(html => activeTab.innerHTML = html)
+                    .catch(error => console.error('Error reloading loaders:', error));
+            }
+        }
+    });
+}
+
+// ========================================
+// ИНТЕГРАЦИЯ С СУЩЕСТВУЮЩЕЙ СИСТЕМОЙ
+// ========================================
+
+// Добавляем обработчик для инициализации корзины при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем пункт "Корзина" в главное меню, если пользователь - администратор
+    checkTrashAccess();
+});
+
+/**
+ * Проверка доступа к корзине и добавление пункта меню
+ */
+function checkTrashAccess() {
+    console.log('Checking trash access...');
+    fetch('/crm/modules/trash/check_access.php')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Trash access response:', data);
+            if (data.has_access) {
+                console.log('Adding trash menu item...');
+                addTrashMenuItem();
+            }
+        })
+        .catch(error => {
+            console.log('Trash access check failed:', error);
+        });
+}
+
+/**
+ * Добавление пункта "Корзина" в главное меню
+ */
+function addTrashMenuItem() {
+    console.log('addTrashMenuItem called');
+    // Проверяем, не добавлен ли уже пункт корзины
+    if (document.querySelector('.sidebar .nav-link[data-module*="trash"]')) {
+        console.log('Trash menu item already exists');
+        return;
+    }
+    
+    const sidebar = document.querySelector('.sidebar ul.nav');
+    console.log('Sidebar found:', sidebar);
+    if (sidebar) {
+        const trashMenuItem = `
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-module="trash/index">
+                    <i class="fas fa-trash"></i>
+                    <span>Корзина</span>
+                    <i class="fas fa-star star-icon" data-favorite="trash/index"></i>
+                </a>
+            </li>
+        `;
+        sidebar.insertAdjacentHTML('beforeend', trashMenuItem);
+        console.log('Trash menu item added to sidebar');
+        
+        // Добавляем обработчик клика для открытия модуля
+        const trashLink = sidebar.querySelector('.nav-link[data-module="trash/index"]');
+        if (trashLink) {
+            trashLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                openModuleTab('trash/index');
+            });
+            console.log('Trash menu item click handler added');
+        }
+    } else {
+        console.log('Sidebar not found!');
+    }
+}
+
+// Экспортируем функции для глобального использования
+window.moveToTrash = moveToTrash;
+window.undoTrashMove = undoTrashMove;
+window.showTrashNotification = showTrashNotification;
 
  

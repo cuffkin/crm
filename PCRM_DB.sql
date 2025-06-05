@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost
--- Время создания: Май 19 2025 г., 11:31
+-- Время создания: Июн 04 2025 г., 19:48
 -- Версия сервера: 8.0.42-0ubuntu0.22.04.1
 -- Версия PHP: 8.1.2-1ubuntu2.21
 
@@ -20,6 +20,18 @@ SET time_zone = "+00:00";
 --
 -- База данных: `prorab`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `PCRM_AccessRights`
+--
+
+CREATE TABLE `PCRM_AccessRights` (
+  `id` int NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -66,14 +78,6 @@ CREATE TABLE `PCRM_CashRegister` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Дамп данных таблицы `PCRM_CashRegister`
---
-
-INSERT INTO `PCRM_CashRegister` (`id`, `name`, `description`, `status`, `created_at`) VALUES
-(1, 'Cash Register 1', 'Main office cash register', 'active', '2025-03-17 02:19:39'),
-(2, 'Cash Register 2', 'Secondary cash register', 'active', '2025-03-17 02:19:39');
-
 -- --------------------------------------------------------
 
 --
@@ -86,49 +90,9 @@ CREATE TABLE `PCRM_Categories` (
   `description` text,
   `type` varchar(50) NOT NULL,
   `pc_id` int DEFAULT NULL,
-  `status` varchar(50) DEFAULT 'active'
+  `status` varchar(50) DEFAULT 'active',
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Дамп данных таблицы `PCRM_Categories`
---
-
-INSERT INTO `PCRM_Categories` (`id`, `name`, `description`, `type`, `pc_id`, `status`) VALUES
-(26, 'Сыпучие', 'Сыпучие материалы (навалом)', 'Товарная категория', NULL, 'active'),
-(27, 'Фасовка', 'Фасованные материалы (в мешках и др.)', 'Товарная категория', NULL, 'active'),
-(28, 'Смеси', 'Строительные смеси', 'Товарная категория', NULL, 'active'),
-(29, 'Утеплители', 'Теплоизоляционные материалы', 'Товарная категория', NULL, 'active'),
-(30, 'Строительная химия', 'Химические составы для строительства', 'Товарная категория', NULL, 'active'),
-(31, 'Металл', 'Металлопродукция для строительства', 'Товарная категория', NULL, 'active'),
-(32, 'Песок', 'Песок речной, карьерный (навалом)', 'Товарная категория', 26, 'active'),
-(33, 'Щебень', 'Щебень гранитный, известняковый (навалом)', 'Товарная категория', 26, 'active'),
-(34, 'Отсев', 'Отсев дробления (навалом)', 'Товарная категория', 26, 'active'),
-(35, 'Бут', 'Бутовый камень', 'Товарная категория', 26, 'active'),
-(36, 'Керамзит', 'Керамзит (навалом)', 'Товарная категория', 26, 'active'),
-(37, 'Крошка', 'Мраморная, гранитная крошка (навалом)', 'Товарная категория', 26, 'active'),
-(38, 'Уголь', 'Уголь каменный, древесный (навалом)', 'Товарная категория', 26, 'active'),
-(39, 'Чернозём', 'Плодородный грунт (навалом)', 'Товарная категория', 26, 'active'),
-(40, 'Известь', 'Известь гашеная, негашеная (навалом)', 'Товарная категория', 26, 'active'),
-(41, 'Другое', 'Прочие сыпучие материалы', 'Товарная категория', 26, 'active'),
-(42, 'Песок', 'Песок в мешках', 'Товарная категория', 27, 'active'),
-(43, 'Щебень', 'Щебень в мешках', 'Товарная категория', 27, 'active'),
-(44, 'Отсев', 'Отсев в мешках', 'Товарная категория', 27, 'active'),
-(45, 'Другое', 'Прочие фасованные материалы', 'Товарная категория', 27, 'active'),
-(46, 'Цемент', 'Портландцемент, шлакопортландцемент', 'Товарная категория', 28, 'active'),
-(47, 'Штукатурки и шпаклёвки', 'Гипсовые, цементные, полимерные смеси', 'Товарная категория', 28, 'active'),
-(48, 'Клей для плитки', 'Для керамической плитки, керамогранита, камня', 'Товарная категория', 28, 'active'),
-(49, 'Смеси для пола', 'Стяжки, наливные полы', 'Товарная категория', 28, 'active'),
-(50, 'Смеси огнеупорные', 'Для кладки печей, каминов', 'Товарная категория', 28, 'active'),
-(51, 'Монтажные смеси', 'Для анкеровки, ремонта бетона', 'Товарная категория', 28, 'active'),
-(52, 'Растворо-бетонные смеси', 'Готовые кладочные, штукатурные растворы', 'Товарная категория', 28, 'active'),
-(53, 'Минвата, каменная вата', 'Рулоны, плиты (базальтовая вата)', 'Товарная категория', 29, 'active'),
-(54, 'Пенопласт', 'Плиты ППС', 'Товарная категория', 29, 'active'),
-(55, 'Экструдер', 'Плиты XPS (экструдированный пенополистирол)', 'Товарная категория', 29, 'active'),
-(56, 'Строительные добавки', 'Пластификаторы, антифризы и т.д.', 'Товарная категория', 30, 'active'),
-(57, 'Пена монтажная', 'Полиуретановая пена', 'Товарная категория', 30, 'active'),
-(58, 'Арматура', 'Арматурная сталь А1, А3', 'Товарная категория', 31, 'active'),
-(59, 'Сетки', 'Кладочная, сварная, рабица', 'Товарная категория', 31, 'active'),
-(60, 'Вязальная проволока', 'Проволока для вязки арматуры', 'Товарная категория', 31, 'inactive');
 
 -- --------------------------------------------------------
 
@@ -144,16 +108,9 @@ CREATE TABLE `PCRM_Counterparty` (
   `email` varchar(255) DEFAULT NULL,
   `address` varchar(255) DEFAULT NULL,
   `inn` varchar(20) DEFAULT NULL,
-  `kpp` varchar(20) DEFAULT NULL
+  `kpp` varchar(20) DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Дамп данных таблицы `PCRM_Counterparty`
---
-
-INSERT INTO `PCRM_Counterparty` (`id`, `name`, `type`, `phone`, `email`, `address`, `inn`, `kpp`) VALUES
-(1, 'тестовый контрагент', 'физлицо', '+79781000000', 'test@gmail.com', 'Тестовая, д.5', '', ''),
-(2, 'Тест заказов', 'физлицо', '', '', 'Петропавловская 222', '', '');
 
 -- --------------------------------------------------------
 
@@ -182,15 +139,9 @@ CREATE TABLE `PCRM_Drivers` (
   `vehicle_name` varchar(255) DEFAULT NULL,
   `load_capacity` decimal(10,2) DEFAULT '0.00',
   `max_volume` decimal(10,3) DEFAULT '0.000',
-  `phone` varchar(50) DEFAULT NULL
+  `phone` varchar(50) DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Дамп данных таблицы `PCRM_Drivers`
---
-
-INSERT INTO `PCRM_Drivers` (`id`, `name`, `vehicle_name`, `load_capacity`, `max_volume`, `phone`) VALUES
-(1, 'Тестовый Водила Иванович', 'Зил', '7.00', '0.000', '+79781234567');
 
 -- --------------------------------------------------------
 
@@ -211,7 +162,8 @@ CREATE TABLE `PCRM_FinancialTransaction` (
   `conducted` tinyint NOT NULL DEFAULT '0',
   `user_id` int NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `expense_category` varchar(50) DEFAULT NULL
+  `expense_category` varchar(50) DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -228,14 +180,6 @@ CREATE TABLE `PCRM_FormState` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Дамп данных таблицы `PCRM_FormState`
---
-
-INSERT INTO `PCRM_FormState` (`id`, `user_id`, `state_key`, `state_data`, `created_at`, `updated_at`) VALUES
-(4354, 1, 'forms', '[]', '2025-05-19 08:03:31', '2025-05-19 08:03:31'),
-(4355, 1, 'tabs', '[]', '2025-05-19 08:03:31', '2025-05-19 08:03:31');
 
 -- --------------------------------------------------------
 
@@ -281,15 +225,9 @@ CREATE TABLE `PCRM_Loaders` (
   `id` int NOT NULL,
   `name` varchar(255) NOT NULL COMMENT 'Имя или ФИО грузчика',
   `phone` varchar(50) DEFAULT NULL COMMENT 'Телефон',
-  `status` varchar(50) DEFAULT 'active' COMMENT 'active/inactive'
+  `status` varchar(50) DEFAULT 'active' COMMENT 'active/inactive',
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-
---
--- Дамп данных таблицы `PCRM_Loaders`
---
-
-INSERT INTO `PCRM_Loaders` (`id`, `name`, `phone`, `status`) VALUES
-(1, 'Тестовый Вася', '+79781112345', 'active');
 
 -- --------------------------------------------------------
 
@@ -306,20 +244,6 @@ CREATE TABLE `PCRM_Measurement` (
   `status` enum('active','inactive') NOT NULL DEFAULT 'active',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Дамп данных таблицы `PCRM_Measurement`
---
-
-INSERT INTO `PCRM_Measurement` (`id`, `name`, `short_name`, `description`, `is_default`, `status`, `created_at`) VALUES
-(1, 'Штука', 'шт.', 'Штучный товар', 1, 'active', '2025-05-07 20:40:54'),
-(2, 'Упаковка', 'уп.', 'Товар, продаваемый упаковками', 0, 'active', '2025-05-07 20:40:54'),
-(3, 'Рулон', 'рул.', 'Рулонный материал', 0, 'active', '2025-05-07 20:40:54'),
-(4, 'Лист', 'л.', 'Листовой материал', 0, 'active', '2025-05-07 20:40:54'),
-(5, 'Тонна', 'т.', 'Весовой товар (тонны)', 0, 'active', '2025-05-07 20:40:54'),
-(6, 'Мешок', 'меш.', 'Товар в мешках', 0, 'active', '2025-05-07 20:40:54'),
-(7, 'Килограмм', 'кг', 'Весовой товар (килограммы)', 0, 'active', '2025-05-07 20:40:54'),
-(8, 'Метр погонный', 'м.пог.', 'Погонный метр', 0, 'active', '2025-05-07 20:40:54');
 
 -- --------------------------------------------------------
 
@@ -346,13 +270,6 @@ CREATE TABLE `PCRM_Order` (
   `contacts` varchar(255) DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Дамп данных таблицы `PCRM_Order`
---
-
-INSERT INTO `PCRM_Order` (`id`, `organization`, `order_number`, `customer`, `created_by`, `order_date`, `status`, `driver`, `total_amount`, `warehouse`, `delivery_address`, `comment`, `deleted`, `conducted`, `driver_id`, `contacts`) VALUES
-(8, 1, 'SO-000001', 2, 1, '2025-03-13 01:57:00', 'confirmed', NULL, '100.00', 1, '', '', 0, 0, NULL, '');
-
 -- --------------------------------------------------------
 
 --
@@ -368,13 +285,6 @@ CREATE TABLE `PCRM_OrderHistory` (
   `timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Дамп данных таблицы `PCRM_OrderHistory`
---
-
-INSERT INTO `PCRM_OrderHistory` (`id`, `order_id`, `action_type`, `action_details`, `user_id`, `timestamp`) VALUES
-(1, 8, 'update', 'Изменен статус заказа на \"Подтверждён\"', 1, '2025-03-16 22:40:08');
-
 -- --------------------------------------------------------
 
 --
@@ -389,15 +299,6 @@ CREATE TABLE `PCRM_OrderItem` (
   `price` decimal(10,2) NOT NULL DEFAULT '0.00',
   `discount` decimal(10,2) NOT NULL DEFAULT '0.00'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-
---
--- Дамп данных таблицы `PCRM_OrderItem`
---
-
-INSERT INTO `PCRM_OrderItem` (`id`, `order_id`, `product_id`, `quantity`, `price`, `discount`) VALUES
-(10, 6, 1, '1.000', '100.00', '0.00'),
-(12, 7, 1, '15.000', '100.00', '0.00'),
-(19, 8, 1, '1.000', '100.00', '0.00');
 
 -- --------------------------------------------------------
 
@@ -416,13 +317,6 @@ CREATE TABLE `PCRM_Organization` (
   `email` varchar(100) DEFAULT NULL COMMENT 'E-mail',
   `status` varchar(50) DEFAULT 'active' COMMENT 'active / inactive и т.д.'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-
---
--- Дамп данных таблицы `PCRM_Organization`
---
-
-INSERT INTO `PCRM_Organization` (`id`, `name`, `inn`, `kpp`, `ogrn`, `address`, `phone`, `email`, `status`) VALUES
-(1, 'ООО \"СтройГигант\"', '7712345678', '771301001', '1157746382975', 'г. Москва, ул. Ленина, д.1, оф.101', '+7 (495) 123-45-67', 'info@stroygiant.ru', 'active');
 
 -- --------------------------------------------------------
 
@@ -493,15 +387,9 @@ CREATE TABLE `PCRM_Product` (
   `weight` decimal(10,3) DEFAULT '0.000',
   `volume` decimal(10,3) DEFAULT '0.000',
   `status` varchar(50) DEFAULT 'active',
-  `default_measurement_id` int DEFAULT NULL
+  `default_measurement_id` int DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Дамп данных таблицы `PCRM_Product`
---
-
-INSERT INTO `PCRM_Product` (`id`, `name`, `sku`, `description`, `category`, `subcategory`, `price`, `cost_price`, `unit_of_measure`, `weight`, `volume`, `status`, `default_measurement_id`) VALUES
-(1, 'тест', '2212123', '', NULL, NULL, '100.00', '100.00', 'шт', '0.000', '0.000', 'inactive', NULL);
 
 -- --------------------------------------------------------
 
@@ -536,7 +424,8 @@ CREATE TABLE `PCRM_ProductionOperation` (
   `comment` text COMMENT 'Комментарий',
   `created_by` int DEFAULT NULL COMMENT 'Кто создал',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -570,7 +459,8 @@ CREATE TABLE `PCRM_ProductionOrder` (
   `conducted` tinyint NOT NULL DEFAULT '0' COMMENT '0=не проведен, 1=проведен',
   `created_by` int DEFAULT NULL COMMENT 'Кто создал',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -632,7 +522,7 @@ CREATE TABLE `PCRM_PurchaseOrder` (
   `warehouse_id` int DEFAULT NULL,
   `date` datetime DEFAULT NULL,
   `delivery_address` varchar(255) DEFAULT NULL,
-  `comment` text DEFAULT NULL,
+  `comment` text,
   `status` varchar(50) DEFAULT 'draft',
   `total_amount` decimal(10,2) DEFAULT '0.00',
   `purchase_order_number` varchar(50) DEFAULT NULL,
@@ -673,7 +563,8 @@ CREATE TABLE `PCRM_ReceiptHeader` (
   `conducted` tinyint NOT NULL DEFAULT '0',
   `created_by` int NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `comment` text
+  `comment` text,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -730,7 +621,8 @@ CREATE TABLE `PCRM_ReturnHeader` (
   `conducted` tinyint DEFAULT '0',
   `created_by` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -753,6 +645,19 @@ CREATE TABLE `PCRM_ReturnItem` (
 -- --------------------------------------------------------
 
 --
+-- Структура таблицы `PCRM_Settings`
+--
+
+CREATE TABLE `PCRM_Settings` (
+  `id` int NOT NULL,
+  `key` varchar(100) NOT NULL,
+  `value` text,
+  `description` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Структура таблицы `PCRM_ShipmentHeader`
 --
 
@@ -767,27 +672,26 @@ CREATE TABLE `PCRM_ShipmentHeader` (
   `conducted` tinyint NOT NULL DEFAULT '0',
   `created_by` int NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `comment` text
+  `comment` text,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `PCRM_Shipments`
+-- Структура таблицы `PCRM_ShipmentItem`
 --
 
-CREATE TABLE `PCRM_Shipments` (
+CREATE TABLE `PCRM_ShipmentItem` (
   `id` int NOT NULL,
-  `shipment_header_id` int DEFAULT NULL,
-  `product_id` int NOT NULL,
-  `quantity` decimal(10,3) NOT NULL DEFAULT '0.000',
-  `price` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `discount` decimal(10,2) NOT NULL DEFAULT '0.00',
-  `conducted` tinyint NOT NULL DEFAULT '0',
-  `unloaded_by` int DEFAULT NULL,
+  `shipment_header_id` int NOT NULL COMMENT 'ID документа отгрузки',
+  `product_id` int NOT NULL COMMENT 'ID товара',
+  `quantity` decimal(10,3) NOT NULL DEFAULT '0.000' COMMENT 'Количество',
+  `price` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT 'Цена',
+  `discount` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT 'Скидка',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Позиции документов отгрузки';
 
 -- --------------------------------------------------------
 
@@ -799,15 +703,9 @@ CREATE TABLE `PCRM_Stock` (
   `id` int NOT NULL,
   `prod_id` int NOT NULL,
   `warehouse` int NOT NULL,
-  `quantity` decimal(10,2) DEFAULT '0.00'
+  `quantity` decimal(10,2) DEFAULT '0.00',
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Дамп данных таблицы `PCRM_Stock`
---
-
-INSERT INTO `PCRM_Stock` (`id`, `prod_id`, `warehouse`, `quantity`) VALUES
-(1, 1, 1, '15.00');
 
 -- --------------------------------------------------------
 
@@ -828,7 +726,8 @@ CREATE TABLE `PCRM_SupplierReturnHeader` (
   `conducted` tinyint DEFAULT '0',
   `created_by` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -885,6 +784,44 @@ CREATE TABLE `PCRM_Transfers` (
 -- --------------------------------------------------------
 
 --
+-- Структура таблицы `PCRM_TrashItems`
+--
+
+CREATE TABLE `PCRM_TrashItems` (
+  `id` int NOT NULL,
+  `item_type` enum('document','reference') NOT NULL COMMENT 'Тип элемента: документ или справочник',
+  `document_type` varchar(50) NOT NULL COMMENT 'Тип документа/справочника',
+  `document_id` int NOT NULL COMMENT 'ID удаленного элемента',
+  `document_data` json DEFAULT NULL COMMENT 'Сохраненные данные для восстановления',
+  `related_data` json DEFAULT NULL COMMENT 'Связанные данные (позиции, детали)',
+  `original_name` varchar(255) DEFAULT NULL COMMENT 'Название/номер для отображения',
+  `deleted_by` int NOT NULL COMMENT 'ID пользователя, который удалил',
+  `deleted_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Дата удаления',
+  `reason` varchar(255) DEFAULT NULL COMMENT 'Причина удаления',
+  `can_restore` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Можно ли восстановить',
+  `auto_delete_at` datetime NOT NULL COMMENT 'Дата автоматического удаления (через месяц)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Корзина для удаленных элементов';
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `PCRM_TrashLog`
+--
+
+CREATE TABLE `PCRM_TrashLog` (
+  `id` int NOT NULL,
+  `trash_item_id` int DEFAULT NULL COMMENT 'ID элемента в корзине',
+  `action` enum('moved_to_trash','restored','permanently_deleted','auto_deleted') NOT NULL COMMENT 'Действие',
+  `document_type` varchar(50) NOT NULL COMMENT 'Тип документа',
+  `document_id` int NOT NULL COMMENT 'ID документа',
+  `user_id` int NOT NULL COMMENT 'ID пользователя',
+  `details` json DEFAULT NULL COMMENT 'Дополнительные детали',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Лог операций с корзиной';
+
+-- --------------------------------------------------------
+
+--
 -- Структура таблицы `PCRM_User`
 --
 
@@ -900,13 +837,17 @@ CREATE TABLE `PCRM_User` (
   `status` varchar(50) DEFAULT 'active'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- --------------------------------------------------------
+
 --
--- Дамп данных таблицы `PCRM_User`
+-- Структура таблицы `PCRM_UserAccessRights`
 --
 
-INSERT INTO `PCRM_User` (`id`, `username`, `email`, `password`, `first_name`, `last_name`, `phone`, `role`, `status`) VALUES
-(1, 'admin', 'admin@prorab82.ru', '$2y$10$C0pyThiSHaSh$', NULL, NULL, NULL, 'admin', 'active'),
-(2, 'admin', 'admin@prorab82.ru', '$2y$10$dBp10USL29b29ZeIG1fKwOhrJRLKUPvzAkG10N14mECZkFB6boH36', NULL, NULL, NULL, 'admin', 'active');
+CREATE TABLE `PCRM_UserAccessRights` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `access_right_id` int NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -934,19 +875,20 @@ CREATE TABLE `PCRM_Warehouse` (
   `id` int NOT NULL,
   `name` varchar(255) NOT NULL,
   `location` varchar(255) NOT NULL,
-  `status` varchar(50) DEFAULT 'active'
+  `status` varchar(50) DEFAULT 'active',
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Дамп данных таблицы `PCRM_Warehouse`
---
-
-INSERT INTO `PCRM_Warehouse` (`id`, `name`, `location`, `status`) VALUES
-(1, 'Кубанская основной', 'Кубанская, 21Б', 'active');
 
 --
 -- Индексы сохранённых таблиц
 --
+
+--
+-- Индексы таблицы `PCRM_AccessRights`
+--
+ALTER TABLE `PCRM_AccessRights`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `name` (`name`);
 
 --
 -- Индексы таблицы `PCRM_Adjustments`
@@ -974,13 +916,15 @@ ALTER TABLE `PCRM_CashRegister`
 -- Индексы таблицы `PCRM_Categories`
 --
 ALTER TABLE `PCRM_Categories`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_Counterparty`
 --
 ALTER TABLE `PCRM_Counterparty`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_DocumentRelation`
@@ -992,7 +936,8 @@ ALTER TABLE `PCRM_DocumentRelation`
 -- Индексы таблицы `PCRM_Drivers`
 --
 ALTER TABLE `PCRM_Drivers`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_FinancialTransaction`
@@ -1001,7 +946,8 @@ ALTER TABLE `PCRM_FinancialTransaction`
   ADD PRIMARY KEY (`id`),
   ADD KEY `counterparty_id` (`counterparty_id`),
   ADD KEY `cash_register_id` (`cash_register_id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_FormState`
@@ -1032,7 +978,8 @@ ALTER TABLE `PCRM_InboundReturns`
 -- Индексы таблицы `PCRM_Loaders`
 --
 ALTER TABLE `PCRM_Loaders`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_Order`
@@ -1042,7 +989,8 @@ ALTER TABLE `PCRM_Order`
   ADD KEY `customer` (`customer`),
   ADD KEY `created_by` (`created_by`),
   ADD KEY `driver` (`driver`),
-  ADD KEY `warehouse` (`warehouse`);
+  ADD KEY `warehouse` (`warehouse`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_OrderHistory`
@@ -1097,7 +1045,8 @@ ALTER TABLE `PCRM_Product`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `sku` (`sku`),
   ADD KEY `category` (`category`),
-  ADD KEY `subcategory` (`subcategory`);
+  ADD KEY `subcategory` (`subcategory`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_ProductImages`
@@ -1106,10 +1055,35 @@ ALTER TABLE `PCRM_ProductImages`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Индексы таблицы `PCRM_ProductionOperation`
+--
+ALTER TABLE `PCRM_ProductionOperation`
+  ADD KEY `idx_deleted` (`deleted`);
+
+--
+-- Индексы таблицы `PCRM_ProductionOrder`
+--
+ALTER TABLE `PCRM_ProductionOrder`
+  ADD KEY `idx_deleted` (`deleted`);
+
+--
 -- Индексы таблицы `PCRM_PurchaseOrder`
 --
 ALTER TABLE `PCRM_PurchaseOrder`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_deleted` (`deleted`);
+
+--
+-- Индексы таблицы `PCRM_PurchaseOrderItem`
+--
+ALTER TABLE `PCRM_PurchaseOrderItem`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Индексы таблицы `PCRM_ReceiptHeader`
+--
+ALTER TABLE `PCRM_ReceiptHeader`
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_RelatedDocuments`
@@ -1126,7 +1100,8 @@ ALTER TABLE `PCRM_ReturnHeader`
   ADD KEY `order_id` (`order_id`),
   ADD KEY `warehouse_id` (`warehouse_id`),
   ADD KEY `loader_id` (`loader_id`),
-  ADD KEY `created_by` (`created_by`);
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_ReturnItem`
@@ -1137,21 +1112,28 @@ ALTER TABLE `PCRM_ReturnItem`
   ADD KEY `product_id` (`product_id`);
 
 --
+-- Индексы таблицы `PCRM_Settings`
+--
+ALTER TABLE `PCRM_Settings`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `key` (`key`);
+
+--
 -- Индексы таблицы `PCRM_ShipmentHeader`
 --
 ALTER TABLE `PCRM_ShipmentHeader`
   ADD PRIMARY KEY (`id`),
   ADD KEY `order_id` (`order_id`),
-  ADD KEY `warehouse_id` (`warehouse_id`);
+  ADD KEY `warehouse_id` (`warehouse_id`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
--- Индексы таблицы `PCRM_Shipments`
+-- Индексы таблицы `PCRM_ShipmentItem`
 --
-ALTER TABLE `PCRM_Shipments`
+ALTER TABLE `PCRM_ShipmentItem`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `product_id` (`product_id`),
-  ADD KEY `unloaded_by` (`unloaded_by`),
-  ADD KEY `shipment_header_id` (`shipment_header_id`);
+  ADD KEY `idx_shipment_header_id` (`shipment_header_id`),
+  ADD KEY `idx_product_id` (`product_id`);
 
 --
 -- Индексы таблицы `PCRM_Stock`
@@ -1160,6 +1142,12 @@ ALTER TABLE `PCRM_Stock`
   ADD PRIMARY KEY (`id`),
   ADD KEY `prod_id` (`prod_id`),
   ADD KEY `warehouse` (`warehouse`);
+
+--
+-- Индексы таблицы `PCRM_SupplierReturnHeader`
+--
+ALTER TABLE `PCRM_SupplierReturnHeader`
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- Индексы таблицы `PCRM_TrainingMaterial`
@@ -1179,20 +1167,55 @@ ALTER TABLE `PCRM_Transfers`
   ADD KEY `user_id` (`user_id`);
 
 --
+-- Индексы таблицы `PCRM_TrashItems`
+--
+ALTER TABLE `PCRM_TrashItems`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_item_type` (`item_type`),
+  ADD KEY `idx_document_type` (`document_type`),
+  ADD KEY `idx_deleted_by` (`deleted_by`),
+  ADD KEY `idx_auto_delete` (`auto_delete_at`);
+
+--
+-- Индексы таблицы `PCRM_TrashLog`
+--
+ALTER TABLE `PCRM_TrashLog`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_action` (`action`),
+  ADD KEY `idx_document_type` (`document_type`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_created_at` (`created_at`);
+
+--
 -- Индексы таблицы `PCRM_User`
 --
 ALTER TABLE `PCRM_User`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Индексы таблицы `PCRM_UserAccessRights`
+--
+ALTER TABLE `PCRM_UserAccessRights`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user_right` (`user_id`,`access_right_id`),
+  ADD KEY `access_right_id` (`access_right_id`);
+
+--
 -- Индексы таблицы `PCRM_Warehouse`
 --
 ALTER TABLE `PCRM_Warehouse`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_deleted` (`deleted`);
 
 --
 -- AUTO_INCREMENT для сохранённых таблиц
 --
+
+--
+-- AUTO_INCREMENT для таблицы `PCRM_AccessRights`
+--
+ALTER TABLE `PCRM_AccessRights`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Adjustments`
@@ -1210,19 +1233,19 @@ ALTER TABLE `PCRM_AnalyticsDashboard`
 -- AUTO_INCREMENT для таблицы `PCRM_CashRegister`
 --
 ALTER TABLE `PCRM_CashRegister`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Categories`
 --
 ALTER TABLE `PCRM_Categories`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Counterparty`
 --
 ALTER TABLE `PCRM_Counterparty`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_DocumentRelation`
@@ -1234,19 +1257,19 @@ ALTER TABLE `PCRM_DocumentRelation`
 -- AUTO_INCREMENT для таблицы `PCRM_Drivers`
 --
 ALTER TABLE `PCRM_Drivers`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_FinancialTransaction`
 --
 ALTER TABLE `PCRM_FinancialTransaction`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_FormState`
 --
 ALTER TABLE `PCRM_FormState`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4428;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_InboundOperations`
@@ -1264,31 +1287,31 @@ ALTER TABLE `PCRM_InboundReturns`
 -- AUTO_INCREMENT для таблицы `PCRM_Loaders`
 --
 ALTER TABLE `PCRM_Loaders`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Order`
 --
 ALTER TABLE `PCRM_Order`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_OrderHistory`
 --
 ALTER TABLE `PCRM_OrderHistory`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_OrderItem`
 --
 ALTER TABLE `PCRM_OrderItem`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Organization`
 --
 ALTER TABLE `PCRM_Organization`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_OutboundOperations`
@@ -1312,7 +1335,7 @@ ALTER TABLE `PCRM_PaymentMethodDetails`
 -- AUTO_INCREMENT для таблицы `PCRM_Product`
 --
 ALTER TABLE `PCRM_Product`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_ProductImages`
@@ -1324,6 +1347,12 @@ ALTER TABLE `PCRM_ProductImages`
 -- AUTO_INCREMENT для таблицы `PCRM_PurchaseOrder`
 --
 ALTER TABLE `PCRM_PurchaseOrder`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `PCRM_PurchaseOrderItem`
+--
+ALTER TABLE `PCRM_PurchaseOrderItem`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
@@ -1345,22 +1374,28 @@ ALTER TABLE `PCRM_ReturnItem`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT для таблицы `PCRM_Settings`
+--
+ALTER TABLE `PCRM_Settings`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT для таблицы `PCRM_ShipmentHeader`
 --
 ALTER TABLE `PCRM_ShipmentHeader`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `PCRM_Shipments`
+-- AUTO_INCREMENT для таблицы `PCRM_ShipmentItem`
 --
-ALTER TABLE `PCRM_Shipments`
+ALTER TABLE `PCRM_ShipmentItem`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Stock`
 --
 ALTER TABLE `PCRM_Stock`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_TrainingMaterial`
@@ -1375,16 +1410,34 @@ ALTER TABLE `PCRM_Transfers`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT для таблицы `PCRM_TrashItems`
+--
+ALTER TABLE `PCRM_TrashItems`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `PCRM_TrashLog`
+--
+ALTER TABLE `PCRM_TrashLog`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT для таблицы `PCRM_User`
 --
 ALTER TABLE `PCRM_User`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `PCRM_UserAccessRights`
+--
+ALTER TABLE `PCRM_UserAccessRights`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `PCRM_Warehouse`
 --
 ALTER TABLE `PCRM_Warehouse`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- Ограничения внешнего ключа сохраненных таблиц
@@ -1496,12 +1549,11 @@ ALTER TABLE `PCRM_ShipmentHeader`
   ADD CONSTRAINT `PCRM_ShipmentHeader_ibfk_2` FOREIGN KEY (`warehouse_id`) REFERENCES `PCRM_Warehouse` (`id`);
 
 --
--- Ограничения внешнего ключа таблицы `PCRM_Shipments`
+-- Ограничения внешнего ключа таблицы `PCRM_ShipmentItem`
 --
-ALTER TABLE `PCRM_Shipments`
-  ADD CONSTRAINT `PCRM_Shipments_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `PCRM_Product` (`id`),
-  ADD CONSTRAINT `PCRM_Shipments_ibfk_3` FOREIGN KEY (`unloaded_by`) REFERENCES `PCRM_Loaders` (`id`),
-  ADD CONSTRAINT `PCRM_Shipments_ibfk_4` FOREIGN KEY (`shipment_header_id`) REFERENCES `PCRM_ShipmentHeader` (`id`);
+ALTER TABLE `PCRM_ShipmentItem`
+  ADD CONSTRAINT `fk_shipment_item_header` FOREIGN KEY (`shipment_header_id`) REFERENCES `PCRM_ShipmentHeader` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_shipment_item_product` FOREIGN KEY (`product_id`) REFERENCES `PCRM_Product` (`id`);
 
 --
 -- Ограничения внешнего ключа таблицы `PCRM_Stock`
@@ -1524,6 +1576,25 @@ ALTER TABLE `PCRM_Transfers`
   ADD CONSTRAINT `PCRM_Transfers_ibfk_2` FOREIGN KEY (`warehouse_from`) REFERENCES `PCRM_Warehouse` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   ADD CONSTRAINT `PCRM_Transfers_ibfk_3` FOREIGN KEY (`warehouse_to`) REFERENCES `PCRM_Warehouse` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   ADD CONSTRAINT `PCRM_Transfers_ibfk_4` FOREIGN KEY (`user_id`) REFERENCES `PCRM_User` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `PCRM_TrashItems`
+--
+ALTER TABLE `PCRM_TrashItems`
+  ADD CONSTRAINT `PCRM_TrashItems_ibfk_1` FOREIGN KEY (`deleted_by`) REFERENCES `PCRM_User` (`id`) ON DELETE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `PCRM_TrashLog`
+--
+ALTER TABLE `PCRM_TrashLog`
+  ADD CONSTRAINT `PCRM_TrashLog_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `PCRM_User` (`id`) ON DELETE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `PCRM_UserAccessRights`
+--
+ALTER TABLE `PCRM_UserAccessRights`
+  ADD CONSTRAINT `PCRM_UserAccessRights_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `PCRM_User` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `PCRM_UserAccessRights_ibfk_2` FOREIGN KEY (`access_right_id`) REFERENCES `PCRM_AccessRights` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

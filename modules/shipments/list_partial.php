@@ -30,17 +30,13 @@ $shipments = $res->fetch_all(MYSQLI_ASSOC);
 
 // Функция для расчета суммы отгрузки
 function calculateShipmentTotal($conn, $id) {
-    $sql = "
-        SELECT SUM((quantity * price) - discount) as total
-        FROM PCRM_Shipments
-        WHERE shipment_header_id = ?
-    ";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
-    return $row ? ($row['total'] ?? 0) : 0;
+    $res = $conn->prepare("SELECT SUM(quantity * price - discount) as total 
+                          FROM PCRM_ShipmentItem 
+                          WHERE shipment_header_id = ?");
+    $res->bind_param("i", $id);
+    $res->execute();
+    $row = $res->get_result()->fetch_assoc();
+    return round($row['total'] ?? 0, 2);
 }
 
 // Функция преобразования статуса в читаемый вид
@@ -170,17 +166,26 @@ function openShipmentEditTab(shipmentId) {
 }
 
 function deleteShipment(shipmentId) {
-  if (!confirm('Вы уверены, что хотите удалить эту отгрузку?')) return;
-  
-  $.get('/crm/modules/shipments/delete.php', { id: shipmentId }, function(response) {
-    if (response === 'OK') {
+  // Вызываем глобальную функцию напрямую (она определена в app.js)
+  if (typeof moveToTrash === 'function') {
+    moveToTrash('shipment', shipmentId, 'Вы уверены, что хотите удалить эту отгрузку?', function() {
       // Обновляем список отгрузок
-      updateShipmentList();
-      showNotification('Отгрузка успешно удалена', 'success');
-    } else {
-      alert('Ошибка при удалении: ' + response);
-    }
-  });
+      const activeTab = document.querySelector('.tab-pane.active');
+      if (activeTab) {
+        const moduleTab = document.querySelector('.nav-link.active[data-module*="shipments"]');
+        if (moduleTab) {
+          const modulePath = moduleTab.getAttribute('data-module');
+          fetch(modulePath)
+            .then(response => response.text())
+            .then(html => activeTab.innerHTML = html)
+            .catch(error => console.error('Error reloading shipments:', error));
+        }
+      }
+    });
+  } else {
+    console.error('Глобальная функция moveToTrash не найдена');
+    alert('Ошибка: функция удаления не найдена');
+  }
 }
 
 function printShipment(shipmentId) {
