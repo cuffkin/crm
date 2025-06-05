@@ -186,51 +186,21 @@ if ($view_mode) {
                                 ?>
                                 <p class="form-control-static"><?= htmlspecialchars($product_name) ?></p>
                             <?php else: ?>
-                                <select class="form-select" id="product_id" name="product_id" required>
-                                    <option value="">Выберите продукт...</option>
-                                    <?php foreach ($products as $product): ?>
-                                    <option value="<?= $product['id'] ?>" 
-                                            data-unit="<?= htmlspecialchars($product['unit_of_measure']) ?>"
-                                            <?= (isset($recipe['product_id']) && $recipe['product_id'] == $product['id']) ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($product['name']) ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <div class="product-selector-container" id="main-product-selector"></div>
+                                <input type="hidden" id="product_id" name="product_id" value="<?= $recipe['product_id'] ?? '' ?>">
                             <?php endif; ?>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="output_quantity" class="form-label">Выход (количество)</label>
-                            <div class="input-group">
-                                <?php if ($view_mode): ?>
-                                    <?php
-                                    $unit_of_measure = "шт";
-                                    foreach ($products as $product) {
-                                        if ($product['id'] == $recipe['product_id']) {
-                                            $unit_of_measure = $product['unit_of_measure'];
-                                            break;
-                                        }
-                                    }
-                                    ?>
-                                    <p class="form-control-static"><?= number_format($recipe['output_quantity'] ?? 0, 2) ?> <?= htmlspecialchars($unit_of_measure) ?></p>
-                                <?php else: ?>
-                                    <input type="number" step="0.01" min="0.01" class="form-control" id="output_quantity" name="output_quantity" 
-                                        value="<?= number_format($recipe['output_quantity'] ?? 0, 2, '.', '') ?>" required>
-                                    <span class="input-group-text" id="output_unit">
-                                        <?php
-                                        $unit_of_measure = "шт";
-                                        foreach ($products as $product) {
-                                            if ($product['id'] == $recipe['product_id']) {
-                                                $unit_of_measure = $product['unit_of_measure'];
-                                                break;
-                                            }
-                                        }
-                                        echo htmlspecialchars($unit_of_measure);
-                                        ?>
-                                    </span>
-                                <?php endif; ?>
-                            </div>
+                            <label for="output_quantity" class="form-label">Количество выхода</label>
+                            <?php if ($view_mode): ?>
+                                <p class="form-control-static"><?= htmlspecialchars($recipe['output_quantity'] ?? '1.00') ?></p>
+                            <?php else: ?>
+                                <input type="number" step="0.01" min="0.01" class="form-control" 
+                                       id="output_quantity" name="output_quantity" 
+                                       value="<?= htmlspecialchars($recipe['output_quantity'] ?? '1.00') ?>" required>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -238,7 +208,7 @@ if ($view_mode) {
                 <div class="row">
                     <div class="col-md-12">
                         <div class="mb-3">
-                            <label for="description" class="form-label">Описание процесса производства</label>
+                            <label for="description" class="form-label">Описание</label>
                             <?php if ($view_mode): ?>
                                 <div class="p-2 bg-light rounded">
                                     <?= nl2br(htmlspecialchars($recipe['description'] ?? '')) ?>
@@ -254,102 +224,95 @@ if ($view_mode) {
         
         <!-- Блок ингредиентов -->
         <div class="card mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Ингредиенты</h5>
+            <div class="card-header">
+                <h5 class="card-title">Ингредиенты</h5>
                 <?php if (!$view_mode): ?>
-                <button type="button" class="btn btn-sm btn-success" id="add_ingredient">
-                    <i class="fas fa-plus"></i> Добавить ингредиент
-                </button>
+                <div class="float-end">
+                    <button type="button" class="btn btn-primary btn-sm" id="add_ingredient">
+                        <i class="fas fa-plus"></i> Добавить ингредиент
+                    </button>
+                </div>
                 <?php endif; ?>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-bordered" id="ingredients_table">
-                        <thead>
-                            <tr>
-                                <th width="45%">Ингредиент</th>
-                                <th width="20%">Количество</th>
-                                <th width="20%">Единица</th>
+                <table class="table table-bordered" id="ingredients_table">
+                    <thead>
+                        <tr>
+                            <th>Ингредиент</th>
+                            <th>Количество</th>
+                            <th>Ед. изм.</th>
+                            <?php if (!$view_mode): ?>
+                            <th width="60">Действие</th>
+                            <?php endif; ?>
+                        </tr>
+                    </thead>
+                    <tbody id="ingredients_body">
+                        <?php if (empty($ingredients)): ?>
+                        <tr class="no-ingredients-row">
+                            <td colspan="<?= $view_mode ? 3 : 4 ?>" class="text-center">
+                                <?= $view_mode ? 'Нет ингредиентов' : 'Нет добавленных ингредиентов' ?>
+                            </td>
+                        </tr>
+                        <?php else: ?>
+                            <?php foreach ($ingredients as $index => $ingredient): ?>
+                            <tr data-index="<?= $index ?>" data-ingredient-id="<?= $ingredient['ingredient_id'] ?>">
+                                <td>
+                                    <?php if ($view_mode): ?>
+                                        <?= htmlspecialchars($ingredient['ingredient_name']) ?>
+                                    <?php else: ?>
+                                        <div class="product-selector-container ingredient-selector" data-ingredient-id="<?= $ingredient['ingredient_id'] ?>"></div>
+                                        <input type="hidden" name="ingredients[<?= $index ?>][ingredient_id]" value="<?= $ingredient['ingredient_id'] ?>">
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($view_mode): ?>
+                                        <?= htmlspecialchars($ingredient['quantity']) ?>
+                                    <?php else: ?>
+                                        <input type="number" step="0.01" min="0.01" class="form-control ingredient-quantity" 
+                                               name="ingredients[<?= $index ?>][quantity]" value="<?= $ingredient['quantity'] ?>" required>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="ingredient-unit">
+                                    <?= htmlspecialchars($ingredient['unit_of_measure'] ?? 'шт') ?>
+                                </td>
                                 <?php if (!$view_mode): ?>
-                                <th width="15%">Действия</th>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm remove-ingredient">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
                                 <?php endif; ?>
                             </tr>
-                        </thead>
-                        <tbody id="ingredients_body">
-                            <?php if (count($ingredients) > 0): ?>
-                                <?php foreach ($ingredients as $index => $item): ?>
-                                <tr data-index="<?= $index ?>" data-ingredient-id="<?= $item['ingredient_id'] ?>">
-                                    <td>
-                                        <?php if ($view_mode): ?>
-                                            <?= htmlspecialchars($item['ingredient_name']) ?>
-                                        <?php else: ?>
-                                        <select class="form-select ingredient-select" name="ingredients[<?= $index ?>][ingredient_id]" required>
-                                            <option value="">Выберите ингредиент...</option>
-                                            <?php foreach ($products as $product): ?>
-                                            <option value="<?= $product['id'] ?>" 
-                                                    data-unit="<?= htmlspecialchars($product['unit_of_measure']) ?>"
-                                                    <?= ($item['ingredient_id'] == $product['id']) ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($product['name']) ?>
-                                            </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($view_mode): ?>
-                                            <?= number_format($item['quantity'], 2) ?>
-                                        <?php else: ?>
-                                        <input type="number" step="0.01" min="0.01" class="form-control ingredient-quantity" 
-                                               name="ingredients[<?= $index ?>][quantity]" value="<?= number_format($item['quantity'], 2, '.', '') ?>" required>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="ingredient-unit">
-                                        <?= htmlspecialchars($item['unit_of_measure'] ?? '') ?>
-                                    </td>
-                                    <?php if (!$view_mode): ?>
-                                    <td>
-                                        <button type="button" class="btn btn-danger btn-sm remove-ingredient">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                    <?php endif; ?>
-                                </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr class="no-ingredients-row">
-                                    <td colspan="<?= $view_mode ? 3 : 4 ?>" class="text-center">
-                                        Нет добавленных ингредиентов
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
                 
                 <?php if (!$view_mode): ?>
-                <div class="row mt-3">
-                    <div class="col-md-5">
-                        <select class="form-select" id="new_ingredient">
-                            <option value="">Выберите ингредиент...</option>
-                            <?php foreach ($products as $product): ?>
-                            <option value="<?= $product['id'] ?>" 
-                                    data-unit="<?= htmlspecialchars($product['unit_of_measure']) ?>"
-                                    data-name="<?= htmlspecialchars($product['name']) ?>">
-                                <?= htmlspecialchars($product['name']) ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
+                <!-- Форма для добавления нового ингредиента -->
+                <div class="row mt-3" id="new_ingredient_form" style="display: none;">
+                    <div class="col-md-6">
+                        <label class="form-label">Ингредиент</label>
+                        <div class="product-selector-container" id="new-ingredient-selector"></div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="input-group">
-                            <input type="number" step="0.01" min="0.01" class="form-control" id="new_quantity" value="1.00">
-                            <span class="input-group-text" id="new_unit">шт</span>
+                    <div class="col-md-2">
+                        <label class="form-label">Количество</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" id="new_quantity" value="1.00">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Ед. изм.</label>
+                        <p class="form-control-static mt-2" id="new_unit">шт</p>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button type="button" class="btn btn-success btn-sm" id="confirm_add_ingredient">
+                                <i class="fas fa-check"></i> Добавить
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm" id="cancel_add_ingredient">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
-                    </div>
-                    <div class="col-md-4">
-                        <button type="button" id="add_new_ingredient" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Добавить ингредиент
-                        </button>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -358,59 +321,133 @@ if ($view_mode) {
     </form>
 </div>
 
-<script>
-// Глобальные переменные
-let ingredientIndex = <?= count($ingredients) ?>;
+<!-- Подключение общих JavaScript функций -->
+<script src="/crm/js/common.js"></script>
 
-// Инициализация при загрузке страницы
+<script>
+console.log('🟢 МОДУЛЬ РЕЦЕПТОВ ПРОИЗВОДСТВА: Скрипт начал загружаться');
+
+// Переменные для управления ингредиентами
+let ingredientIndex = <?= count($ingredients) ?>;
+let mainProductSelector = null;
+let newIngredientSelector = null;
+const ALL_PRODUCTS = <?= json_encode($products, JSON_UNESCAPED_UNICODE) ?>;
+
 $(document).ready(function() {
-    // Обработчик выбора продукта
-    $('#product_id').on('change', function() {
-        const selected = $(this).find('option:selected');
-        const unit = selected.data('unit');
-        
-        if (unit) {
-            $('#output_unit').text(unit);
+    console.log('📋 Инициализация рецептов производства...');
+    
+    <?php if (!$view_mode): ?>
+    // Инициализируем основной селектор продукта
+    mainProductSelector = createProductSelector('#main-product-selector', {
+        context: 'production',
+        placeholder: 'Выберите производимый продукт...',
+        onSelect: function(product) {
+            $('#product_id').val(product.id);
+            console.log('✅ Выбран производимый продукт:', product.name);
+        },
+        onClear: function() {
+            $('#product_id').val('');
         }
     });
     
-    // Обработчик добавления нового ингредиента через форму внизу
-    $('#add_new_ingredient').on('click', function() {
-        const ingredientId = $('#new_ingredient').val();
-        if (!ingredientId) {
-            showAlert('warning', 'Выберите ингредиент');
-            return;
+    // Устанавливаем выбранный продукт если есть
+    <?php if (!empty($recipe['product_id'])): ?>
+    const mainProduct = ALL_PRODUCTS.find(p => p.id == <?= $recipe['product_id'] ?>);
+    if (mainProduct) {
+        mainProductSelector.setProduct(mainProduct);
+    }
+    <?php endif; ?>
+    
+    // Инициализируем селекторы ингредиентов для существующих строк
+    $('.ingredient-selector').each(function() {
+        const $container = $(this);
+        const $row = $container.closest('tr');
+        const ingredientId = $container.data('ingredient-id');
+        
+        const ingredientSelector = createProductSelector(this, {
+            context: 'production',
+            placeholder: 'Выберите ингредиент...',
+            onSelect: function(product) {
+                // Обновляем скрытое поле
+                $row.find('input[name$="[ingredient_id]"]').val(product.id);
+                // Обновляем единицу измерения
+                $row.find('.ingredient-unit').text(product.unit || 'шт');
+                console.log('✅ Выбран ингредиент:', product.name);
+            },
+            onClear: function() {
+                $row.find('input[name$="[ingredient_id]"]').val('');
+                $row.find('.ingredient-unit').text('шт');
+            }
+        });
+        
+        // Устанавливаем выбранный ингредиент
+        if (ingredientId) {
+            const ingredient = ALL_PRODUCTS.find(p => p.id == ingredientId);
+            if (ingredient) {
+                ingredientSelector.setProduct(ingredient);
+            }
         }
-        
-        const quantity = $('#new_quantity').val();
-        if (!quantity || quantity <= 0) {
-            showAlert('warning', 'Введите корректное количество');
-            return;
+    });
+    
+    // Инициализируем селектор для нового ингредиента
+    newIngredientSelector = createProductSelector('#new-ingredient-selector', {
+        context: 'production',
+        placeholder: 'Выберите ингредиент...',
+        onSelect: function(product) {
+            $('#new_unit').text(product.unit || 'шт');
+            console.log('✅ Выбран новый ингредиент:', product.name);
+        },
+        onClear: function() {
+            $('#new_unit').text('шт');
         }
-        
-        // Проверяем, есть ли уже такой ингредиент в таблице
-        const existingRow = $(`#ingredients_table tbody tr[data-ingredient-id="${ingredientId}"]`);
-        if (existingRow.length > 0) {
-            showAlert('warning', 'Этот ингредиент уже добавлен в рецепт');
-            return;
+    });
+    <?php endif; ?>
+    
+    // Обработчик кнопки добавления ингредиента
+    $('#add_ingredient').on('click', function() {
+        $('#new_ingredient_form').show();
+        if (newIngredientSelector) {
+            newIngredientSelector.elements.input.focus();
         }
-        
-        // Получаем данные об ингредиенте
-        const ingredientName = $('#new_ingredient option:selected').text();
-        const unit = $('#new_ingredient option:selected').data('unit') || 'шт';
-        
-        // Добавляем ингредиент в таблицу
-        addIngredientRow(ingredientId, ingredientName, quantity, unit);
-        
-        // Сбрасываем форму
-        $('#new_ingredient').val('');
+    });
+    
+    // Обработчик отмены добавления ингредиента
+    $('#cancel_add_ingredient').on('click', function() {
+        $('#new_ingredient_form').hide();
+        if (newIngredientSelector) {
+            newIngredientSelector.clear();
+        }
         $('#new_quantity').val('1.00');
         $('#new_unit').text('шт');
     });
     
-    // Обработчик кнопки добавления ингредиента
-    $('#add_ingredient').on('click', function() {
-        $('#new_ingredient').focus();
+    // Обработчик подтверждения добавления ингредиента
+    $('#confirm_add_ingredient').on('click', function() {
+        if (!newIngredientSelector) return;
+        
+        const selectedProduct = newIngredientSelector.getSelectedProduct();
+        if (!selectedProduct) {
+            alert('Выберите ингредиент');
+            return;
+        }
+        
+        const quantity = $('#new_quantity').val();
+        if (!quantity || parseFloat(quantity) <= 0) {
+            alert('Укажите корректное количество');
+            $('#new_quantity').focus();
+            return;
+        }
+        
+        const unit = $('#new_unit').text();
+        
+        // Добавляем ингредиент в таблицу
+        addIngredientRow(selectedProduct.id, selectedProduct.name, quantity, unit);
+        
+        // Сбрасываем форму
+        newIngredientSelector.clear();
+        $('#new_quantity').val('1.00');
+        $('#new_unit').text('шт');
+        $('#new_ingredient_form').hide();
     });
     
     // Обработчик удаления ингредиента
@@ -426,26 +463,6 @@ $(document).ready(function() {
                     </td>
                 </tr>
             `);
-        }
-    });
-    
-    // Обработчик выбора ингредиента
-    $(document).on('change', '.ingredient-select', function() {
-        const selected = $(this).find('option:selected');
-        const unit = selected.data('unit');
-        
-        if (unit) {
-            $(this).closest('tr').find('.ingredient-unit').text(unit);
-        }
-    });
-    
-    // Обработчик выбора ингредиента в новой форме
-    $('#new_ingredient').on('change', function() {
-        const selected = $(this).find('option:selected');
-        const unit = selected.data('unit');
-        
-        if (unit) {
-            $('#new_unit').text(unit);
         }
     });
     
@@ -468,16 +485,8 @@ function addIngredientRow(ingredientId, ingredientName, quantity, unit) {
     const row = `
         <tr data-index="${ingredientIndex}" data-ingredient-id="${ingredientId}">
             <td>
-                <select class="form-select ingredient-select" name="ingredients[${ingredientIndex}][ingredient_id]" required>
-                    <option value="">Выберите ингредиент...</option>
-                    <?php foreach ($products as $product): ?>
-                    <option value="<?= $product['id'] ?>" 
-                            data-unit="<?= htmlspecialchars($product['unit_of_measure']) ?>"
-                            ${<?= $product['id'] ?> == ingredientId ? 'selected' : ''}>
-                        <?= htmlspecialchars($product['name']) ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="product-selector-container ingredient-selector" data-ingredient-id="${ingredientId}"></div>
+                <input type="hidden" name="ingredients[${ingredientIndex}][ingredient_id]" value="${ingredientId}">
             </td>
             <td>
                 <input type="number" step="0.01" min="0.01" class="form-control ingredient-quantity" 
@@ -495,6 +504,30 @@ function addIngredientRow(ingredientId, ingredientName, quantity, unit) {
     `;
     
     $('#ingredients_body').append(row);
+    
+    // Инициализируем Product Selector для новой строки
+    const $newRow = $('#ingredients_body tr').last();
+    const $container = $newRow.find('.ingredient-selector');
+    
+    const ingredientSelector = createProductSelector($container[0], {
+        context: 'production',
+        placeholder: 'Выберите ингредиент...',
+        onSelect: function(product) {
+            $newRow.find('input[name$="[ingredient_id]"]').val(product.id);
+            $newRow.find('.ingredient-unit').text(product.unit || 'шт');
+        },
+        onClear: function() {
+            $newRow.find('input[name$="[ingredient_id]"]').val('');
+            $newRow.find('.ingredient-unit').text('шт');
+        }
+    });
+    
+    // Устанавливаем выбранный ингредиент
+    const ingredient = ALL_PRODUCTS.find(p => p.id == ingredientId);
+    if (ingredient) {
+        ingredientSelector.setProduct(ingredient);
+    }
+    
     ingredientIndex++;
 }
 
@@ -518,7 +551,7 @@ function saveRecipe() {
     
     // Добавляем ингредиенты
     $('#ingredients_table tbody tr').each(function() {
-        const ingredientId = $(this).find('.ingredient-select').val();
+        const ingredientId = $(this).find('input[name$="[ingredient_id]"]').val();
         const quantity = $(this).find('.ingredient-quantity').val();
         
         if (ingredientId && quantity) {
@@ -578,7 +611,6 @@ function validateForm() {
         isValid = false;
     } else if (!$('#product_id').val()) {
         showAlert('warning', 'Выберите производимый продукт');
-        $('#product_id').focus();
         isValid = false;
     } else if (!$('#output_quantity').val() || parseFloat($('#output_quantity').val()) <= 0) {
         showAlert('warning', 'Укажите корректное количество выхода');

@@ -370,24 +370,24 @@ if ($view_mode) {
                                         <?php if ($view_mode): ?>
                                             <?= htmlspecialchars($item['product_name']) ?>
                                         <?php else: ?>
-                                        <select class="form-select ingredient-select" name="ingredients[<?= $index ?>][ingredient_id]" required>
-                                            <option value="">Выберите ингредиент...</option>
-                                            <?php foreach ($products as $product): ?>
-                                            <option value="<?= $product['id'] ?>" 
-                                                    data-unit="<?= htmlspecialchars($product['unit_of_measure']) ?>"
-                                                    <?= ($item['ingredient_id'] == $product['id']) ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($product['name']) ?>
-                                            </option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                        <div class="product-selector-container ingredient-selector" data-ingredient-id="<?= $item['ingredient_id'] ?>"></div>
+                                        <input type="hidden" name="ingredients[<?= $index ?>][ingredient_id]" value="<?= $item['ingredient_id'] ?>">
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <?php if ($view_mode): ?>
-                                            <?= number_format($item['quantity'], 2) ?>
+                                            <?= number_format($item['required_quantity'], 2) ?>
                                         <?php else: ?>
                                         <input type="number" step="0.01" min="0.01" class="form-control ingredient-quantity" 
-                                               name="ingredients[<?= $index ?>][quantity]" value="<?= number_format($item['quantity'], 2, '.', '') ?>" required>
+                                               name="ingredients[<?= $index ?>][required_quantity]" value="<?= number_format($item['required_quantity'], 2, '.', '') ?>" required>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($view_mode): ?>
+                                            <?= number_format($item['actual_quantity'], 2) ?>
+                                        <?php else: ?>
+                                        <input type="number" step="0.01" min="0" class="form-control actual-quantity" 
+                                               name="ingredients[<?= $index ?>][actual_quantity]" value="<?= number_format($item['actual_quantity'], 2, '.', '') ?>">
                                         <?php endif; ?>
                                     </td>
                                     <td class="ingredient-unit">
@@ -404,7 +404,7 @@ if ($view_mode) {
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr class="no-ingredients-row">
-                                    <td colspan="<?= $view_mode ? 3 : 4 ?>" class="text-center">
+                                    <td colspan="<?= $view_mode ? 4 : 5 ?>" class="text-center">
                                         Нет добавленных ингредиентов
                                     </td>
                                 </tr>
@@ -487,49 +487,72 @@ if ($view_mode) {
     </div>
 </div>
 
-<script>
-// Глобальные переменные
-let ingredientIndex = <?= count($operation_items) ?>;
-let productData = {}; // Хранение данных о продуктах
+<!-- Подключение общих JavaScript функций -->
+<script src="/crm/js/common.js"></script>
 
-// Инициализация при загрузке страницы
+<script>
+console.log('🟢 МОДУЛЬ ОПЕРАЦИЙ ПРОИЗВОДСТВА: Скрипт начал загружаться');
+
+// Переменные для управления ингредиентами
+let ingredientIndex = <?= count($operation_items) ?>;
+const ALL_PRODUCTS = <?= json_encode($products, JSON_UNESCAPED_UNICODE) ?>;
+
 $(document).ready(function() {
-    // Инициализация данных о продуктах
-    <?php foreach ($products as $product): ?>
-    productData[<?= $product['id'] ?>] = {
-        name: "<?= addslashes($product['name']) ?>",
-        unit: "<?= addslashes($product['unit_of_measure']) ?>"
-    };
-    <?php endforeach; ?>
+    console.log('📋 Инициализация операций производства...');
+    
+    <?php if (!$view_mode): ?>
+    // Инициализируем селекторы ингредиентов для существующих строк
+    $('.ingredient-selector').each(function() {
+        const $container = $(this);
+        const $row = $container.closest('tr');
+        const ingredientId = $container.data('ingredient-id');
+        
+        const ingredientSelector = createProductSelector(this, {
+            context: 'production',
+            placeholder: 'Выберите ингредиент...',
+            onSelect: function(product) {
+                // Обновляем скрытое поле
+                $row.find('input[name$="[ingredient_id]"]').val(product.id);
+                // Обновляем единицу измерения
+                $row.find('.ingredient-unit').text(product.unit || 'шт');
+                console.log('✅ Выбран ингредиент:', product.name);
+            },
+            onClear: function() {
+                $row.find('input[name$="[ingredient_id]"]').val('');
+                $row.find('.ingredient-unit').text('шт');
+            }
+        });
+        
+        // Устанавливаем выбранный ингредиент
+        if (ingredientId) {
+            const ingredient = ALL_PRODUCTS.find(p => p.id == ingredientId);
+            if (ingredient) {
+                ingredientSelector.setProduct(ingredient);
+            }
+        }
+    });
+    <?php endif; ?>
     
     // Обработчик выбора рецепта
     $('#recipe_id').on('change', function() {
-        const selected = $(this).find('option:selected');
-        const productId = selected.data('product-id');
-        const productName = selected.data('product-name');
-        const unit = selected.data('unit');
+        const recipeId = $(this).val();
         
-        if (productId) {
-            // Устанавливаем продукт и его единицу измерения
-            $('#product_id').val(productId).trigger('change');
-            $('#product_unit').text(unit);
-            
-            // Загружаем ингредиенты для выбранного рецепта
-            loadRecipeIngredients($(this).val());
+        if (recipeId) {
+            // Загружаем ингредиенты рецепта
+            loadRecipeIngredients(recipeId);
+        } else {
+            // Очищаем список ингредиентов
+            $('#ingredients_body').html(`
+                <tr class="no-ingredients-row">
+                    <td colspan="<?= $view_mode ? 4 : 5 ?>" class="text-center">
+                        Выберите рецепт для загрузки ингредиентов
+                    </td>
+                </tr>
+            `);
         }
     });
     
-    // Обработчик выбора продукта
-    $('#product_id').on('change', function() {
-        const selected = $(this).find('option:selected');
-        const unit = selected.data('unit');
-        
-        if (unit) {
-            $('#product_unit').text(unit);
-        }
-    });
-    
-    // Обработчик кнопки добавления ингредиента
+    // Обработчик добавления ингредиента
     $('#add_ingredient').on('click', function() {
         addIngredientRow();
     });
@@ -542,27 +565,12 @@ $(document).ready(function() {
         if ($('#ingredients_body tr').length === 0) {
             $('#ingredients_body').html(`
                 <tr class="no-ingredients-row">
-                    <td colspan="4" class="text-center">
+                    <td colspan="<?= $view_mode ? 4 : 5 ?>" class="text-center">
                         Нет добавленных ингредиентов
                     </td>
                 </tr>
             `);
         }
-    });
-    
-    // Обработчик выбора ингредиента
-    $(document).on('change', '.ingredient-select', function() {
-        const selected = $(this).find('option:selected');
-        const unit = selected.data('unit');
-        
-        if (unit) {
-            $(this).closest('tr').find('.ingredient-unit').text(unit);
-        }
-    });
-    
-    // Обработчик кнопки проверки ингредиентов
-    $('#check_ingredients').on('click', function() {
-        checkIngredients();
     });
     
     // Обработчик кнопки сохранения
@@ -574,16 +582,46 @@ $(document).ready(function() {
     $('#cancelOperationEdit').on('click', function() {
         returnToList();
     });
-    
-    // Если выбран рецепт при загрузке, загружаем его ингредиенты
-    const recipeId = $('#recipe_id').val();
-    if (recipeId) {
-        // Загружаем только если это новая операция или нет ингредиентов
-        if (<?= $id ?> === 0 || <?= count($operation_items) ?> === 0) {
-            loadRecipeIngredients(recipeId);
-        }
-    }
 });
+
+// Функция загрузки ингредиентов рецепта
+function loadRecipeIngredients(recipeId) {
+    $.ajax({
+        url: 'modules/production/operations/get_recipe_ingredients.php',
+        type: 'GET',
+        data: { recipe_id: recipeId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success && response.ingredients) {
+                // Очищаем текущий список ингредиентов
+                $('#ingredients_body').empty();
+                
+                // Добавляем ингредиенты из рецепта
+                response.ingredients.forEach(function(ingredient) {
+                    addIngredientRowWithData(ingredient);
+                });
+                
+                if (response.ingredients.length === 0) {
+                    $('#ingredients_body').html(`
+                        <tr class="no-ingredients-row">
+                            <td colspan="<?= $view_mode ? 4 : 5 ?>" class="text-center">
+                                В рецепте нет ингредиентов
+                            </td>
+                        </tr>
+                    `);
+                }
+                
+                // Сбрасываем счетчик
+                ingredientIndex = response.ingredients.length;
+            } else {
+                showAlert('danger', 'Ошибка загрузки ингредиентов рецепта');
+            }
+        },
+        error: function() {
+            showAlert('danger', 'Ошибка при запросе ингредиентов рецепта');
+        }
+    });
+}
 
 // Функция добавления строки ингредиента
 function addIngredientRow() {
@@ -593,22 +631,18 @@ function addIngredientRow() {
     const row = `
         <tr data-index="${ingredientIndex}">
             <td>
-                <select class="form-select ingredient-select" name="ingredients[${ingredientIndex}][ingredient_id]" required>
-                    <option value="">Выберите ингредиент...</option>
-                    <?php foreach ($products as $product): ?>
-                    <option value="<?= $product['id'] ?>" data-unit="<?= htmlspecialchars($product['unit_of_measure']) ?>">
-                        <?= htmlspecialchars($product['name']) ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="product-selector-container ingredient-selector"></div>
+                <input type="hidden" name="ingredients[${ingredientIndex}][ingredient_id]" value="">
             </td>
             <td>
                 <input type="number" step="0.01" min="0.01" class="form-control ingredient-quantity" 
-                       name="ingredients[${ingredientIndex}][quantity]" value="1.00" required>
+                       name="ingredients[${ingredientIndex}][required_quantity]" value="1.00" required>
             </td>
-            <td class="ingredient-unit">
-                
+            <td>
+                <input type="number" step="0.01" min="0" class="form-control actual-quantity" 
+                       name="ingredients[${ingredientIndex}][actual_quantity]" value="0.00">
             </td>
+            <td class="ingredient-unit">шт</td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm remove-ingredient">
                     <i class="fas fa-trash"></i>
@@ -618,208 +652,83 @@ function addIngredientRow() {
     `;
     
     $('#ingredients_body').append(row);
+    
+    // Инициализируем Product Selector для новой строки
+    const $newRow = $('#ingredients_body tr').last();
+    const $container = $newRow.find('.ingredient-selector');
+    
+    const ingredientSelector = createProductSelector($container[0], {
+        context: 'production',
+        placeholder: 'Выберите ингредиент...',
+        onSelect: function(product) {
+            $newRow.find('input[name$="[ingredient_id]"]').val(product.id);
+            $newRow.find('.ingredient-unit').text(product.unit || 'шт');
+        },
+        onClear: function() {
+            $newRow.find('input[name$="[ingredient_id]"]').val('');
+            $newRow.find('.ingredient-unit').text('шт');
+        }
+    });
+    
     ingredientIndex++;
 }
 
-// Функция загрузки ингредиентов рецепта
-function loadRecipeIngredients(recipeId) {
-    if (!recipeId) return;
+// Функция добавления строки ингредиента с данными
+function addIngredientRowWithData(ingredient) {
+    // Удаляем строку-заглушку, если она есть
+    $('.no-ingredients-row').remove();
     
-    $.ajax({
-        url: 'modules/production/operations/api.php',
-        type: 'POST',
-        data: { 
-            action: 'get_recipe_ingredients',
-            recipe_id: recipeId 
+    const row = `
+        <tr data-index="${ingredientIndex}" data-ingredient-id="${ingredient.ingredient_id}">
+            <td>
+                <div class="product-selector-container ingredient-selector" data-ingredient-id="${ingredient.ingredient_id}"></div>
+                <input type="hidden" name="ingredients[${ingredientIndex}][ingredient_id]" value="${ingredient.ingredient_id}">
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0.01" class="form-control ingredient-quantity" 
+                       name="ingredients[${ingredientIndex}][required_quantity]" value="${ingredient.required_quantity || ingredient.quantity}" required>
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0" class="form-control actual-quantity" 
+                       name="ingredients[${ingredientIndex}][actual_quantity]" value="${ingredient.actual_quantity || 0}">
+            </td>
+            <td class="ingredient-unit">${ingredient.unit_of_measure || 'шт'}</td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm remove-ingredient">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+    
+    $('#ingredients_body').append(row);
+    
+    // Инициализируем Product Selector для новой строки
+    const $newRow = $('#ingredients_body tr').last();
+    const $container = $newRow.find('.ingredient-selector');
+    
+    const ingredientSelector = createProductSelector($container[0], {
+        context: 'production',
+        placeholder: 'Выберите ингредиент...',
+        onSelect: function(product) {
+            $newRow.find('input[name$="[ingredient_id]"]').val(product.id);
+            $newRow.find('.ingredient-unit').text(product.unit || 'шт');
         },
-        success: function(response) {
-            try {
-                const data = JSON.parse(response);
-                
-                if (data.success && data.ingredients && data.ingredients.length > 0) {
-                    // Очищаем таблицу ингредиентов
-                    $('#ingredients_body').empty();
-                    ingredientIndex = 0;
-                    
-                    // Добавляем ингредиенты из рецепта
-                    data.ingredients.forEach(function(item) {
-                        const row = `
-                            <tr data-index="${ingredientIndex}">
-                                <td>
-                                    <select class="form-select ingredient-select" name="ingredients[${ingredientIndex}][ingredient_id]" required>
-                                        <option value="">Выберите ингредиент...</option>
-                                        <?php foreach ($products as $product): ?>
-                                        <option value="<?= $product['id'] ?>" 
-                                                data-unit="<?= htmlspecialchars($product['unit_of_measure']) ?>"
-                                                ${item.ingredient_id == <?= $product['id'] ?> ? 'selected' : ''}>
-                                            <?= htmlspecialchars($product['name']) ?>
-                                        </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="number" step="0.01" min="0.01" class="form-control ingredient-quantity" 
-                                           name="ingredients[${ingredientIndex}][quantity]" value="${parseFloat(item.quantity).toFixed(2)}" required>
-                                </td>
-                                <td class="ingredient-unit">
-                                    ${item.unit || ''}
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-danger btn-sm remove-ingredient">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                        
-                        $('#ingredients_body').append(row);
-                        ingredientIndex++;
-                    });
-                    
-                    // Устанавливаем продукт из рецепта
-                    if (data.recipe && data.recipe.product_id) {
-                        $('#product_id').val(data.recipe.product_id);
-                        $('#product_unit').text(data.recipe.unit_of_measure || '');
-                    }
-                } else {
-                    // Если нет ингредиентов, показываем заглушку
-                    $('#ingredients_body').html(`
-                        <tr class="no-ingredients-row">
-                            <td colspan="4" class="text-center">
-                                Нет ингредиентов в выбранном рецепте
-                            </td>
-                        </tr>
-                    `);
-                }
-            } catch (e) {
-                console.error('Ошибка при обработке ответа:', e);
-                showAlert('danger', 'Ошибка при загрузке ингредиентов рецепта');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Ошибка запроса:', error);
-            showAlert('danger', 'Ошибка при загрузке ингредиентов рецепта');
+        onClear: function() {
+            $newRow.find('input[name$="[ingredient_id]"]').val('');
+            $newRow.find('.ingredient-unit').text('шт');
         }
     });
-}
-
-// Функция проверки наличия ингредиентов
-function checkIngredients() {
-    const recipeId = $('#recipe_id').val();
-    const quantity = $('#output_quantity').val();
-    const warehouseId = $('#warehouse_id').val();
     
-    if (!recipeId || !quantity || !warehouseId) {
-        showAlert('warning', 'Выберите рецепт, склад и укажите количество для проверки ингредиентов');
-        return;
+    // Устанавливаем выбранный ингредиент
+    if (ingredient.ingredient_id) {
+        const product = ALL_PRODUCTS.find(p => p.id == ingredient.ingredient_id);
+        if (product) {
+            ingredientSelector.setProduct(product);
+        }
     }
     
-    // Показываем модальное окно с индикатором загрузки
-    $('#ingredientsCheckModal').modal('show');
-    $('#ingredients_check_results').html('<p>Загрузка данных...</p>');
-    
-    $.ajax({
-        url: 'modules/production/operations/api.php',
-        type: 'POST',
-        data: { 
-            action: 'check_ingredients',
-            recipe_id: recipeId,
-            quantity: quantity,
-            warehouse_id: warehouseId
-        },
-        success: function(response) {
-            try {
-                const data = JSON.parse(response);
-                
-                if (data.success) {
-                    let html = `
-                        <div class="mb-3">
-                            <h5>Рецепт: ${data.recipe_name}</h5>
-                            <p>Продукт: ${data.product_name}</p>
-                            <p>Количество: ${quantity} ${data.product_unit}</p>
-                        </div>
-                    `;
-                    
-                    if (data.all_available) {
-                        html += `
-                            <div class="alert alert-success">
-                                <i class="fas fa-check-circle me-2"></i>
-                                Все ингредиенты в наличии в достаточном количестве.
-                            </div>
-                        `;
-                    } else {
-                        html += `
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Недостаточно ингредиентов на складе!
-                            </div>
-                        `;
-                    }
-                    
-                    html += `
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Ингредиент</th>
-                                        <th>Требуется</th>
-                                        <th>В наличии</th>
-                                        <th>Статус</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                    `;
-                    
-                    data.ingredients.forEach(function(item) {
-                        html += `
-                            <tr class="${item.available ? 'table-success' : 'table-danger'}">
-                                <td>${item.name}</td>
-                                <td>${parseFloat(item.required_quantity).toFixed(2)} ${item.unit}</td>
-                                <td>${parseFloat(item.stock_quantity).toFixed(2)} ${item.unit}</td>
-                                <td>
-                                    ${item.available 
-                                        ? '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Достаточно</span>' 
-                                        : '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>Недостаточно</span>'}
-                                </td>
-                            </tr>
-                        `;
-                    });
-                    
-                    html += `
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                    
-                    $('#ingredients_check_results').html(html);
-                } else {
-                    $('#ingredients_check_results').html(`
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle me-2"></i>
-                            Ошибка: ${data.error || 'Неизвестная ошибка при проверке ингредиентов'}
-                        </div>
-                    `);
-                }
-            } catch (e) {
-                console.error('Ошибка при обработке ответа:', e);
-                $('#ingredients_check_results').html(`
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        Ошибка при обработке ответа
-                    </div>
-                `);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Ошибка запроса:', error);
-            $('#ingredients_check_results').html(`
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    Ошибка при выполнении запроса: ${error}
-                </div>
-            `);
-        }
-    });
+    ingredientIndex++;
 }
 
 // Функция сохранения операции
@@ -830,32 +739,31 @@ function saveOperation() {
     }
     
     // Собираем данные формы
-    const formData = {
+    const operationData = {
         id: $('#operation_id').val(),
         operation_number: $('#operation_number').val(),
         production_date: $('#production_date').val(),
-        recipe_id: $('#recipe_id').val(),
         product_id: $('#product_id').val(),
+        recipe_id: $('#recipe_id').val(),
         warehouse_id: $('#warehouse_id').val(),
         output_quantity: $('#output_quantity').val(),
-        status: $('#status').val(),
         comment: $('#comment').val(),
+        status: $('#status').val(),
         ingredients: []
     };
     
     // Добавляем ингредиенты
-    $('#ingredients_body tr').each(function() {
-        const index = $(this).data('index');
-        if (index !== undefined) {
-            const ingredientId = $(this).find('.ingredient-select').val();
-            const quantity = $(this).find('.ingredient-quantity').val();
-            
-            if (ingredientId && quantity) {
-                formData.ingredients.push({
-                    ingredient_id: ingredientId,
-                    quantity: quantity
-                });
-            }
+    $('#ingredients_table tbody tr').each(function() {
+        const ingredientId = $(this).find('input[name$="[ingredient_id]"]').val();
+        const requiredQuantity = $(this).find('.ingredient-quantity').val();
+        const actualQuantity = $(this).find('.actual-quantity').val();
+        
+        if (ingredientId && requiredQuantity) {
+            operationData.ingredients.push({
+                ingredient_id: ingredientId,
+                required_quantity: requiredQuantity,
+                actual_quantity: actualQuantity || 0
+            });
         }
     });
     
@@ -864,7 +772,7 @@ function saveOperation() {
         url: 'modules/production/operations/save.php',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify(formData),
+        data: JSON.stringify(operationData),
         success: function(response) {
             try {
                 const data = JSON.parse(response);
@@ -873,20 +781,20 @@ function saveOperation() {
                     showAlert('success', 'Операция успешно сохранена');
                     
                     // Если это новая операция, перенаправляем на страницу редактирования
-                    if (formData.id == 0) {
+                    if (operationData.id == 0) {
                         // Открываем новую вкладку с созданной операцией
-                        openProductionOperationTab(data.id);
+                        openOperationTab(data.id);
                         // Закрываем текущую вкладку
                         returnToList();
                     } else {
                         // Перезагружаем текущую страницу для обновления данных
-                        loadContent('modules/production/operations/edit_partial.php?id=' + data.id);
+                        loadContent(`modules/production/operations/edit_partial.php?id=${data.id}`);
                     }
                 } else {
                     showAlert('danger', 'Ошибка при сохранении: ' + (data.error || 'Неизвестная ошибка'));
                 }
             } catch (e) {
-                console.error('Ошибка при обработке ответа:', e);
+                console.error('Ошибка при обработке ответа:', e, response);
                 showAlert('danger', 'Ошибка при обработке ответа сервера');
             }
         },
@@ -906,20 +814,14 @@ function validateForm() {
         showAlert('warning', 'Укажите номер операции');
         $('#operation_number').focus();
         isValid = false;
-    } else if (!$('#production_date').val()) {
-        showAlert('warning', 'Укажите дату производства');
-        $('#production_date').focus();
+    } else if (!$('#product_id').val()) {
+        showAlert('warning', 'Выберите производимый продукт');
         isValid = false;
     } else if (!$('#warehouse_id').val()) {
         showAlert('warning', 'Выберите склад');
-        $('#warehouse_id').focus();
-        isValid = false;
-    } else if (!$('#product_id').val()) {
-        showAlert('warning', 'Выберите продукт');
-        $('#product_id').focus();
         isValid = false;
     } else if (!$('#output_quantity').val() || parseFloat($('#output_quantity').val()) <= 0) {
-        showAlert('warning', 'Укажите количество');
+        showAlert('warning', 'Укажите корректное количество выхода');
         $('#output_quantity').focus();
         isValid = false;
     }

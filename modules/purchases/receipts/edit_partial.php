@@ -270,7 +270,7 @@ $uniquePrefix = 'rc_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
 </div>
 
 <!-- Подключение общих JavaScript функций -->
-<script src="/crm/js/common.js"></script>
+<script src="js/common.js"></script>
 
 <script>
 // Внимание! Переменные теперь в локальной области видимости
