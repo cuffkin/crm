@@ -222,17 +222,7 @@ $uniquePrefix = 'sh_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         <?php foreach ($items as $itm): ?>
         <tr>
           <td>
-            <div class="input-group">
-              <select class="form-select si-product">
-                <option value="">(не выбран)</option>
-                <?php foreach ($allProducts as $p): ?>
-                <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>" <?= ($p['id'] == $itm['product_id'] ? 'selected' : '') ?>>
-                  <?= htmlspecialchars($p['name']) ?>
-                </option>
-                <?php endforeach; ?>
-              </select>
-              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
-            </div>
+            <div class="product-selector-container"></div>
           </td>
           <td><input type="number" step="0.001" class="form-control si-qty" value="<?= $itm['quantity'] ?>"></td>
           <td><input type="number" step="0.01" class="form-control si-price" value="<?= $itm['price'] ?>"></td>
@@ -325,18 +315,43 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
             }
         });
 
-        // Обработчик изменения товаров в таблице
-        $('#si-table').on('change', '.si-product, .si-qty, .si-price, .si-discount', function(){
-            if ($(this).hasClass('si-product')) {
-                let priceInput = $(this).closest('tr').find('.si-price');
-                let currentVal = parseFloat(priceInput.val()) || 0;
-                if (currentVal === 0) {
-                    let sel = $(this).find(':selected');
-                    let autoPrice = parseFloat(sel.attr('data-price')) || 0;
-                    priceInput.val(autoPrice.toFixed(2));
+        // Обработчик изменения товаров в таблице - ОБНОВЛЕН
+        $('#si-table').on('change', '.si-qty, .si-price, .si-discount', function(){
+            calcTotal();
+        });
+        
+        // Инициализируем Product Selector для существующих строк
+        $('#si-table .product-selector-container').each(function() {
+            const $container = $(this);
+            const $row = $container.closest('tr');
+            
+            const productSelector = createProductSelector(this, {
+                context: 'sale',
+                onSelect: function(product) {
+                    // Автозаполнение цены
+                    const $priceInput = $row.find('.si-price');
+                    if (parseFloat($priceInput.val()) === 0) {
+                        $priceInput.val(parseFloat(product.price || 0).toFixed(2));
+                    }
+                    
+                    calcTotal();
+                },
+                onClear: function() {
+                    calcTotal();
+                }
+            });
+            
+            // Устанавливаем выбранный товар если есть
+            <?php foreach ($items as $itm): ?>
+            if ($row.index() === <?= array_search($itm, $items) ?> && <?= $itm['product_id'] ?>) {
+                // Находим товар по ID и устанавливаем его
+                const productId = <?= $itm['product_id'] ?>;
+                const product = ALL_PRODUCTS.find(p => p.id == productId);
+                if (product) {
+                    productSelector.setProduct(product);
                 }
             }
-            calcTotal();
+            <?php endforeach; ?>
         });
         
         // Инициализация слайдера проведения
@@ -357,13 +372,7 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
         let rowHtml = `
             <tr>
                 <td>
-                    <div class="input-group">
-                        <select class="form-select si-product">
-                            <option value="">(не выбран)</option>
-                            ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name}</option>`).join('')}
-                        </select>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
-                    </div>
+                    <div class="product-selector-container"></div>
                 </td>
                 <td><input type="number" step="0.001" class="form-control si-qty" value="1"></td>
                 <td><input type="number" step="0.01" class="form-control si-price" value="0"></td>
@@ -372,7 +381,29 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
                 <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();window['<?= $uniquePrefix ?>_calcTotal']();">×</button></td>
             </tr>
         `;
-        $('#si-table tbody').append(rowHtml);
+        const $newRow = $(rowHtml);
+        $('#si-table tbody').append($newRow);
+        
+        // Инициализируем Product Selector для новой строки
+        const $container = $newRow.find('.product-selector-container');
+        const productSelector = createProductSelector($container[0], {
+            context: 'sale',
+            onSelect: function(product) {
+                const $row = $container.closest('tr');
+                
+                // Автозаполнение цены
+                const $priceInput = $row.find('.si-price');
+                if (parseFloat($priceInput.val()) === 0) {
+                    $priceInput.val(parseFloat(product.price || 0).toFixed(2));
+                }
+                
+                calcTotal();
+            },
+            onClear: function() {
+                calcTotal();
+            }
+        });
+        
         calcTotal();
     }
 
@@ -381,13 +412,7 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
         let rowHtml = `
             <tr data-id="${item.id || ''}">
                 <td>
-                    <div class="input-group">
-                        <select class="form-select si-product">
-                            <option value="">(не выбран)</option>
-                            ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.price}" ${item.product_id == p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
-                        </select>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
-                    </div>
+                    <div class="product-selector-container"></div>
                 </td>
                 <td><input type="number" step="0.001" class="form-control si-qty" value="${item.quantity}"></td>
                 <td><input type="number" step="0.01" class="form-control si-price" value="${item.price}"></td>
@@ -396,7 +421,36 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
                 <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove();window['<?= $uniquePrefix ?>_calcTotal']();">×</button></td>
             </tr>
         `;
-        $('#si-table tbody').append(rowHtml);
+        const $newRow = $(rowHtml);
+        $('#si-table tbody').append($newRow);
+        
+        // Инициализируем Product Selector для строки с данными
+        const $container = $newRow.find('.product-selector-container');
+        const productSelector = createProductSelector($container[0], {
+            context: 'sale',
+            onSelect: function(product) {
+                const $row = $container.closest('tr');
+                
+                // Автозаполнение цены
+                const $priceInput = $row.find('.si-price');
+                if (parseFloat($priceInput.val()) === 0) {
+                    $priceInput.val(parseFloat(product.price || 0).toFixed(2));
+                }
+                
+                calcTotal();
+            },
+            onClear: function() {
+                calcTotal();
+            }
+        });
+        
+        // Устанавливаем выбранный товар
+        if (item.product_id) {
+            const product = ALL_PRODUCTS.find(p => p.id == item.product_id);
+            if (product) {
+                productSelector.setProduct(product);
+            }
+        }
     }
 
     // Расчёт общей суммы
@@ -440,10 +494,15 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
             $('#sh-warehouse').removeClass('is-invalid');
         }
         
-        // Проверка наличия товаров
+        // Проверка наличия товаров - ОБНОВЛЕНА
         const hasProducts = $('#si-table tbody tr').length > 0 && 
                             $('#si-table tbody tr').some(function() {
-                                return $(this).find('.si-product').val() !== '';
+                                const selector = $(this).find('.product-selector-container')[0];
+                                if (selector && selector.productSelector) {
+                                    const product = selector.productSelector.getSelectedProduct();
+                                    return product && product.id;
+                                }
+                                return false;
                             });
         
         if (!hasProducts) {
@@ -471,10 +530,18 @@ console.log('🔍 DIAGNOSTIC: uniquePrefix =', '<?= $uniquePrefix ?>');
             based_on: $('#sh-based-on').val()
         };
 
-        // Собираем товары
+        // Собираем товары - ОБНОВЛЕНО
         let items = [];
         $('#si-table tbody tr').each(function(){
-            let pid = $(this).find('.si-product').val();
+            const $container = $(this).find('.product-selector-container');
+            const selector = $container[0];
+            let pid = null;
+            
+            if (selector && selector.productSelector) {
+                const product = selector.productSelector.getSelectedProduct();
+                pid = product ? product.id : null;
+            }
+            
             if (!pid) return;
             let qty = parseFloat($(this).find('.si-qty').val()) || 0;
             let prc = parseFloat($(this).find('.si-price').val()) || 0;
@@ -704,17 +771,7 @@ window['<?= $uniquePrefix ?>_addItemRow'] = function() {
     const newRow = `
         <tr>
             <td>
-                <div class="input-group">
-                    <select class="form-select si-product">
-                        <option value="">(не выбран)</option>
-                        <?php foreach ($allProducts as $p): ?>
-                        <option value="<?= $p['id'] ?>" data-price="<?= $p['price'] ?>">
-                            <?= htmlspecialchars($p['name']) ?>
-                        </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openNewTab('products/edit_partial')">+</button>
-                </div>
+                <div class="product-selector-container"></div>
             </td>
             <td><input type="number" step="0.001" class="form-control si-qty" value="1"></td>
             <td><input type="number" step="0.01" class="form-control si-price" value="0"></td>

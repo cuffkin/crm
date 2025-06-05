@@ -266,14 +266,7 @@ $uniquePrefix = 'sret_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
         <?php foreach ($items as $itm): ?>
         <tr>
           <td>
-            <select class="form-select sri-product">
-              <option value="">(не выбран)</option>
-              <?php foreach ($allProducts as $p): ?>
-              <option value="<?= $p['id'] ?>" data-price="<?= $p['cost_price'] ?>" <?= ($p['id'] == $itm['product_id'] ? 'selected' : '') ?>>
-                <?= htmlspecialchars($p['name']) ?>
-              </option>
-              <?php endforeach; ?>
-            </select>
+            <div class="product-selector-container"></div>
           </td>
           <td><input type="number" step="0.001" class="form-control sri-qty" value="<?= $itm['quantity'] ?>"></td>
           <td><input type="number" step="0.01" class="form-control sri-price" value="<?= $itm['price'] ?>"></td>
@@ -439,10 +432,7 @@ $uniquePrefix = 'sret_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
       let rowHtml = `
         <tr>
           <td>
-            <select class="form-select sri-product">
-              <option value="">(не выбран)</option>
-              ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.cost_price}">${p.name}</option>`).join('')}
-            </select>
+            <div class="product-selector-container"></div>
           </td>
           <td><input type="number" step="0.001" class="form-control sri-qty" value="1"></td>
           <td><input type="number" step="0.01" class="form-control sri-price" value="0"></td>
@@ -460,10 +450,7 @@ $uniquePrefix = 'sret_' . preg_replace('/[^a-zA-Z0-9]/', '', uniqid('a', true));
       let rowHtml = `
         <tr>
           <td>
-            <select class="form-select sri-product">
-              <option value="">(не выбран)</option>
-              ${ALL_PRODUCTS.map(p => `<option value="${p.id}" data-price="${p.cost_price}" ${p.id == item.product_id ? 'selected' : ''}>${p.name}</option>`).join('')}
-            </select>
+            <div class="product-selector-container"></div>
           </td>
           <td><input type="number" step="0.001" class="form-control sri-qty" value="${item.quantity}"></td>
           <td><input type="number" step="0.01" class="form-control sri-price" value="${item.price}"></td>
