@@ -14,7 +14,7 @@ if (!check_access($conn, $_SESSION['user_id'], 'production')) {
 }
 
 // Обрабатываем тип запроса
-$action = isset($_POST['action']) ? $_POST['action'] : '';
+$action = isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : '');
 
 switch ($action) {
     case 'check_ingredients':
@@ -25,6 +25,9 @@ switch ($action) {
         break;
     case 'get_recipe_ingredients':
         getRecipeIngredients($conn);
+        break;
+    case 'get_stock_for_ingredients':
+        get_stock_for_ingredients($conn);
         break;
     case 'conduct':
         conductOperation($conn);
@@ -37,6 +40,9 @@ switch ($action) {
         break;
     case 'execute_production':
         executeProduction($conn);
+        break;
+    case 'get_total_stock':
+        getTotalStock($conn);
         break;
     default:
         echo json_encode(['success' => false, 'error' => 'Неизвестное действие']);
@@ -79,7 +85,7 @@ function checkIngredients($conn) {
             SELECT r.*, p.name as product_name, p.unit_of_measure 
             FROM PCRM_ProductionRecipe r
             JOIN PCRM_Product p ON r.product_id = p.id
-            WHERE r.id = ?
+            WHERE r.id = ? AND r.deleted = 0
         ");
         
         if (!$recipe_stmt) {
@@ -250,78 +256,95 @@ function checkStock($conn) {
  * Получает список ингредиентов для указанного рецепта
  */
 function getRecipeIngredients($conn) {
-    $recipe_id = isset($_POST['recipe_id']) ? intval($_POST['recipe_id']) : 0;
-    
+    header('Content-Type: application/json');
+    $recipe_id = isset($_GET['recipe_id']) ? intval($_GET['recipe_id']) : 0;
+    $warehouse_id = isset($_GET['warehouse_id']) ? intval($_GET['warehouse_id']) : 0; // Склад теперь важен
+
     if ($recipe_id <= 0) {
-        echo json_encode(['success' => false, 'error' => 'Не указан ID рецепта']);
+        echo json_encode(['success' => false, 'message' => 'Неверный ID рецепта.']);
         return;
     }
-    
+
     try {
-        // Получаем информацию о рецепте и продукте
-        $recipe_stmt = $conn->prepare("
-            SELECT r.*, p.name as product_name, p.unit_of_measure 
-            FROM PCRM_ProductionRecipe r
-            JOIN PCRM_Product p ON r.product_id = p.id
-            WHERE r.id = ?
-        ");
+        // Запрос для получения ингредиентов и их остатков одним махом
+        $sql = "
+            SELECT 
+                ri.ingredient_id,
+                ri.quantity,
+                p.name AS product_name,
+                p.unit_of_measure,
+                (SELECT COALESCE(SUM(s.quantity), 0) 
+                 FROM PCRM_Stock s 
+                 WHERE s.prod_id = ri.ingredient_id" . 
+                 ($warehouse_id > 0 ? " AND s.warehouse_id = ?" : "") . 
+                ") as stock_quantity
+            FROM PCRM_ProductionRecipeItem ri
+            JOIN PCRM_Product p ON ri.ingredient_id = p.id
+            WHERE ri.recipe_id = ?
+        ";
         
-        if (!$recipe_stmt) {
-            throw new Exception("Ошибка подготовки запроса рецепта: " . $conn->error);
+        $stmt = $conn->prepare($sql);
+
+        if ($warehouse_id > 0) {
+            $stmt->bind_param("ii", $warehouse_id, $recipe_id);
+        } else {
+            $stmt->bind_param("i", $recipe_id);
         }
         
-        $recipe_stmt->bind_param('i', $recipe_id);
-        $recipe_stmt->execute();
-        $recipe_result = $recipe_stmt->get_result();
-        
-        if ($recipe_result->num_rows === 0) {
-            throw new Exception("Рецепт не найден");
-        }
-        
-        $recipe = $recipe_result->fetch_assoc();
-        
-        // Получаем ингредиенты рецепта
-        $stmt = $conn->prepare("
-            SELECT i.*, p.name, p.unit_of_measure 
-            FROM PCRM_ProductionRecipeItem i
-            JOIN PCRM_Product p ON i.ingredient_id = p.id
-            WHERE i.recipe_id = ?
-        ");
-        
-        if (!$stmt) {
-            throw new Exception($conn->error);
-        }
-        
-        $stmt->bind_param('i', $recipe_id);
         $stmt->execute();
         $result = $stmt->get_result();
+        $ingredients = $result->fetch_all(MYSQLI_ASSOC);
         
-        $ingredients = [];
-        
-        while ($row = $result->fetch_assoc()) {
-            $ingredients[] = [
-                'id' => $row['id'],
-                'ingredient_id' => $row['ingredient_id'],
-                'name' => $row['name'],
-                'quantity' => $row['quantity'],
-                'unit' => $row['unit_of_measure']
-            ];
-        }
-        
-        echo json_encode([
-            'success' => true, 
-            'ingredients' => $ingredients,
-            'recipe' => [
-                'id' => $recipe['id'],
-                'name' => $recipe['name'],
-                'product_id' => $recipe['product_id'],
-                'product_name' => $recipe['product_name'],
-                'unit_of_measure' => $recipe['unit_of_measure']
-            ]
-        ]);
-        
+        echo json_encode(['success' => true, 'ingredients' => $ingredients]);
+
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'error' => 'Ошибка при получении ингредиентов: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'Ошибка при получении ингредиентов: ' . $e->getMessage()]);
+    }
+}
+
+function get_stock_for_ingredients($conn) {
+    header('Content-Type: application/json');
+    $data = json_decode(file_get_contents('php://input'), true);
+    $ingredient_ids = $data['ingredient_ids'] ?? [];
+    $warehouse_id = $data['warehouse_id'] ?? 0;
+
+    if (empty($ingredient_ids) || $warehouse_id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Не указаны ID ингредиентов или склад.']);
+        return;
+    }
+
+    try {
+        $placeholders = implode(',', array_fill(0, count($ingredient_ids), '?'));
+        $sql = "
+            SELECT prod_id, COALESCE(SUM(quantity), 0) as stock_quantity
+            FROM PCRM_Stock
+            WHERE warehouse_id = ? AND prod_id IN ($placeholders)
+            GROUP BY prod_id
+        ";
+        
+        $stmt = $conn->prepare($sql);
+        $types = 'i' . str_repeat('i', count($ingredient_ids));
+        $params = array_merge([$warehouse_id], $ingredient_ids);
+        $stmt->bind_param($types, ...$params);
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stocks = [];
+        while($row = $result->fetch_assoc()) {
+            $stocks[$row['prod_id']] = $row['stock_quantity'];
+        }
+
+        // Убедимся, что для всех запрошенных ID есть ответ
+        foreach ($ingredient_ids as $id) {
+            if (!isset($stocks[$id])) {
+                $stocks[$id] = 0;
+            }
+        }
+
+        echo json_encode(['success' => true, 'stocks' => $stocks]);
+
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Ошибка при получении остатков: ' . $e->getMessage()]);
     }
 }
 
@@ -1273,5 +1296,39 @@ function executeProduction($conn) {
         // Откатываем транзакцию в случае ошибки
         $conn->rollback();
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
+
+/**
+ * Получает общий остаток товара по всем складам.
+ */
+function getTotalStock($conn) {
+    $product_id = isset($_GET['product_id']) ? intval($_GET['product_id']) : 0;
+
+    if ($product_id <= 0) {
+        echo json_encode(['success' => false, 'error' => 'Некорректный ID товара']);
+        return;
+    }
+
+    try {
+        $stmt = $conn->prepare("
+            SELECT COALESCE(SUM(quantity), 0) as total_stock 
+            FROM PCRM_Stock 
+            WHERE prod_id = ?
+        ");
+        
+        if (!$stmt) {
+            throw new Exception($conn->error);
+        }
+
+        $stmt->bind_param('i', $product_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        echo json_encode(['success' => true, 'stock' => $row['total_stock']]);
+
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => 'Ошибка при получении общего остатка: ' . $e->getMessage()]);
     }
 }

@@ -41,9 +41,9 @@ if ($id > 0) {
 // Получаем список активных рецептов
 $recipes = $conn->query("
     SELECT r.*, p.name as product_name, p.unit_of_measure 
-    FROM PCRM_ProductionRecipe r
-    JOIN PCRM_Product p ON r.product_id = p.id 
-    WHERE r.status='active' 
+                    FROM PCRM_ProductionRecipe r
+        JOIN PCRM_Product p ON r.product_id = p.id 
+        WHERE r.status='active' AND r.deleted = 0 
     ORDER BY r.name
 ");
 

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест Product Selector в производстве</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/crm/css/product_selector.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Тест Product Selector в модулях производства</h2>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Рецепты производства</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Производимый продукт</label>
+                            <div class="product-selector-container" id="main-product-selector"></div>
+                            <input type="hidden" id="product_id" name="product_id">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Ингредиент 1</label>
+                            <div class="product-selector-container ingredient-selector" data-ingredient-id=""></div>
+                            <input type="hidden" name="ingredients[0][ingredient_id]">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Новый ингредиент</label>
+                            <div class="product-selector-container" id="new-ingredient-selector"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Операции производства</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Ингредиент</th>
+                                    <th>Требуется</th>
+                                    <th>Фактически</th>
+                                    <th>Ед. изм.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="product-selector-container ingredient-selector" data-ingredient-id=""></div>
+                                        <input type="hidden" name="ingredients[0][ingredient_id]">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control" value="1.00">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control" value="0.00">
+                                    </td>
+                                    <td class="ingredient-unit">шт</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <button class="btn btn-primary" onclick="testSelectors()">Тест селекторов</button>
+            <button class="btn btn-info" onclick="checkConsole()">Проверить консоль</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/crm/js/product_selector.js"></script>
+    
+    <script>
+        console.log('🟢 Тестовая страница загружена');
+        
+        // Тестовые данные продуктов
+        const ALL_PRODUCTS = [
+            {id: 1, name: 'Тестовый продукт 1', unit_of_measure: 'шт', cost_price: 100, sale_price: 150},
+            {id: 2, name: 'Тестовый продукт 2', unit_of_measure: 'кг', cost_price: 50, sale_price: 80},
+            {id: 3, name: 'Тестовый продукт 3', unit_of_measure: 'л', cost_price: 25, sale_price: 40}
+        ];
+        
+        let mainProductSelector = null;
+        let newIngredientSelector = null;
+        
+        $(document).ready(function() {
+            console.log('📋 Инициализация тестовых селекторов...');
+            
+            // Проверяем наличие функции createProductSelector
+            if (typeof createProductSelector === 'undefined') {
+                console.error('❌ Функция createProductSelector не найдена!');
+                alert('Ошибка: Product Selector не загружен');
+                return;
+            }
+            
+            // Инициализируем основной селектор продукта
+            try {
+                mainProductSelector = createProductSelector('#main-product-selector', {
+                    context: 'production',
+                    placeholder: 'Выберите производимый продукт...',
+                    onSelect: function(product) {
+                        $('#product_id').val(product.id);
+                        console.log('✅ Выбран производимый продукт:', product.name);
+                    },
+                    onClear: function() {
+                        $('#product_id').val('');
+                    }
+                });
+                console.log('✅ Основной селектор инициализирован');
+            } catch (e) {
+                console.error('❌ Ошибка инициализации основного селектора:', e);
+            }
+            
+            // Инициализируем селектор нового ингредиента
+            try {
+                newIngredientSelector = createProductSelector('#new-ingredient-selector', {
+                    context: 'production',
+                    placeholder: 'Выберите ингредиент...',
+                    onSelect: function(product) {
+                        console.log('✅ Выбран новый ингредиент:', product.name);
+                    },
+                    onClear: function() {
+                        console.log('🔄 Очищен селектор нового ингредиента');
+                    }
+                });
+                console.log('✅ Селектор нового ингредиента инициализирован');
+            } catch (e) {
+                console.error('❌ Ошибка инициализации селектора нового ингредиента:', e);
+            }
+            
+            // Инициализируем селекторы ингредиентов
+            initializeIngredientSelectors();
+        });
+        
+        function initializeIngredientSelectors() {
+            $('.ingredient-selector').each(function() {
+                if ($(this).hasClass('selector-initialized')) {
+                    return;
+                }
+                
+                const $container = $(this);
+                const $row = $container.closest('tr');
+                
+                try {
+                    const ingredientSelector = createProductSelector(this, {
+                        context: 'production',
+                        placeholder: 'Выберите ингредиент...',
+                        onSelect: function(product) {
+                            $row.find('input[name$="[ingredient_id]"]').val(product.id);
+                            $row.find('.ingredient-unit').text(product.unit_of_measure || 'шт');
+                            console.log('✅ Выбран ингредиент:', product.name);
+                        },
+                        onClear: function() {
+                            $row.find('input[name$="[ingredient_id]"]').val('');
+                            $row.find('.ingredient-unit').text('шт');
+                        }
+                    });
+                    
+                    $container.addClass('selector-initialized');
+                    console.log('✅ Селектор ингредиента инициализирован');
+                } catch (e) {
+                    console.error('❌ Ошибка инициализации селектора ингредиента:', e);
+                }
+            });
+        }
+        
+        function testSelectors() {
+            console.log('🧪 Тестирование селекторов...');
+            
+            // Тест основного селектора
+            if (mainProductSelector) {
+                console.log('📋 Основной селектор:', mainProductSelector);
+                console.log('📋 Методы селектора:', Object.keys(mainProductSelector));
+            }
+            
+            // Тест селектора нового ингредиента
+            if (newIngredientSelector) {
+                console.log('📋 Селектор нового ингредиента:', newIngredientSelector);
+            }
+            
+            // Проверяем количество инициализированных селекторов
+            const initializedCount = $('.selector-initialized').length;
+            console.log('📊 Количество инициализированных селекторов:', initializedCount);
+            
+            alert('Проверьте консоль для результатов тестирования');
+        }
+        
+        function checkConsole() {
+            console.log('🔍 Проверка состояния:');
+            console.log('- createProductSelector доступен:', typeof createProductSelector !== 'undefined');
+            console.log('- jQuery доступен:', typeof $ !== 'undefined');
+            console.log('- Селекторы на странице:', $('.product-selector-container').length);
+            console.log('- Инициализированные селекторы:', $('.selector-initialized').length);
+        }
+    </script>
+</body>
+</html> 

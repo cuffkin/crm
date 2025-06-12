@@ -31,10 +31,11 @@ if(!$tables_exist) {
     $recipes = [];
 } else {
     try {
-        // Упрощенный запрос для избежания проблем с JOIN
+        // Упрощенный запрос для избежания проблем с JOIN, исключаем удаленные
         $sql = "
         SELECT pr.id, pr.name, pr.description, pr.status, pr.product_id, pr.output_quantity
         FROM PCRM_ProductionRecipe pr
+        WHERE pr.deleted = 0
         ORDER BY pr.name
         ";
         $res = $conn->query($sql);
@@ -156,31 +157,28 @@ if(!$tables_exist) {
 </div>
 
 <script>
-// Функция удаления рецепта
+// Функция удаления рецепта через корзину
 function deleteRecipe(id) {
-    if (!confirm('Вы уверены, что хотите удалить этот рецепт?')) return;
-    
-    $.ajax({
-        url: 'modules/production/recipes/delete.php',
-        type: 'POST',
-        data: { id: id },
-        success: function(response) {
-            try {
-                var data = JSON.parse(response);
-                if (data.success) {
-                    showAlert('success', 'Рецепт успешно удален');
-                    loadContent('modules/production/recipes/list_partial.php');
-                } else {
-                    showAlert('danger', 'Ошибка: ' + data.error);
+    // Вызываем глобальную функцию напрямую (она определена в app.js)
+    if (typeof moveToTrash === 'function') {
+        moveToTrash('production_recipe', id, 'Вы уверены, что хотите удалить этот рецепт?', function() {
+            // Обновляем список рецептов
+            const activeTab = document.querySelector('.tab-pane.active');
+            if (activeTab) {
+                const moduleTab = document.querySelector('.nav-link.active[data-module*="production/recipes"]');
+                if (moduleTab) {
+                    const modulePath = moduleTab.getAttribute('data-module');
+                    fetch(modulePath)
+                        .then(response => response.text())
+                        .then(html => activeTab.innerHTML = html)
+                        .catch(error => console.error('Error reloading production recipes:', error));
                 }
-            } catch (e) {
-                showAlert('danger', 'Ошибка при обработке ответа: ' + response);
             }
-        },
-        error: function(xhr, status, error) {
-            showAlert('danger', 'Произошла ошибка при выполнении запроса: ' + error);
-        }
-    });
+        });
+    } else {
+        console.error('Глобальная функция moveToTrash не найдена');
+        alert('Ошибка: функция удаления не найдена');
+    }
 }
 
 // Функция отображения уведомления

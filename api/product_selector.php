@@ -38,6 +38,9 @@ try {
         case 'category_products':
             getProductsByCategory();
             break;
+        case 'remove_recent':
+            removeRecentProduct();
+            break;
         default:
             throw new Exception('Неизвестное действие: ' . $action);
     }
@@ -219,7 +222,7 @@ function getRecentProducts() {
     
     $userId = $_SESSION['user_id'];
     $context = $_GET['context'] ?? 'sale';
-    $limit = (int)($_GET['limit'] ?? 5);
+    $limit = (int)($_GET['limit'] ?? 3); // Ограничиваем до 3-х товаров
     
     // Создаем таблицу если не существует
     $createTableSql = "
@@ -583,5 +586,30 @@ function getAllSubcategoryIds($categoryId) {
     }
     
     return array_unique($allIds);
+}
+
+/**
+ * Удаление товара из недавних для пользователя
+ */
+function removeRecentProduct() {
+    global $conn;
+    
+    $productId = (int)($_POST['product_id'] ?? 0);
+    $context = $_POST['context'] ?? 'sale';
+    $userId = $_SESSION['user_id'];
+    
+    if (!$productId) {
+        throw new Exception('ID товара не указан');
+    }
+    
+    $sql = "DELETE FROM PCRM_RecentProducts WHERE user_id = ? AND product_id = ? AND context = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('iis', $userId, $productId, $context);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => 'Товар удален из недавних']);
+    } else {
+        throw new Exception('Ошибка удаления товара из недавних');
+    }
 }
 ?> 

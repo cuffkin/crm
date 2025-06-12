@@ -69,6 +69,13 @@ class TrashManager {
             'related_tables' => ['PCRM_ProductionOperationItem'],
             'display_field' => 'operation_number',
             'icon' => '⚙️'
+        ],
+        'production_recipe' => [
+            'name' => 'Рецепты производства',
+            'table' => 'PCRM_ProductionRecipe',
+            'related_tables' => ['PCRM_ProductionRecipeItem'],
+            'display_field' => 'name',
+            'icon' => '📋'
         ]
     ];
     

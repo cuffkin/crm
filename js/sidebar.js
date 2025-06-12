@@ -7,7 +7,7 @@ console.log('[SIDEBAR.JS] Начало загрузки скрипта');
 // Глобальный обработчик ошибок для отлова проблем
 window.addEventListener('error', function(e) {
   try {
-    console.error('[SIDEBAR.JS ERROR]', e.message, e.error ? e.error.stack : '');
+    console.error('[SIDEBAR.JS ERROR]', e.message, (e.error && e.error.stack) ? e.error.stack : '(стек вызовов недоступен)');
   } catch (logError) {
     console.error('[SIDEBAR.JS LOGGING ERROR] Не удалось залогировать оригинальную ошибку:', logError);
     console.error('[SIDEBAR.JS ORIGINAL ERROR MSG]', String(e.message)); 

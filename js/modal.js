@@ -1,4 +1,71 @@
 // Универсальный обработчик модальных окон для CRM
+
+// Глобальная функция для создания и открытия модального окна
+function openModal(modalHTML, onOpenCallback = null) {
+    try {
+        // Генерируем уникальный ID для модального окна
+        const modalId = `dynamic-modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Добавляем ID к HTML модального окна
+        const processedHTML = modalHTML.replace(/class="modal/, `id="${modalId}" class="modal`);
+        
+        // Добавляем модальное окно в DOM
+        document.body.insertAdjacentHTML('beforeend', processedHTML);
+        
+        // Находим созданный элемент
+        const modalElement = document.getElementById(modalId);
+        if (!modalElement) {
+            console.error('Не удалось найти созданное модальное окно');
+            return false;
+        }
+        
+        // Инициализируем модальное окно через modalManager
+        const modalInterface = modalManager.init(modalId);
+        if (!modalInterface) {
+            console.error('Не удалось инициализировать модальное окно');
+            modalElement.remove();
+            return false;
+        }
+        
+        // Устанавливаем обработчик на закрытие для очистки
+        modalInterface.on('hidden', function() {
+            console.log(`Модальное окно ${modalId} закрыто, выполняю отложенную очистку`);
+            setTimeout(() => {
+                modalInterface.dispose();
+                if (modalElement && modalElement.parentNode) {
+                    modalElement.remove();
+                }
+            }, 100);
+        });
+        
+        // Показываем модальное окно
+        const showResult = modalInterface.show();
+        if (!showResult) {
+            console.error('Не удалось показать модальное окно');
+            modalInterface.dispose();
+            modalElement.remove();
+            return false;
+        }
+        
+        // Вызываем коллбэк с элементом модального окна
+        if (onOpenCallback && typeof onOpenCallback === 'function') {
+            try {
+                onOpenCallback(modalElement);
+            } catch (callbackError) {
+                console.error('Ошибка при выполнении коллбэка onOpenCallback:', callbackError);
+            }
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Ошибка при создании модального окна:', error);
+        return false;
+    }
+}
+
+// Экспортируем функцию в глобальную область видимости
+window.openModal = openModal;
+
 const modalManager = {
   // Хранилище для экземпляров модальных окон
   instances: {},
