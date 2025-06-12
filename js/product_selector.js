@@ -135,7 +135,8 @@ class ProductSelector {
                 if (typeof this.options.onShowAll === 'function') {
                     this.options.onShowAll(this);
                 } else {
-                    console.error('Callback onShowAll не определен для селектора');
+                    // Используем встроенный метод loadModalData() по умолчанию
+                    this.loadModalData();
                 }
             });
         });
@@ -209,7 +210,7 @@ class ProductSelector {
 
     async loadRecentProducts() {
         try {
-            const response = await fetch('/crm/api/product_selector.php?action=get_recent&limit=5');
+            const response = await fetch('/crm/api/product_selector.php?action=recent&limit=5');
             const data = await response.json();
             
             if (data.error) throw new Error(data.error);
@@ -257,7 +258,7 @@ class ProductSelector {
 
     async setProductById(productId) {
         try {
-            const response = await fetch(`/crm/api/product_selector.php?action=get_by_id&id=${productId}`);
+            const response = await fetch(`/crm/api/product_selector.php?action=details&id=${productId}`);
             const data = await response.json();
             
             if (data.error) throw new Error(data.error);
@@ -429,15 +430,23 @@ class ProductSelector {
 
         // Клик по категории
         categoriesList.addEventListener('click', (e) => {
-            const categoryItem = e.target.closest('li[data-category-id]');
+            const categoryItem = e.target.closest('.category-item');
             if (categoryItem) {
                 e.stopPropagation();
                 const categoryId = categoryItem.dataset.categoryId;
+                const hasChildren = categoryItem.dataset.hasChildren === 'true';
+                
+                // Если кликнули по иконке раскрытия и у категории есть дети
+                if (hasChildren && e.target.classList.contains('expand-icon')) {
+                    this.toggleCategoryExpansion(categoryItem);
+                    return;
+                }
                 
                 // Снимаем выделение с других категорий
-                categoriesList.querySelectorAll('li').forEach(li => li.classList.remove('active'));
+                categoriesList.querySelectorAll('.category-item').forEach(li => li.classList.remove('active'));
                 categoryItem.classList.add('active');
                 
+                // Загружаем товары для выбранной категории
                 this.loadModalProducts(modalElement, categoryId);
             }
         });
@@ -462,7 +471,7 @@ class ProductSelector {
         const categoriesList = modalElement.querySelector('.categories-list');
         
         try {
-            const response = await fetch('/crm/api/product_selector.php?action=get_categories');
+            const response = await fetch('/crm/api/product_selector.php?action=categories');
             const data = await response.json();
             
             if (data.error) throw new Error(data.error);
@@ -480,16 +489,82 @@ class ProductSelector {
             return;
         }
 
-        const html = categories.map(category => `
-            <li class="list-group-item list-group-item-action" data-category-id="${category.id}">
+        // Подсчитываем общее количество товаров
+        const totalProducts = this.calculateTotalProducts(categories);
+        
+        // Создаем пункт "Всё" + иерархический список категорий
+        const allItemHtml = `
+            <li class="list-group-item list-group-item-action category-item" data-category-id="0">
                 <div class="d-flex justify-content-between align-items-center">
-                    <span>${this.escapeHtml(category.name)}</span>
-                    <small class="text-muted">${category.product_count || 0}</small>
+                    <span><i class="fas fa-list me-2"></i>Всё</span>
+                    <small class="text-muted">${totalProducts}</small>
                 </div>
             </li>
-        `).join('');
+        `;
+        
+        const categoriesHtml = this.renderCategoryTree(categories);
+        
+        container.innerHTML = `<ul class="list-group list-group-flush">${allItemHtml}${categoriesHtml}</ul>`;
+    }
 
-        container.innerHTML = `<ul class="list-group list-group-flush">${html}</ul>`;
+    calculateTotalProducts(categories) {
+        let total = 0;
+        categories.forEach(category => {
+            total += category.products_count || 0;
+            if (category.children) {
+                total += this.calculateTotalProducts(category.children);
+            }
+        });
+        return total;
+    }
+
+    renderCategoryTree(categories, level = 0) {
+        return categories.map(category => {
+            const hasChildren = category.children && category.children.length > 0;
+            const indent = level > 0 ? `style="padding-left: ${level * 20 + 16}px"` : '';
+            const expandIcon = hasChildren ? '<i class="fas fa-chevron-right expand-icon me-2"></i>' : '<i class="fas fa-tag me-2"></i>';
+            
+            let html = `
+                <li class="list-group-item list-group-item-action category-item ${hasChildren ? 'has-children' : ''}" 
+                    data-category-id="${category.id}" 
+                    data-has-children="${hasChildren}" 
+                    ${indent}>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>${expandIcon}${this.escapeHtml(category.name)}</span>
+                        <small class="text-muted">${category.products_count || 0}</small>
+                    </div>
+                </li>
+            `;
+            
+            // Добавляем подкатегории (изначально скрытые)
+            if (hasChildren) {
+                html += `<div class="subcategories" data-parent-id="${category.id}" style="display: none;">`;
+                html += this.renderCategoryTree(category.children, level + 1);
+                html += '</div>';
+            }
+            
+            return html;
+        }).join('');
+    }
+
+    toggleCategoryExpansion(categoryItem) {
+        const categoryId = categoryItem.dataset.categoryId;
+        const subcategoriesDiv = categoryItem.parentNode.querySelector(`.subcategories[data-parent-id="${categoryId}"]`);
+        const expandIcon = categoryItem.querySelector('.expand-icon');
+        
+        if (subcategoriesDiv) {
+            const isExpanded = subcategoriesDiv.style.display !== 'none';
+            
+            if (isExpanded) {
+                // Сворачиваем
+                subcategoriesDiv.style.display = 'none';
+                expandIcon.className = 'fas fa-chevron-right expand-icon me-2';
+            } else {
+                // Раскрываем
+                subcategoriesDiv.style.display = 'block';
+                expandIcon.className = 'fas fa-chevron-down expand-icon me-2';
+            }
+        }
     }
 
     async loadModalProducts(modalElement, categoryId = null) {
@@ -499,7 +574,7 @@ class ProductSelector {
         
         try {
             let url = '/crm/api/product_selector.php?action=by_category';
-            if (categoryId) {
+            if (categoryId !== null) {
                 url += `&category_id=${categoryId}`;
             }
             

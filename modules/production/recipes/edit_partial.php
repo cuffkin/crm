@@ -277,53 +277,8 @@ $(document).ready(function() {
             }
         },
         disabled: isViewMode,
-        onShowAll: function(selectorInstance) {
-            const modalId = `product-selector-modal-${Date.now()}`;
-                            const modalHTML = `
-                    <div class="modal fade product-selector-modal" id="${modalId}" tabindex="-1" aria-hidden="true">
-                      <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title">Выбор товара</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                      </div>
-                      <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-3 border-end">
-                                <h6>Категории</h6>
-                                <div class="categories-tree" style="max-height: 50vh; overflow-y: auto;"></div>
-                            </div>
-                            <div class="col-md-9">
-                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6>Товары (<span class="products-count">0</span>)</h6>
-                                    <input type="text" class="form-control form-control-sm w-50 modal-search" placeholder="Поиск по товарам...">
-                                </div>
-                                <div class="modal-loading text-center p-4" style="display: none;">Загрузка...</div>
-                                <div class="table-responsive" style="max-height: 50vh;">
-                                    <table class="table table-sm table-hover">
-                                        <thead>
-                                            <tr><th>Название</th><th>Артикул</th><th>Цена</th><th>Остаток</th><th>Ед.</th><th>Действие</th></tr>
-                                        </thead>
-                                        <tbody class="modal-products-list"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>`;
-
-            if (window.openModal) {
-                window.openModal(modalHTML, (modalElement) => {
-                    console.log('Модальное окно для селектора продукта открыто, загружаем данные...');
-                    selectorInstance.loadModalData(modalElement);
-                });
-            } else {
-                console.error('Функция openModal не найдена!');
-                alert('Не удалось открыть окно выбора товара.');
-            }
-        }
+        // Используем встроенный метод loadModalData() из ProductSelector
+        // Удален кастомный onShowAll обработчик
     });
 
     // --- Логика таблицы ингредиентов ---
@@ -368,53 +323,8 @@ $(document).ready(function() {
                 }
             },
             disabled: isViewMode,
-            onShowAll: function(selectorInstance) {
-                const modalId = `product-selector-modal-${Date.now()}`;
-                const modalHTML = `
-                    <div class="modal fade product-selector-modal" id="${modalId}" tabindex="-1" aria-hidden="true">
-                      <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title">Выбор товара</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                          </div>
-                          <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-3 border-end">
-                                    <h6>Категории</h6>
-                                    <div class="categories-tree" style="max-height: 50vh; overflow-y: auto;"></div>
-                                </div>
-                                <div class="col-md-9">
-                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6>Товары (<span class="products-count">0</span>)</h6>
-                                        <input type="text" class="form-control form-control-sm w-50 modal-search" placeholder="Поиск по товарам...">
-                                    </div>
-                                    <div class="modal-loading text-center p-4" style="display: none;">Загрузка...</div>
-                                    <div class="table-responsive" style="max-height: 50vh;">
-                                        <table class="table table-sm table-hover">
-                                            <thead>
-                                                <tr><th>Название</th><th>Артикул</th><th>Цена</th><th>Остаток</th><th>Ед.</th><th>Действие</th></tr>
-                                            </thead>
-                                            <tbody class="modal-products-list"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>`;
-
-                if (window.openModal) {
-                    window.openModal(modalHTML, (modalElement) => {
-                        console.log('Модальное окно для селектора ингредиента открыто, загружаем данные...');
-                        selectorInstance.loadModalData(modalElement);
-                    });
-                } else {
-                    console.error('Функция openModal не найдена!');
-                    alert('Не удалось открыть окно выбора товара.');
-                }
-            }
+            // Используем встроенный метод loadModalData() из ProductSelector
+            // Удален кастомный onShowAll обработчик
         });
         ingredientSelectors.push(newSelector);
     };

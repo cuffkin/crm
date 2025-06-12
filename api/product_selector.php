@@ -486,15 +486,7 @@ function getProductsByCategory() {
     $limit = (int)($_GET['limit'] ?? 50);
     $offset = (int)($_GET['offset'] ?? 0);
     
-    if (!$categoryId) {
-        throw new Exception('ID категории не указан');
-    }
-    
     error_log('Product Selector API: getProductsByCategory called, categoryId=' . $categoryId);
-    
-    // Получаем все подкатегории (включая саму категорию)
-    $allCategoryIds = getAllSubcategoryIds($categoryId);
-    error_log('Product Selector API: Found subcategories: ' . implode(',', $allCategoryIds));
     
     if ($context === 'purchase' || $context === 'production') {
         $priceField = 'cost_price';
@@ -502,36 +494,80 @@ function getProductsByCategory() {
         $priceField = 'price';
     }
     
-    // Создаем placeholder'ы для IN запроса
-    $placeholders = str_repeat('?,', count($allCategoryIds) - 1) . '?';
-    
-    $sql = "
-        SELECT 
-            p.id,
-            p.name,
-            p.sku,
-            p.unit_of_measure,
-            p.{$priceField} as price,
-            COALESCE(SUM(s.quantity), 0) as stock_quantity,
-            p.description
-        FROM PCRM_Product p
-        LEFT JOIN PCRM_Stock s ON p.id = s.prod_id AND s.deleted = 0
-        WHERE p.category IN ({$placeholders})
-        AND p.status = 'active' AND p.deleted = 0
-        GROUP BY p.id, p.name, p.sku, p.unit_of_measure, p.{$priceField}, p.description
-        ORDER BY p.name ASC
-        LIMIT ? OFFSET ?
-    ";
-    
-    $stmt = $conn->prepare($sql);
-    
-    // Подготавливаем параметры для bind_param
-    $types = str_repeat('i', count($allCategoryIds)) . 'ii';
-    $params = array_merge($allCategoryIds, [$limit, $offset]);
-    
-    $stmt->bind_param($types, ...$params);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // Если categoryId = 0, показываем все товары
+    if ($categoryId === 0) {
+        $sql = "
+            SELECT 
+                p.id,
+                p.name,
+                p.sku,
+                p.unit_of_measure,
+                p.{$priceField} as price,
+                COALESCE(SUM(s.quantity), 0) as stock_quantity,
+                p.description
+            FROM PCRM_Product p
+            LEFT JOIN PCRM_Stock s ON p.id = s.prod_id AND s.deleted = 0
+            WHERE p.status = 'active' AND p.deleted = 0
+            GROUP BY p.id, p.name, p.sku, p.unit_of_measure, p.{$priceField}, p.description
+            ORDER BY p.name ASC
+            LIMIT ? OFFSET ?
+        ";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('ii', $limit, $offset);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        // Получаем общее количество всех товаров
+        $countSql = "SELECT COUNT(*) as total FROM PCRM_Product WHERE status = 'active' AND deleted = 0";
+        $countResult = $conn->query($countSql);
+        $total = $countResult->fetch_assoc()['total'];
+        
+    } else {
+        // Получаем все подкатегории (включая саму категорию)
+        $allCategoryIds = getAllSubcategoryIds($categoryId);
+        error_log('Product Selector API: Found subcategories: ' . implode(',', $allCategoryIds));
+        
+        // Создаем placeholder'ы для IN запроса
+        $placeholders = str_repeat('?,', count($allCategoryIds) - 1) . '?';
+        
+        $sql = "
+            SELECT 
+                p.id,
+                p.name,
+                p.sku,
+                p.unit_of_measure,
+                p.{$priceField} as price,
+                COALESCE(SUM(s.quantity), 0) as stock_quantity,
+                p.description
+            FROM PCRM_Product p
+            LEFT JOIN PCRM_Stock s ON p.id = s.prod_id AND s.deleted = 0
+            WHERE p.category IN ({$placeholders})
+            AND p.status = 'active' AND p.deleted = 0
+            GROUP BY p.id, p.name, p.sku, p.unit_of_measure, p.{$priceField}, p.description
+            ORDER BY p.name ASC
+            LIMIT ? OFFSET ?
+        ";
+        
+        $stmt = $conn->prepare($sql);
+        
+        // Подготавливаем параметры для bind_param
+        $types = str_repeat('i', count($allCategoryIds)) . 'ii';
+        $params = array_merge($allCategoryIds, [$limit, $offset]);
+        
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        // Получаем общее количество товаров в категории и подкатегориях
+        $countSql = "SELECT COUNT(*) as total FROM PCRM_Product WHERE category IN ({$placeholders}) AND status = 'active' AND deleted = 0";
+        $countStmt = $conn->prepare($countSql);
+        $countTypes = str_repeat('i', count($allCategoryIds));
+        $countStmt->bind_param($countTypes, ...$allCategoryIds);
+        $countStmt->execute();
+        $countResult = $countStmt->get_result();
+        $total = $countResult->fetch_assoc()['total'];
+    }
     
     $products = [];
     while ($row = $result->fetch_assoc()) {
@@ -545,15 +581,6 @@ function getProductsByCategory() {
             'description' => $row['description']
         ];
     }
-    
-    // Получаем общее количество товаров в категории и подкатегориях
-    $countSql = "SELECT COUNT(*) as total FROM PCRM_Product WHERE category IN ({$placeholders}) AND status = 'active' AND deleted = 0";
-    $countStmt = $conn->prepare($countSql);
-    $countTypes = str_repeat('i', count($allCategoryIds));
-    $countStmt->bind_param($countTypes, ...$allCategoryIds);
-    $countStmt->execute();
-    $countResult = $countStmt->get_result();
-    $total = $countResult->fetch_assoc()['total'];
     
     error_log('Product Selector API: getProductsByCategory returned ' . count($products) . ' products, total=' . $total);
     

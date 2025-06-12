@@ -514,8 +514,8 @@
 /* Темная тема (если потребуется) - ИСПРАВЛЕННАЯ */
 @media (prefers-color-scheme: dark) {
     .product-dropdown {
-        background-color: #2b2b2b;
-        border-color: #404040;
+        /*background-color: #2b2b2b;*/
+        /*border-color: #404040;*/
         color: #ffffff;
     }
     
@@ -606,4 +606,97 @@
     overflow: hidden !important;
     padding: 0 !important;
     margin: 0 !important;
+}
+
+/* Стили для иерархических категорий в модальном окне */
+.product-selector-modal .categories-list .category-item {
+    border: none;
+    border-bottom: 1px solid #f1f3f4;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    user-select: none;
+    padding: 0.75rem 1rem;
+}
+
+.product-selector-modal .categories-list .category-item:last-child {
+    border-bottom: none;
+}
+
+.product-selector-modal .categories-list .category-item:hover {
+    background-color: #f8f9fa;
+}
+
+.product-selector-modal .categories-list .category-item.active {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    font-weight: 500;
+}
+
+/* Стили для пункта "Всё" */
+.product-selector-modal .categories-list .category-item[data-category-id="0"] {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.product-selector-modal .categories-list .category-item[data-category-id="0"]:hover {
+    background-color: #e9ecef;
+}
+
+.product-selector-modal .categories-list .category-item[data-category-id="0"].active {
+    background-color: #d1ecf1;
+    border-left: 4px solid #17a2b8;
+}
+
+/* Стили для иконок раскрытия */
+.product-selector-modal .categories-list .expand-icon {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    color: #6c757d;
+    width: 16px;
+    text-align: center;
+}
+
+.product-selector-modal .categories-list .expand-icon:hover {
+    color: #495057;
+}
+
+/* Стили для подкатегорий */
+.product-selector-modal .categories-list .subcategories {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    margin: 0;
+    padding: 0;
+    animation: slideDown 0.3s ease;
+}
+
+.product-selector-modal .categories-list .subcategories .category-item {
+    background-color: transparent;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9em;
+    padding-left: 2rem; /* Отступ для подкатегорий */
+}
+
+.product-selector-modal .categories-list .subcategories .category-item:hover {
+    background-color: #e9ecef;
+}
+
+.product-selector-modal .categories-list .subcategories .category-item.active {
+    background-color: #cce5ff;
+    border-left: 4px solid #007bff;
+}
+
+/* Анимация для раскрытия подкатегорий */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+        overflow: visible;
+    }
 } 

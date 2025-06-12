@@ -3248,28 +3248,26 @@ function initTabIndicators() {
 function cleanupModals() {
   console.log('Очистка модальных окон...');
   
-  // Очистка body от классов и стилей модальных окон
-  if (document.body) {
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
-  }
-  
-  // Удаляем backdrop элементы нативным способом
-  const backdrops = document.querySelectorAll('.modal-backdrop');
-  backdrops.forEach(backdrop => {
-    if (backdrop && backdrop.parentNode) {
-      backdrop.parentNode.removeChild(backdrop);
-    }
-  });
-  
-  // Сбрасываем все модальные окна
+  // Получаем все модальные окна
   const modals = document.querySelectorAll('.modal');
+  let hasActiveModals = false;
+  
   modals.forEach(modal => {
     // Пропускаем обработку несуществующих элементов
     if (!modal) return;
     
-    // Удаляем экземпляры Bootstrap Modal
+    // НЕ ЗАКРЫВАЕМ модальные окна селектора продуктов и другие активные модальные окна
+    if (modal.id && (
+      modal.id.startsWith('dynamic-modal-') || // Селектор продуктов
+      modal.classList.contains('show') || // Активные модальные окна
+      modal.classList.contains('product-selector-modal') // Модальные окна селектора продуктов по классу
+    )) {
+      console.log(`Пропускаем активное модальное окно: ${modal.id}`);
+      hasActiveModals = true;
+      return;
+    }
+    
+    // Удаляем экземпляры Bootstrap Modal только для неактивных окон
     if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal !== 'undefined') {
       try {
         const modalInstance = bootstrap.Modal.getInstance(modal);
@@ -3281,7 +3279,7 @@ function cleanupModals() {
       }
     }
     
-    // Сбрасываем классы и стили модального окна
+    // Сбрасываем классы и стили модального окна только для неактивных
     modal.classList.remove('show');
     if (modal.style) {
       modal.style.display = 'none';
@@ -3294,13 +3292,30 @@ function cleanupModals() {
     modal.removeAttribute('aria-hidden');
   });
   
+  // Удаляем backdrop элементы только если нет активных модальных окон
+  if (!hasActiveModals) {
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => {
+      if (backdrop && backdrop.parentNode) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
+    });
+    
+    // Очистка body от классов и стилей модальных окон только если нет активных модальных окон
+    if (document.body) {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+  }
+  
   // Чистим очередь анимации, устанавливая все на начальное состояние
   // Это поможет избежать "зависших" анимаций, которые могут вызывать проблемы
   if (document.body) {
     document.body.offsetHeight; // Force reflow
   }
   
-  console.log('Все модальные окна очищены');
+  console.log('Очистка модальных окон завершена (активные окна сохранены)');
 }
 
 // Проверяем наличие сохраненной сессии после загрузки страницы

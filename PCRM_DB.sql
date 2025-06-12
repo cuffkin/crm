@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost
--- Время создания: Июн 04 2025 г., 19:48
+-- Время создания: Июн 12 2025 г., 07:06
 -- Версия сервера: 8.0.42-0ubuntu0.22.04.1
 -- Версия PHP: 8.1.2-1ubuntu2.21
 
@@ -478,7 +478,8 @@ CREATE TABLE `PCRM_ProductionRecipe` (
   `status` varchar(50) NOT NULL DEFAULT 'active' COMMENT 'Статус рецепта: active/inactive',
   `created_by` int DEFAULT NULL COMMENT 'Кто создал',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Помечен как удаленный'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -584,6 +585,20 @@ CREATE TABLE `PCRM_ReceiptItem` (
   `unloaded_by` int DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `PCRM_RecentProducts`
+--
+
+CREATE TABLE `PCRM_RecentProducts` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `product_id` int NOT NULL,
+  `context` varchar(50) NOT NULL DEFAULT 'sale',
+  `last_used` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -1067,6 +1082,28 @@ ALTER TABLE `PCRM_ProductionOrder`
   ADD KEY `idx_deleted` (`deleted`);
 
 --
+-- Индексы таблицы `PCRM_ProductionRecipe`
+--
+ALTER TABLE `PCRM_ProductionRecipe`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `product_id` (`product_id`),
+  ADD KEY `status` (`status`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `idx_product_id` (`product_id`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_created_by` (`created_by`);
+
+--
+-- Индексы таблицы `PCRM_ProductionRecipeItem`
+--
+ALTER TABLE `PCRM_ProductionRecipeItem`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `recipe_id` (`recipe_id`),
+  ADD KEY `ingredient_id` (`ingredient_id`),
+  ADD KEY `idx_recipe_id` (`recipe_id`),
+  ADD KEY `idx_ingredient_id` (`ingredient_id`);
+
+--
 -- Индексы таблицы `PCRM_PurchaseOrder`
 --
 ALTER TABLE `PCRM_PurchaseOrder`
@@ -1084,6 +1121,14 @@ ALTER TABLE `PCRM_PurchaseOrderItem`
 --
 ALTER TABLE `PCRM_ReceiptHeader`
   ADD KEY `idx_deleted` (`deleted`);
+
+--
+-- Индексы таблицы `PCRM_RecentProducts`
+--
+ALTER TABLE `PCRM_RecentProducts`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_user_product_context` (`user_id`,`product_id`,`context`),
+  ADD KEY `idx_user_context_time` (`user_id`,`context`,`last_used`);
 
 --
 -- Индексы таблицы `PCRM_RelatedDocuments`
@@ -1344,6 +1389,18 @@ ALTER TABLE `PCRM_ProductImages`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT для таблицы `PCRM_ProductionRecipe`
+--
+ALTER TABLE `PCRM_ProductionRecipe`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `PCRM_ProductionRecipeItem`
+--
+ALTER TABLE `PCRM_ProductionRecipeItem`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT для таблицы `PCRM_PurchaseOrder`
 --
 ALTER TABLE `PCRM_PurchaseOrder`
@@ -1353,6 +1410,12 @@ ALTER TABLE `PCRM_PurchaseOrder`
 -- AUTO_INCREMENT для таблицы `PCRM_PurchaseOrderItem`
 --
 ALTER TABLE `PCRM_PurchaseOrderItem`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `PCRM_RecentProducts`
+--
+ALTER TABLE `PCRM_RecentProducts`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
